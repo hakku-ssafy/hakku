@@ -1,0 +1,80 @@
+package com.hakku.main.user.domain;
+
+import com.hakku.main.personalcolor.domain.PersonalColorType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+/**
+ * 회원 (PRD §3.1). 이메일은 유니크. 퍼스널컬러는 AI 진단 전까지 null.
+ */
+@Entity
+@Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String nickname;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    /** AI 진단 결과. 미진단 시 null. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "personal_color")
+    private PersonalColorType personalColor;
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    @ElementCollection
+    @CollectionTable(name = "user_preferred_styles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "style")
+    private Set<String> preferredStyles = new HashSet<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    public User(String email, String nickname, Role role) {
+        this.email = email;
+        this.nickname = nickname;
+        this.role = role;
+    }
+
+    /** AI 퍼스널컬러 진단 결과를 부여한다. */
+    public void assignPersonalColor(PersonalColorType personalColor) {
+        this.personalColor = personalColor;
+    }
+
+    /** 프로필(닉네임/이미지/선호 스타일)을 갱신한다. */
+    public void updateProfile(String nickname, String profileImageUrl, Set<String> preferredStyles) {
+        this.nickname = nickname;
+        this.profileImageUrl = profileImageUrl;
+        this.preferredStyles = preferredStyles == null ? new HashSet<>() : new HashSet<>(preferredStyles);
+    }
+}
