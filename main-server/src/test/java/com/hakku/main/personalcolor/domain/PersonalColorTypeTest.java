@@ -7,6 +7,7 @@ import static com.hakku.main.personalcolor.domain.PersonalColorType.CLEAR_WINTER
 import static com.hakku.main.personalcolor.domain.PersonalColorType.COOL_SUMMER;
 import static com.hakku.main.personalcolor.domain.PersonalColorType.DEEP_AUTUMN;
 import static com.hakku.main.personalcolor.domain.PersonalColorType.LIGHT_SPRING;
+import static com.hakku.main.personalcolor.domain.PersonalColorType.LIGHT_SUMMER;
 import static com.hakku.main.personalcolor.domain.PersonalColorType.MUTED_AUTUMN;
 import static com.hakku.main.personalcolor.domain.PersonalColorType.SOFT_SUMMER;
 import static com.hakku.main.personalcolor.domain.PersonalColorType.TRUE_SPRING;
@@ -40,6 +41,18 @@ class PersonalColorTypeTest {
         assertEquals(Optional.of(DEEP_AUTUMN), PersonalColorType.fromText("딥 오텀"));
         assertEquals(Optional.of(CLEAR_WINTER), PersonalColorType.fromText("클리어 윈터"));
         assertEquals(Optional.of(TRUE_WINTER), PersonalColorType.fromText("트루 윈터"));
+    }
+
+    @Test
+    @DisplayName("실측 OCR 형식 '[계절] [언더톤] [톤]' — 톤 토큰이 언더톤(쿨/웜)보다 우선")
+    void parsesRealReportFormat() {
+        // result1.png 진단 결과 라벨: "여름 쿨 라이트 (Summer Cool Light)" → Light Summer
+        assertEquals(Optional.of(LIGHT_SUMMER), PersonalColorType.fromText("여름 쿨 라이트"));
+        assertEquals(Optional.of(LIGHT_SUMMER), PersonalColorType.fromText("Summer Cool Light"));
+        assertEquals(Optional.of(LIGHT_SUMMER),
+                PersonalColorType.fromText("진단 결과: 여름 쿨 라이트 (Summer Cool Light)"));
+        // 봄 웜 라이트 → Light Spring (언더톤 '웜' 무시, 톤 '라이트' 채택)
+        assertEquals(Optional.of(LIGHT_SPRING), PersonalColorType.fromText("봄 웜 라이트"));
     }
 
     @Test
