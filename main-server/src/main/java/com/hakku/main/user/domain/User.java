@@ -39,6 +39,10 @@ public class User {
     @Column(nullable = false)
     private String nickname;
 
+    /** BCrypt 해시. JWT 로그인용. (소셜/패스워드리스 확장 대비 nullable) */
+    @Column(name = "password_hash")
+    private String passwordHash;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -63,6 +67,13 @@ public class User {
     public User(String email, String nickname, Role role) {
         this.email = email;
         this.nickname = nickname;
+        this.role = role;
+    }
+
+    public User(String email, String nickname, String passwordHash, Role role) {
+        this.email = email;
+        this.nickname = nickname;
+        this.passwordHash = passwordHash;
         this.role = role;
     }
 
