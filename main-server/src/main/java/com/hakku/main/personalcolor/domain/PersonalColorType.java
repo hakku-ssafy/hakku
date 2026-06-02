@@ -1,5 +1,6 @@
 package com.hakku.main.personalcolor.domain;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -7,8 +8,6 @@ import java.util.Optional;
  *
  * <p>AI 진단 결과 이미지를 OCR로 읽어 추출한 텍스트를 이 enum 값으로 매핑한다
  * ({@link #fromText(String)}).
- *
- * <p>STUB — {@code fromText}가 아직 미구현이라 테스트가 RED 상태가 된다 (TDD).
  */
 public enum PersonalColorType {
 
@@ -56,7 +55,41 @@ public enum PersonalColorType {
      * @return 계절과 톤을 모두 식별하면 해당 타입, 아니면 {@link Optional#empty()}
      */
     public static Optional<PersonalColorType> fromText(String text) {
+        if (text == null || text.isBlank()) {
+            return Optional.empty();
+        }
+        String haystack = text.toLowerCase(Locale.ROOT);
+        Season season = matchKeyword(haystack, Season.values(), Season::keywords);
+        Tone tone = matchKeyword(haystack, Tone.values(), Tone::keywords);
+        if (season == null || tone == null) {
+            return Optional.empty();
+        }
+        for (PersonalColorType type : values()) {
+            if (type.season == season && type.tone == tone) {
+                return Optional.of(type);
+            }
+        }
         return Optional.empty();
+    }
+
+    /**
+     * 가장 긴(=가장 구체적인) 키워드가 일치하는 후보를 고른다.
+     * 예: "브라이트"(bright)는 "라이트"(light)를 부분 문자열로 포함하므로,
+     * 더 긴 키워드 매칭을 우선해 BRIGHT 로 정확히 분류한다.
+     */
+    private static <E> E matchKeyword(String haystack, E[] candidates,
+                                      java.util.function.Function<E, String[]> keywordsOf) {
+        E best = null;
+        int bestLength = 0;
+        for (E candidate : candidates) {
+            for (String keyword : keywordsOf.apply(candidate)) {
+                if (haystack.contains(keyword) && keyword.length() > bestLength) {
+                    best = candidate;
+                    bestLength = keyword.length();
+                }
+            }
+        }
+        return best;
     }
 
     /** 사계절. */
