@@ -1,0 +1,37 @@
+# ── OS / Editor ────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# ── Env / Secrets ──────────────────────────────
+.env
+.env.local
+*.local
+
+# ── Java / Gradle (main-server) ────────────────
+**/build/
+**/.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+**/out/
+
+# ── Node / Vue (frontend) ──────────────────────
+**/node_modules/
+**/dist/
+**/.vite/
+npm-debug.log*
+
+# ── Python / FastAPI (ai-server) ───────────────
+**/__pycache__/
+**/.venv/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+
+# ── Go (storage-server) ────────────────────────
+**/storage-server/bin/
+**/*.test
+
+# ── Data / Volumes ─────────────────────────────
+.data/
+*.log
