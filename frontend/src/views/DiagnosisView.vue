@@ -5,7 +5,70 @@
       <p class="text-gray-500 mt-1 text-sm">얼굴 사진을 업로드하면 AI가 퍼스널컬러를 분석해드려요</p>
     </div>
 
-    <div v-if="!result">
+    <!-- 프로필 로딩 중 -->
+    <div v-if="profileLoading" class="flex justify-center py-20" role="status">
+      <svg class="animate-spin h-8 w-8 text-purple-400" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+      </svg>
+    </div>
+
+    <!-- AI 분석 진행 중 (PENDING) -->
+    <div v-else-if="diagnosisStatus === 'PENDING'" class="bg-white rounded-xl border border-gray-100 p-8 text-center">
+      <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg class="w-10 h-10 text-purple-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">AI가 분석 중이에요</h2>
+      <p class="text-gray-500 text-sm leading-relaxed">
+        분석에는 수 분이 걸릴 수 있어요.<br />
+        이 페이지를 떠나도 괜찮아요 — 완료되면 알림으로 알려드릴게요!
+      </p>
+    </div>
+
+    <!-- 진단 완료 (COMPLETED) -->
+    <div v-else-if="diagnosisStatus === 'COMPLETED'" class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-8 text-center">
+        <img
+          v-if="resultImageUrl"
+          :src="resultImageUrl"
+          alt="진단 결과 이미지"
+          class="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow"
+        />
+        <p class="text-sm text-purple-500 font-medium mb-1">당신의 퍼스널컬러</p>
+        <h2 class="text-3xl font-bold text-gray-900">{{ personalColor }}</h2>
+      </div>
+      <div class="p-6">
+        <p class="text-gray-500 text-sm text-center mb-6">
+          진단 결과를 바탕으로 어울리는 상품을 추천해드려요.
+        </p>
+        <router-link
+          to="/recommendations"
+          class="block w-full py-2.5 bg-purple-600 text-white text-center rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
+        >
+          추천 상품 보기
+        </router-link>
+      </div>
+    </div>
+
+    <!-- 진단 접수 완료 (로컬 submitted 상태) -->
+    <div v-else-if="submitted" class="bg-white rounded-xl border border-gray-100 p-8 text-center">
+      <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">진단 요청이 접수되었어요!</h2>
+      <p class="text-gray-500 text-sm leading-relaxed">
+        AI가 분석을 시작했어요. 페이지를 이동해도 괜찮아요.<br />
+        완료되면 알림으로 알려드릴게요!
+      </p>
+    </div>
+
+    <!-- 업로드 폼 (NONE) -->
+    <div v-else>
       <div
         class="bg-white rounded-xl border-2 border-dashed border-gray-200 p-12 text-center transition-colors"
         :class="isDragging ? 'border-purple-400 bg-purple-50' : 'hover:border-gray-300'"
@@ -65,65 +128,28 @@
 
       <button
         type="button"
-        :disabled="!selectedFile || loading"
+        :disabled="!selectedFile || submitting"
         class="mt-5 w-full py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         @click="runDiagnosis"
       >
-        <span v-if="loading" class="flex items-center justify-center gap-2">
+        <span v-if="submitting" class="flex items-center justify-center gap-2">
           <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
-          분석 중...
+          요청 중...
         </span>
         <span v-else>진단 시작</span>
       </button>
-    </div>
-
-    <div v-else class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-8 text-center">
-        <img
-          v-if="result.imageUrl"
-          :src="result.imageUrl"
-          alt="진단 결과 이미지"
-          class="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow"
-        />
-        <p class="text-sm text-purple-500 font-medium mb-1">당신의 퍼스널컬러</p>
-        <h2 class="text-3xl font-bold text-gray-900">{{ result.personalColorType }}</h2>
-      </div>
-
-      <div class="p-6">
-        <p class="text-gray-500 text-sm text-center mb-6">
-          진단 결과를 바탕으로 어울리는 상품을 추천해드려요.
-        </p>
-        <div class="flex gap-3">
-          <router-link
-            to="/products"
-            class="flex-1 py-2.5 bg-purple-600 text-white text-center rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
-          >
-            추천 상품 보기
-          </router-link>
-          <button
-            type="button"
-            class="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
-            @click="resetDiagnosis"
-          >
-            다시 진단하기
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
-
-interface DiagnosisResult {
-  personalColorType: string
-  imageUrl: string | null
-}
+import apiClient from '@/api/client'
+import type { DiagnosisStatus, User } from '@/types'
 
 const aiClient = axios.create({
   baseURL: import.meta.env.VITE_AI_BASE_URL ?? '/ai'
@@ -133,9 +159,27 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
 const isDragging = ref(false)
-const loading = ref(false)
+const submitting = ref(false)
+const submitted = ref(false)
 const errorMessage = ref('')
-const result = ref<DiagnosisResult | null>(null)
+
+const profileLoading = ref(true)
+const diagnosisStatus = ref<DiagnosisStatus>('NONE')
+const personalColor = ref<string | null>(null)
+const resultImageUrl = ref<string | null>(null)
+
+onMounted(async () => {
+  try {
+    const { data } = await apiClient.get<User>('/users/me')
+    diagnosisStatus.value = data.diagnosisStatus
+    personalColor.value = data.personalColor
+    resultImageUrl.value = data.profileImageUrl
+  } catch {
+    // 인증 없는 경우 등 — 업로드 폼 표시
+  } finally {
+    profileLoading.value = false
+  }
+})
 
 function setFile(file: File) {
   if (!file.type.startsWith('image/')) {
@@ -181,14 +225,9 @@ function clearFile() {
   errorMessage.value = ''
 }
 
-function resetDiagnosis() {
-  result.value = null
-  clearFile()
-}
-
 async function runDiagnosis() {
   if (!selectedFile.value) return
-  loading.value = true
+  submitting.value = true
   errorMessage.value = ''
 
   try {
@@ -196,22 +235,29 @@ async function runDiagnosis() {
     const formData = new FormData()
     formData.append('image', selectedFile.value)
 
-    const { data } = await aiClient.post<DiagnosisResult>('/api/diagnosis', formData, {
+    await aiClient.post('/api/diagnosis', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       }
     })
 
-    result.value = data
+    diagnosisStatus.value = 'PENDING'
+    submitted.value = true
+    clearFile()
   } catch (e: unknown) {
     if (axios.isAxiosError(e)) {
-      errorMessage.value = (e.response?.data as { error?: string })?.error ?? '진단에 실패했습니다. 다시 시도해주세요.'
+      const status = e.response?.status
+      if (status === 409) {
+        errorMessage.value = '이미 진단 요청이 접수되었습니다.'
+      } else {
+        errorMessage.value = (e.response?.data as { detail?: string })?.detail ?? '진단에 실패했습니다. 다시 시도해주세요.'
+      }
     } else {
       errorMessage.value = '진단에 실패했습니다. 다시 시도해주세요.'
     }
   } finally {
-    loading.value = false
+    submitting.value = false
   }
 }
 </script>

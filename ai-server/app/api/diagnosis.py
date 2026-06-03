@@ -1,23 +1,29 @@
 """Personal color diagnosis endpoint.
 
-POST /api/diagnosis — multipart upload pipeline:
-  preprocess → OpenAI image generation → storage → vision OCR → main-server update
+POST /api/diagnosis — accepts image, locks slot immediately (202), processes in background:
+  preprocess → OpenAI image generation → storage → vision OCR → main-server update + notification
+
+On error, resets diagnosis status to NONE so the user can retry.
 """
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+import logging
+
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
 from app.services import generator, storage, vision, main_client
 from app.services.preprocess import resize_for_api
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 _ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
-class DiagnosisResponse(BaseModel):
-    personalColorType: str
-    resultImageUrl: str
+class DiagnosisAcceptedResponse(BaseModel):
+    message: str
 
 
 def _require_auth(request: Request) -> str:
@@ -27,8 +33,30 @@ def _require_auth(request: Request) -> str:
     return auth
 
 
-@router.post("/api/diagnosis", response_model=DiagnosisResponse)
+async def _run_pipeline(authorization: str, raw_bytes: bytes) -> None:
+    """Background task: run the full diagnosis pipeline."""
+    try:
+        processed = resize_for_api(raw_bytes)
+        result_image = await generator.generate_analysis_image(processed)
+        meta = await storage.upload_result_image(result_image)
+        result_url = meta["url"]
+        color_type = await vision.extract_color_from_image(result_image)
+        if color_type is None:
+            logger.error("퍼스널컬러 인식 실패 — 진단 상태 초기화")
+            await main_client.reset_diagnosis_status(authorization)
+            return
+        await main_client.update_user_diagnosis(authorization, color_type, result_url)
+    except Exception:
+        logger.exception("진단 파이프라인 실패 — 진단 상태 초기화")
+        try:
+            await main_client.reset_diagnosis_status(authorization)
+        except Exception:
+            logger.exception("진단 상태 초기화 실패")
+
+
+@router.post("/api/diagnosis", status_code=202, response_model=DiagnosisAcceptedResponse)
 async def diagnose(
+    background_tasks: BackgroundTasks,
     image: UploadFile = File(...),
     authorization: str = Depends(_require_auth),
 ):
@@ -40,25 +68,16 @@ async def diagnose(
 
     raw_bytes = await image.read()
 
-    # 1. Preprocess — resize per portrait/landscape rule
-    processed = resize_for_api(raw_bytes)
+    # Lock the slot — returns 409 if already requested or completed
+    try:
+        await main_client.request_diagnosis_start(authorization)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 409:
+            raise HTTPException(status_code=409, detail="이미 진단 요청이 진행 중이거나 완료되었습니다.")
+        raise HTTPException(status_code=502, detail="서버 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.")
+    except Exception:
+        raise HTTPException(status_code=502, detail="서버 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.")
 
-    # 2. Generate analysis image via OpenAI gpt-image-1 (original photo discarded)
-    result_image = await generator.generate_analysis_image(processed)
+    background_tasks.add_task(_run_pipeline, authorization, raw_bytes)
 
-    # 3. Store result image in storage-server (kind=result)
-    meta = await storage.upload_result_image(result_image)
-    result_url = meta["url"]
-
-    # 4. Extract personal color type via OpenAI Vision
-    color_type = await vision.extract_color_from_image(result_image)
-    if color_type is None:
-        raise HTTPException(
-            status_code=422,
-            detail="퍼스널컬러 타입을 인식하지 못했습니다. 다시 시도해 주세요.",
-        )
-
-    # 5. Update user profile in main-server
-    await main_client.update_user_diagnosis(authorization, color_type, result_url)
-
-    return DiagnosisResponse(personalColorType=color_type, resultImageUrl=result_url)
+    return DiagnosisAcceptedResponse(message="진단 요청이 접수되었습니다. 완료되면 알림을 보내드립니다.")

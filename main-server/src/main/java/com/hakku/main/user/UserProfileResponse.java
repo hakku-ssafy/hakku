@@ -1,6 +1,7 @@
 package com.hakku.main.user;
 
 import com.hakku.main.personalcolor.domain.PersonalColorType;
+import com.hakku.main.user.domain.DiagnosisStatus;
 import com.hakku.main.user.domain.Role;
 import com.hakku.main.user.domain.User;
 import java.util.Set;
@@ -15,7 +16,8 @@ public record UserProfileResponse(
         Role role,
         PersonalColorType personalColor,
         String profileImageUrl,
-        Set<String> preferredStyles) {
+        Set<String> preferredStyles,
+        DiagnosisStatus diagnosisStatus) {
 
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
@@ -25,6 +27,7 @@ public record UserProfileResponse(
                 user.getRole(),
                 user.getPersonalColor(),
                 user.getProfileImageUrl(),
-                Set.copyOf(user.getPreferredStyles()));
+                Set.copyOf(user.getPreferredStyles()),
+                user.getDiagnosisStatus());
     }
 }

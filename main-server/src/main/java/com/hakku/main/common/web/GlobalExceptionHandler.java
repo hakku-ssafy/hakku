@@ -12,6 +12,7 @@ import com.hakku.main.product.exception.ProductNotFoundException;
 import com.hakku.main.review.exception.DuplicateReviewException;
 import com.hakku.main.review.exception.ReviewAccessDeniedException;
 import com.hakku.main.review.exception.ReviewNotFoundException;
+import com.hakku.main.user.exception.DiagnosisAlreadyRequestedException;
 import com.hakku.main.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DiagnosisAlreadyRequestedException.class)
+    public ResponseEntity<ErrorResponse> handleDiagnosisAlreadyRequested(DiagnosisAlreadyRequestedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(PostNotFoundException.class)

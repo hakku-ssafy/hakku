@@ -50,7 +50,7 @@
           <div class="flex justify-between items-center py-3 border-t border-gray-50">
             <dt class="text-sm text-gray-500">퍼스널컬러</dt>
             <dd class="text-sm font-medium text-gray-800">
-              <span v-if="user.personalColorType">{{ user.personalColorType }}</span>
+              <span v-if="user.personalColor">{{ user.personalColor }}</span>
               <span v-else class="text-gray-400">미진단</span>
             </dd>
           </div>
@@ -72,7 +72,7 @@
 
       <div class="space-y-2">
         <router-link
-          v-if="!user.personalColorType"
+          v-if="!user.personalColor"
           to="/diagnosis"
           class="flex items-center justify-between w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-xl px-5 py-4 hover:from-purple-700 hover:to-purple-600 transition-all"
         >

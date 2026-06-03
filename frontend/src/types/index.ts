@@ -1,12 +1,15 @@
 export type UserRole = 'NORMAL' | 'SELLER' | 'ADMIN'
+export type DiagnosisStatus = 'NONE' | 'PENDING' | 'COMPLETED'
 
 export interface User {
   id: number
   email: string
   nickname: string
   role: UserRole
-  personalColorType: string | null
+  personalColor: string | null
+  profileImageUrl: string | null
   preferredStyles: string[]
+  diagnosisStatus: DiagnosisStatus
 }
 
 export interface AuthTokens {

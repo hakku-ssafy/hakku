@@ -18,6 +18,7 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
 /**
@@ -52,6 +53,11 @@ public class User {
     @Column(name = "personal_color")
     private PersonalColorType personalColor;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "diagnosis_status", nullable = false)
+    @ColumnDefault("'NONE'")
+    private DiagnosisStatus diagnosisStatus = DiagnosisStatus.NONE;
+
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
@@ -80,6 +86,21 @@ public class User {
     /** AI 퍼스널컬러 진단 결과를 부여한다. */
     public void assignPersonalColor(PersonalColorType personalColor) {
         this.personalColor = personalColor;
+    }
+
+    /** 진단 요청을 시작한다 — NONE → PENDING. */
+    public void startDiagnosis() {
+        this.diagnosisStatus = DiagnosisStatus.PENDING;
+    }
+
+    /** 진단을 완료 처리한다 — PENDING → COMPLETED. */
+    public void completeDiagnosis() {
+        this.diagnosisStatus = DiagnosisStatus.COMPLETED;
+    }
+
+    /** 진단 상태를 초기화한다 — 실패 복구용. */
+    public void resetDiagnosis() {
+        this.diagnosisStatus = DiagnosisStatus.NONE;
     }
 
     /** 프로필(닉네임/이미지/선호 스타일)을 갱신한다. */

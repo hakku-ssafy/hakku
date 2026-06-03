@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
+import com.hakku.main.notification.NotificationProducer;
 import com.hakku.main.user.domain.Role;
 import com.hakku.main.user.domain.User;
 import com.hakku.main.user.exception.UserNotFoundException;
@@ -23,11 +24,14 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private NotificationProducer notificationProducer;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository);
+        userService = new UserService(userRepository, notificationProducer);
     }
 
     @Test
