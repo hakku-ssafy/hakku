@@ -4,11 +4,13 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Trend, Rate, Counter } from 'k6/metrics'
+import { pickImagePayload, uploadBytes, fixtureSummary } from './lib/image-payload.js'
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:19001'
 const STORAGE_URL = __ENV.STORAGE_URL || BASE_URL
 const TEST_TOKEN = __ENV.TEST_JWT || ''
 const RUN_LABEL = __ENV.RUN_LABEL || 'run'
+const OUT_DIR = __ENV.OUT_DIR || '.'
 
 const productLatency = new Trend('product_list_latency', true)
 const recommendLatency = new Trend('recommendation_latency', true)
@@ -56,11 +58,13 @@ export default function () {
     errorRate.add(!ok)
   } else {
     scenarioCounter.add(1, { scenario: 'storage_upload' })
+    const payload = pickImagePayload()
     const res = http.post(
-      `${STORAGE_URL}/storage/images?kind=raw`,
-      '0'.repeat(1024),
-      { headers: { 'Content-Type': 'application/octet-stream' } },
+      `${STORAGE_URL}/storage/images?kind=${payload.kind}`,
+      payload.data,
+      { headers: { 'Content-Type': payload.contentType } },
     )
+    uploadBytes.add(payload.sizeBytes)
     const ok = check(res, { 'upload: 201': (r) => r.status === 201 })
     uploadLatency.add(res.timings.duration)
     errorRate.add(!ok)
@@ -90,7 +94,10 @@ export function handleSummary(data) {
     notificationP95: metric(data, 'notification_latency', 'p(95)'),
     uploadP95: metric(data, 'image_upload_latency', 'p(95)'),
     uploadAvg: metric(data, 'image_upload_latency', 'avg'),
+    uploadBytesP95: metric(data, 'upload_bytes', 'p(95)'),
     errorRate: metric(data, 'error_rate', 'rate'),
+    fixtureProfile: 'realistic',
+    fixtures: fixtureSummary(),
   }
 
   console.log(`\n=== [${RUN_LABEL}] 아키텍처 부하 테스트 ===`)
@@ -98,9 +105,10 @@ export function handleSummary(data) {
   console.log(`총 요청: ${summary.httpReqs}`)
   console.log(`오류율: ${((summary.httpReqFailedRate || 0) * 100).toFixed(2)}%`)
   console.log(`전체 P95: ${(summary.httpDurationP95 || 0).toFixed(0)}ms`)
-  console.log(`Storage 업로드 P95: ${(summary.uploadP95 || 0).toFixed(0)}ms`)
+  console.log(`Storage 업로드 P95: ${(summary.uploadP95 || 0).toFixed(0)}ms (업로드 크기 P95 ${Math.round((summary.uploadBytesP95 || 0) / 1024)} KB)`)
 
+  const outFile = `${OUT_DIR}/results-${RUN_LABEL}.json`
   return {
-    [`results-${RUN_LABEL}.json`]: JSON.stringify(summary, null, 2),
+    [outFile]: JSON.stringify(summary, null, 2),
   }
 }

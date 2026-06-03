@@ -13,6 +13,7 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Trend, Rate } from 'k6/metrics'
+import { pickImagePayload } from './lib/image-payload.js'
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080'
 const STORAGE_URL = __ENV.STORAGE_URL || 'http://localhost:8081'
@@ -33,7 +34,7 @@ export const options = {
     http_req_duration:         ['p(95)<500'],
     product_list_latency:      ['p(95)<300'],
     recommendation_latency:    ['p(95)<500'],
-    image_upload_latency:      ['p(95)<1000'],
+    image_upload_latency:      ['p(95)<5000'],
     error_rate:                ['rate<0.01'],
   },
 }
@@ -63,11 +64,13 @@ export default function () {
     errorRate.add(!ok)
 
   } else {
+    const payload = pickImagePayload()
     const res = http.post(
-      `${STORAGE_URL}/storage/images?kind=raw`,
-      '0'.repeat(1024),
-      { headers: { 'Content-Type': 'application/octet-stream' } },
+      `${STORAGE_URL}/storage/images?kind=${payload.kind}`,
+      payload.data,
+      { headers: { 'Content-Type': payload.contentType } },
     )
+    
     const ok = check(res, {
       'upload: status 201': (r) => r.status === 201,
     })
