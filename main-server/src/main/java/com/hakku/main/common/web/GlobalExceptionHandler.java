@@ -2,6 +2,8 @@ package com.hakku.main.common.web;
 
 import com.hakku.main.auth.exception.EmailAlreadyExistsException;
 import com.hakku.main.auth.exception.InvalidCredentialsException;
+import com.hakku.main.community.exception.CommentAccessDeniedException;
+import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.user.exception.UserNotFoundException;
@@ -42,6 +44,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PostAccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handlePostAccessDenied(PostAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFound(CommentNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CommentAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleCommentAccessDenied(CommentAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
     }
 
