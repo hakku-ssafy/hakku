@@ -37,13 +37,15 @@ public class PostController {
     }
 
     @GetMapping
-    public List<PostResponse> list() {
-        return postService.list();
+    public List<PostResponse> list(@AuthenticationPrincipal String userId) {
+        Long viewerId = userId != null ? Long.valueOf(userId) : null;
+        return postService.list(viewerId);
     }
 
     @GetMapping("/{id}")
-    public PostResponse get(@PathVariable Long id) {
-        return postService.get(id);
+    public PostResponse get(@AuthenticationPrincipal String userId, @PathVariable Long id) {
+        Long viewerId = userId != null ? Long.valueOf(userId) : null;
+        return postService.get(id, viewerId);
     }
 
     @PutMapping("/{id}")

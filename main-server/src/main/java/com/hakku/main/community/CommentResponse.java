@@ -10,15 +10,17 @@ public record CommentResponse(
         Long id,
         Long postId,
         Long authorId,
+        String authorNickname,
         String content,
         Instant createdAt,
         Instant updatedAt) {
 
-    public static CommentResponse from(Comment comment) {
+    public static CommentResponse from(Comment comment, String authorNickname) {
         return new CommentResponse(
                 comment.getId(),
                 comment.getPostId(),
                 comment.getAuthorId(),
+                authorNickname,
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt());

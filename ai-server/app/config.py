@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     storage_server_url: str = "http://localhost:8080"
     main_server_url: str = "http://localhost:8081"
+    storage_public_url: str = "http://localhost/storage"
     template_image_path: str = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "..", "src", "result1.png"
     )

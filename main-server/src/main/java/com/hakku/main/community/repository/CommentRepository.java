@@ -8,4 +8,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     /** 게시글의 댓글을 작성 순(id 오름차순)으로 조회한다. */
     List<Comment> findByPostIdOrderByIdAsc(Long postId);
+
+    long countByPostId(Long postId);
 }

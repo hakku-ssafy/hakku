@@ -9,17 +9,26 @@ import java.time.Instant;
 public record PostResponse(
         Long id,
         Long authorId,
+        String authorNickname,
         String title,
         String content,
+        long likeCount,
+        long commentCount,
+        boolean liked,
         Instant createdAt,
         Instant updatedAt) {
 
-    public static PostResponse from(Post post) {
+    public static PostResponse from(Post post, String authorNickname, long likeCount,
+                                  long commentCount, boolean liked) {
         return new PostResponse(
                 post.getId(),
                 post.getAuthorId(),
+                authorNickname,
                 post.getTitle(),
                 post.getContent(),
+                likeCount,
+                commentCount,
+                liked,
                 post.getCreatedAt(),
                 post.getUpdatedAt());
     }

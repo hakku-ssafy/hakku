@@ -16,6 +16,7 @@ public record RecommendationResponse(
     /** 추천 점수의 항목별 기여도. */
     public record ScoreBreakdown(
             double personalColor,
+            double preferredColor,
             double style,
             double recentAction,
             double popularity,
@@ -24,6 +25,7 @@ public record RecommendationResponse(
         static ScoreBreakdown from(RecommendationScore score) {
             return new ScoreBreakdown(
                     score.personalColor(),
+                    score.preferredColor(),
                     score.style(),
                     score.recentAction(),
                     score.popularity(),

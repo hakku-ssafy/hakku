@@ -103,7 +103,12 @@ async function handleSignup() {
       password: password.value,
       role: role.value
     })
-    router.push('/')
+    await authStore.fetchMe()
+    if (role.value === 'SELLER') {
+      router.push('/seller/products')
+    } else {
+      router.push('/onboarding')
+    }
   } catch (e: unknown) {
     errorMessage.value = e instanceof Error ? e.message : '회원가입에 실패했습니다'
   } finally {

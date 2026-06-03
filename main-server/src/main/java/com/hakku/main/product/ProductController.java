@@ -82,13 +82,16 @@ public class ProductController {
             @NotBlank String name,
             String description,
             @PositiveOrZero long price,
+            String category,
             String keyColor,
             String subColor,
+            Set<String> colors,
             Set<String> styles,
-            String imageUrl) {
+            String imageUrl,
+            String purchaseUrl) {
 
         ProductCommand toCommand() {
-            return new ProductCommand(name, description, price, keyColor, subColor, styles, imageUrl);
+            return new ProductCommand(name, description, price, category, keyColor, subColor, colors, styles, imageUrl, purchaseUrl);
         }
     }
 }

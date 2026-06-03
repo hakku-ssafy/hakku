@@ -1,6 +1,23 @@
 import apiClient from './client'
 import type { Post, Comment } from '@/types'
 
+function normalizePost(raw: Post): Post {
+  return {
+    ...raw,
+    authorNickname: raw.authorNickname ?? '알 수 없음',
+    likeCount: raw.likeCount ?? 0,
+    commentCount: raw.commentCount ?? 0,
+    liked: raw.liked ?? false,
+  }
+}
+
+function normalizeComment(raw: Comment): Comment {
+  return {
+    ...raw,
+    authorNickname: raw.authorNickname ?? '알 수 없음',
+  }
+}
+
 export interface CreatePostRequest {
   title: string
   content: string
@@ -8,17 +25,17 @@ export interface CreatePostRequest {
 
 export async function getPosts(): Promise<Post[]> {
   const { data } = await apiClient.get<Post[]>('/posts')
-  return data
+  return data.map(normalizePost)
 }
 
 export async function getPost(id: number): Promise<Post> {
   const { data } = await apiClient.get<Post>(`/posts/${id}`)
-  return data
+  return normalizePost(data)
 }
 
 export async function createPost(request: CreatePostRequest): Promise<Post> {
   const { data } = await apiClient.post<Post>('/posts', request)
-  return data
+  return normalizePost(data)
 }
 
 export async function updatePost(id: number, request: CreatePostRequest): Promise<Post> {
@@ -39,12 +56,12 @@ export async function toggleLike(postId: number): Promise<{ liked: boolean; like
 
 export async function getComments(postId: number): Promise<Comment[]> {
   const { data } = await apiClient.get<Comment[]>(`/posts/${postId}/comments`)
-  return data
+  return data.map(normalizeComment)
 }
 
 export async function createComment(postId: number, content: string): Promise<Comment> {
   const { data } = await apiClient.post<Comment>(`/posts/${postId}/comments`, { content })
-  return data
+  return normalizeComment(data)
 }
 
 export async function updateComment(commentId: number, content: string): Promise<Comment> {

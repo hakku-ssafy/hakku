@@ -13,11 +13,14 @@ const mockProduct = {
   name: '봄 스티커 세트',
   description: '라이트 스프링을 위한 파스텔 스티커',
   price: 5900,
+  category: '꾸미기 스티커',
   imageUrl: null,
   keyColor: 'SPRING',
   subColor: null,
+  colors: ['blue'],
   styles: ['CUTE'],
-  sellerId: 10
+  sellerId: 10,
+  purchaseUrl: null
 }
 
 describe('useProductStore', () => {

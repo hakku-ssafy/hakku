@@ -38,12 +38,20 @@
           class="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow"
         />
         <p class="text-sm text-purple-500 font-medium mb-1">당신의 퍼스널컬러</p>
-        <h2 class="text-3xl font-bold text-gray-900">{{ personalColor }}</h2>
+        <h2 class="text-3xl font-bold text-gray-900">{{ formatPersonalColor(personalColor) }}</h2>
       </div>
       <div class="p-6">
         <p class="text-gray-500 text-sm text-center mb-6">
           진단 결과를 바탕으로 어울리는 상품을 추천해드려요.
         </p>
+        <button
+          v-if="resultImageUrl"
+          type="button"
+          class="block w-full py-2.5 mb-3 bg-white border border-purple-200 text-purple-600 text-center rounded-lg font-medium hover:bg-purple-50 transition-colors text-sm"
+          @click="showResultImage = true"
+        >
+          진단 이미지 보기
+        </button>
         <router-link
           to="/recommendations"
           class="block w-full py-2.5 bg-purple-600 text-white text-center rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
@@ -142,6 +150,24 @@
         <span v-else>진단 시작</span>
       </button>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showResultImage && resultImageUrl"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+        @click.self="showResultImage = false"
+      >
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-xl">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-900">진단 이미지</h3>
+            <button type="button" class="text-gray-400 hover:text-gray-600" @click="showResultImage = false">닫기</button>
+          </div>
+          <div class="p-4">
+            <img :src="resultImageUrl" alt="진단 이미지" class="w-full rounded-lg" />
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -149,7 +175,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import apiClient from '@/api/client'
-import type { DiagnosisStatus, User } from '@/types'
+import { formatPersonalColor, type DiagnosisStatus, type User } from '@/types'
 
 const aiClient = axios.create({
   baseURL: import.meta.env.VITE_AI_BASE_URL ?? '/ai'
@@ -167,13 +193,14 @@ const profileLoading = ref(true)
 const diagnosisStatus = ref<DiagnosisStatus>('NONE')
 const personalColor = ref<string | null>(null)
 const resultImageUrl = ref<string | null>(null)
+const showResultImage = ref(false)
 
 onMounted(async () => {
   try {
     const { data } = await apiClient.get<User>('/users/me')
     diagnosisStatus.value = data.diagnosisStatus
     personalColor.value = data.personalColor
-    resultImageUrl.value = data.profileImageUrl
+    resultImageUrl.value = data.diagnosisImageUrl ?? data.profileImageUrl
   } catch {
     // 인증 없는 경우 등 — 업로드 폼 표시
   } finally {

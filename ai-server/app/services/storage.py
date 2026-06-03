@@ -27,5 +27,5 @@ async def upload_result_image(image_bytes: bytes) -> dict:
         meta = r.json()
 
     image_id = meta["id"]
-    meta["url"] = f"{settings.storage_server_url}/storage/images/{image_id}"
+    meta["url"] = f"{settings.storage_public_url.rstrip('/')}/images/{image_id}"
     return meta

@@ -9,6 +9,9 @@ public record NotificationEvent(
         NotificationType type,
         Long recipientId,
         Long actorId,
+        String actorNickname,
+        Long postId,
+        String postTitlePreview,
         String message,
         long createdAt) {
 }

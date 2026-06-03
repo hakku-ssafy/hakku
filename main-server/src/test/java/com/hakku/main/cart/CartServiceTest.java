@@ -43,8 +43,7 @@ class CartServiceTest {
     }
 
     private Product product() {
-        return new Product(2L, "코트", "겨울 코트", 89000L, "WINTER", null,
-                Set.of("미니멀"), "https://img/coat.png");
+        return new Product(2L, "코트", "겨울 코트", 89000L, "기타", "WINTER", null, Set.of(), Set.of("미니멀"), "https://img/coat.png", null);
     }
 
     @Test

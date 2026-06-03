@@ -21,7 +21,7 @@ class NotificationConsumerTest {
     @DisplayName("Kafka 이벤트 수신 시 NotificationService.saveNotification() 호출")
     void consume_savesNotificationViaService() {
         NotificationEvent event = new NotificationEvent(
-                NotificationType.COMMENT, 1L, 2L, "댓글을 달았습니다.", Instant.now().toEpochMilli());
+                NotificationType.COMMENT, 1L, 2L, "테스터", 10L, "제목", "댓글을 달았습니다.", Instant.now().toEpochMilli());
 
         consumer.consume(event);
 

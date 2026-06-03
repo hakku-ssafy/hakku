@@ -64,7 +64,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         UserProfileResponse updated = userService.updateProfile(
-                1L, "지호2", "https://img/p.png", Set.of("캐주얼", "미니멀"));
+                1L, "지호2", "https://img/p.png", Set.of("캐주얼", "미니멀"), Set.of("blue"));
 
         assertThat(updated.nickname()).isEqualTo("지호2");
         assertThat(updated.profileImageUrl()).isEqualTo("https://img/p.png");
@@ -77,7 +77,7 @@ class UserServiceTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                userService.updateProfile(99L, "x", null, Set.of()))
+                userService.updateProfile(99L, "x", null, Set.of(), Set.of(), null))
                 .isInstanceOf(UserNotFoundException.class);
     }
 }

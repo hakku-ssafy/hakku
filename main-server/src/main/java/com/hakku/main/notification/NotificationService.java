@@ -16,7 +16,13 @@ public class NotificationService {
     /** Kafka consumer가 이벤트를 받으면 Redis에 저장한다. */
     public void saveNotification(NotificationEvent event) {
         NotificationResponse dto = new NotificationResponse(
-                event.type(), event.actorId(), event.message(), event.createdAt());
+                event.type(),
+                event.actorId(),
+                event.actorNickname(),
+                event.postId(),
+                event.postTitlePreview(),
+                event.message(),
+                event.createdAt());
         repository.save(event.recipientId(), dto);
     }
 

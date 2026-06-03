@@ -129,6 +129,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       STORAGE_SERVER_URL: http://storage-server:8080
       MAIN_SERVER_URL: http://main-server:8080
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-https://hakku.rearleg.com/storage}
     depends_on:
       storage-server:
         condition: service_healthy
@@ -163,6 +164,7 @@ services:
       - "19001:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./coupang_images:/usr/share/nginx/product-images:ro
     depends_on:
       main-server:
         condition: service_healthy

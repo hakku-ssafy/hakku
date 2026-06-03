@@ -70,7 +70,7 @@ public class RecommendationService {
         String personalColor = user.getPersonalColor() == null
                 ? null
                 : user.getPersonalColor().season().name();
-        return new UserPreferenceProfile(personalColor, user.getPreferredStyles(), Set.of());
+        return new UserPreferenceProfile(personalColor, user.getPreferredStyles(), user.getPreferredColors(), Set.of());
     }
 
     private ProductFeatures featuresOf(Product product, Map<Long, Double> reviewAverages) {
@@ -79,6 +79,7 @@ public class RecommendationService {
         return new ProductFeatures(
                 product.getKeyColor(),
                 product.getSubColor(),
+                product.getColors(),
                 product.getStyles(),
                 0.0,
                 reviewScore);

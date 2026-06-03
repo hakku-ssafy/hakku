@@ -34,8 +34,11 @@ public class AuthService {
             throw new EmailAlreadyExistsException(email);
         }
         String passwordHash = passwordEncoder.encode(rawPassword);
-        User saved = userRepository.save(new User(email, nickname, passwordHash, role));
-        return saved.getId();
+        User user = new User(email, nickname, passwordHash, role);
+        if (role == Role.SELLER) {
+            user.completeOnboarding();
+        }
+        return userRepository.save(user).getId();
     }
 
     @Transactional(readOnly = true)

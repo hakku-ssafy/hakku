@@ -38,7 +38,7 @@ class UserTest {
     void updateProfile() {
         var user = new User("tester@hakku.dev", "테스터", Role.NORMAL);
 
-        user.updateProfile("새닉네임", "https://cdn/img.png", Set.of("cute", "pastel"));
+        user.updateProfile("새닉네임", "https://cdn/img.png", Set.of("cute", "pastel"), Set.of("blue"));
 
         assertEquals("새닉네임", user.getNickname());
         assertEquals("https://cdn/img.png", user.getProfileImageUrl());

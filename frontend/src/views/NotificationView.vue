@@ -41,24 +41,27 @@
     <ul v-else class="space-y-2">
       <li
         v-for="(notification, index) in notifications"
-        :key="index"
-        class="bg-white rounded-xl border border-gray-100 p-4 flex items-start gap-3"
+        :key="`${notification.type}-${notification.createdAt}-${index}`"
       >
-        <div
-          class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base"
-          :class="iconBg(notification.type)"
+        <button
+          type="button"
+          class="w-full text-left bg-white rounded-xl border border-gray-100 p-4 flex items-start gap-3 hover:border-purple-200 hover:bg-purple-50/30 transition-colors"
+          :class="{ 'cursor-default hover:border-gray-100 hover:bg-white': !isClickable(notification) }"
+          @click="handleNotificationClick(notification)"
         >
-          {{ typeIcon(notification.type) }}
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-800">{{ notification.message }}</p>
-          <time
-            class="text-xs text-gray-400 mt-1 block"
-            :datetime="notification.createdAt"
+          <div
+            class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base"
+            :class="iconBg(notification.type)"
           >
-            {{ formatDate(notification.createdAt) }}
-          </time>
-        </div>
+            {{ typeIcon(notification.type) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-800">{{ notification.message }}</p>
+            <time class="text-xs text-gray-400 mt-1 block">
+              {{ formatDate(notification.createdAt) }}
+            </time>
+          </div>
+        </button>
       </li>
     </ul>
   </div>
@@ -66,9 +69,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useNotificationStore } from '@/stores/notifications'
 import apiClient from '@/api/client'
 import type { Notification } from '@/types'
 
+const router = useRouter()
+const notificationStore = useNotificationStore()
 const notifications = ref<Notification[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
@@ -77,7 +84,7 @@ function typeIcon(type: string): string {
   switch (type) {
     case 'COMMENT': return '💬'
     case 'LIKE': return '❤️'
-    case 'PRODUCT': return '📦'
+    case 'DIAGNOSIS_COMPLETE': return '🎨'
     default: return '🔔'
   }
 }
@@ -86,13 +93,13 @@ function iconBg(type: string): string {
   switch (type) {
     case 'COMMENT': return 'bg-blue-50'
     case 'LIKE': return 'bg-red-50'
-    case 'PRODUCT': return 'bg-purple-50'
+    case 'DIAGNOSIS_COMPLETE': return 'bg-purple-50'
     default: return 'bg-gray-50'
   }
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
+function formatDate(createdAt: number): string {
+  const date = new Date(createdAt)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffMin = Math.floor(diffMs / 60_000)
@@ -111,6 +118,21 @@ function formatDate(dateString: string): string {
   })
 }
 
+function isClickable(notification: Notification): boolean {
+  if (notification.type === 'DIAGNOSIS_COMPLETE') return true
+  return notification.postId != null
+}
+
+function handleNotificationClick(notification: Notification) {
+  if (notification.type === 'DIAGNOSIS_COMPLETE') {
+    router.push({ path: '/my', query: { view: 'diagnosis' } })
+    return
+  }
+  if (notification.postId != null) {
+    router.push(`/community/${notification.postId}`)
+  }
+}
+
 async function fetchNotifications() {
   loading.value = true
   errorMessage.value = ''
@@ -124,5 +146,8 @@ async function fetchNotifications() {
   }
 }
 
-onMounted(fetchNotifications)
+onMounted(async () => {
+  await fetchNotifications()
+  notificationStore.markAllSeen()
+})
 </script>

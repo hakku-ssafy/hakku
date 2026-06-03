@@ -1,6 +1,7 @@
 package com.hakku.main.user;
 
 import com.hakku.main.notification.NotificationEvent;
+import com.hakku.main.notification.NotificationMessageFormatter;
 import com.hakku.main.notification.NotificationProducer;
 import com.hakku.main.notification.domain.NotificationType;
 import com.hakku.main.personalcolor.domain.PersonalColorType;
@@ -35,9 +36,13 @@ public class UserService {
 
     @Transactional
     public UserProfileResponse updateProfile(Long userId, String nickname,
-                                             String profileImageUrl, Set<String> preferredStyles) {
+                                             String profileImageUrl, Set<String> preferredStyles,
+                                             Set<String> preferredColors, Boolean onboardingCompleted) {
         User user = findOrThrow(userId);
-        user.updateProfile(nickname, profileImageUrl, preferredStyles);
+        user.updateProfile(nickname, profileImageUrl, preferredStyles, preferredColors);
+        if (Boolean.TRUE.equals(onboardingCompleted)) {
+            user.completeOnboarding();
+        }
         return UserProfileResponse.from(user);
     }
 
@@ -66,12 +71,15 @@ public class UserService {
         User user = findOrThrow(userId);
         user.assignPersonalColor(personalColor);
         user.completeDiagnosis();
-        user.updateProfile(user.getNickname(), resultImageUrl, user.getPreferredStyles());
+        user.assignDiagnosisImage(resultImageUrl);
         notificationProducer.publish(new NotificationEvent(
                 NotificationType.DIAGNOSIS_COMPLETE,
                 userId,
                 null,
-                "퍼스널컬러 진단이 완료되었습니다!",
+                null,
+                null,
+                null,
+                NotificationMessageFormatter.diagnosisComplete(),
                 Instant.now().toEpochMilli()));
         return UserProfileResponse.from(user);
     }

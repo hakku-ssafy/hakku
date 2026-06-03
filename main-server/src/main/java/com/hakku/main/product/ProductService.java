@@ -27,8 +27,8 @@ public class ProductService {
             throw new ProductAccessDeniedException("상품 등록은 판매자만 가능합니다.");
         }
         Product saved = productRepository.save(new Product(
-                sellerId, cmd.name(), cmd.description(), cmd.price(),
-                cmd.keyColor(), cmd.subColor(), cmd.styles(), cmd.imageUrl()));
+                sellerId, cmd.name(), cmd.description(), cmd.price(), cmd.category(),
+                cmd.keyColor(), cmd.subColor(), cmd.colors(), cmd.styles(), cmd.imageUrl(), cmd.purchaseUrl()));
         return ProductResponse.from(saved);
     }
 
@@ -48,8 +48,8 @@ public class ProductService {
     public ProductResponse update(Long productId, Long requesterId, ProductCommand cmd) {
         Product product = findOrThrow(productId);
         requireOwner(product, requesterId);
-        product.update(cmd.name(), cmd.description(), cmd.price(),
-                cmd.keyColor(), cmd.subColor(), cmd.styles(), cmd.imageUrl());
+        product.update(cmd.name(), cmd.description(), cmd.price(), cmd.category(),
+                cmd.keyColor(), cmd.subColor(), cmd.colors(), cmd.styles(), cmd.imageUrl(), cmd.purchaseUrl());
         return ProductResponse.from(product);
     }
 

@@ -6,9 +6,6 @@ import com.hakku.main.user.domain.Role;
 import com.hakku.main.user.domain.User;
 import java.util.Set;
 
-/**
- * 회원 프로필 응답 DTO. 비밀번호 해시 등 민감 정보는 노출하지 않는다.
- */
 public record UserProfileResponse(
         Long id,
         String email,
@@ -16,8 +13,11 @@ public record UserProfileResponse(
         Role role,
         PersonalColorType personalColor,
         String profileImageUrl,
+        String diagnosisImageUrl,
         Set<String> preferredStyles,
-        DiagnosisStatus diagnosisStatus) {
+        Set<String> preferredColors,
+        DiagnosisStatus diagnosisStatus,
+        boolean onboardingCompleted) {
 
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
@@ -27,7 +27,10 @@ public record UserProfileResponse(
                 user.getRole(),
                 user.getPersonalColor(),
                 user.getProfileImageUrl(),
+                user.getDiagnosisImageUrl(),
                 Set.copyOf(user.getPreferredStyles()),
-                user.getDiagnosisStatus());
+                Set.copyOf(user.getPreferredColors()),
+                user.getDiagnosisStatus(),
+                user.isOnboardingCompleted());
     }
 }

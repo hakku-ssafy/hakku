@@ -17,7 +17,8 @@ const mockPost = {
   authorNickname: '테스터',
   likeCount: 3,
   commentCount: 1,
-  createdAt: '2026-06-01T10:00:00'
+  liked: false,
+      createdAt: '2026-06-01T10:00:00'
 }
 
 describe('usePostStore', () => {

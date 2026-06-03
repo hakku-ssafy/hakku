@@ -50,8 +50,28 @@
           <div class="flex justify-between items-center py-3 border-t border-gray-50">
             <dt class="text-sm text-gray-500">퍼스널컬러</dt>
             <dd class="text-sm font-medium text-gray-800">
-              <span v-if="user.personalColor">{{ user.personalColor }}</span>
+              <button
+                v-if="user.personalColor"
+                type="button"
+                class="text-purple-600 hover:underline cursor-pointer"
+                @click="showDiagnosisModal = true"
+              >
+                {{ formatPersonalColor(user.personalColor) }}
+              </button>
               <span v-else class="text-gray-400">미진단</span>
+            </dd>
+          </div>
+
+          <div v-if="user.preferredColors.length > 0" class="py-3 border-t border-gray-50">
+            <dt class="text-sm text-gray-500 mb-2">선호 컬러</dt>
+            <dd class="flex flex-wrap gap-1.5">
+              <span
+                v-for="color in user.preferredColors"
+                :key="color"
+                class="inline-block px-2.5 py-0.5 bg-purple-50 text-purple-600 text-xs font-medium rounded-full"
+              >
+                {{ getColorLabel(color) }}
+              </span>
             </dd>
           </div>
 
@@ -113,25 +133,70 @@
         </button>
       </div>
     </template>
+
+    <Teleport to="body">
+      <div
+        v-if="showDiagnosisModal && diagnosisPreviewUrl"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+        @click.self="showDiagnosisModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-xl">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-900">진단 이미지</h3>
+            <button
+              type="button"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+              @click="showDiagnosisModal = false"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="p-4">
+            <img
+              :src="diagnosisPreviewUrl"
+              alt="퍼스널컬러 진단 이미지"
+              class="w-full rounded-lg"
+            />
+            <p v-if="user?.personalColor" class="text-center text-sm text-purple-600 font-medium mt-3">
+              {{ formatPersonalColor(user?.personalColor ?? null) }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { COLOR_OPTIONS, formatPersonalColor } from '@/types'
 import type { User, UserRole } from '@/types'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const user = ref<User | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
+const showDiagnosisModal = ref(false)
+
+const diagnosisPreviewUrl = computed(() =>
+  user.value?.diagnosisImageUrl ?? user.value?.profileImageUrl ?? null
+)
 
 const userInitial = computed(() =>
   user.value?.nickname?.charAt(0).toUpperCase() ?? '?'
 )
+
+
+function getColorLabel(value: string): string {
+  return COLOR_OPTIONS.find((c) => c.value === value)?.label ?? value
+}
 
 function roleLabel(role: UserRole): string {
   switch (role) {
@@ -154,12 +219,24 @@ function handleLogout() {
   router.push('/')
 }
 
+watch(
+  () => route.query.view,
+  (view) => {
+    if (view === 'diagnosis' && user.value?.personalColor) {
+      showDiagnosisModal.value = true
+    }
+  }
+)
+
 onMounted(async () => {
   loading.value = true
   errorMessage.value = ''
   try {
     await authStore.fetchMe()
     user.value = authStore.user
+    if (route.query.view === 'diagnosis' && user.value?.personalColor) {
+      showDiagnosisModal.value = true
+    }
   } catch {
     errorMessage.value = '사용자 정보를 불러오는데 실패했습니다.'
   } finally {

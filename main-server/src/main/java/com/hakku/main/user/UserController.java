@@ -42,7 +42,8 @@ public class UserController {
                 Long.valueOf(userId),
                 request.nickname(),
                 request.profileImageUrl(),
-                request.preferredStyles());
+                request.preferredStyles(), request.preferredColors(),
+                request.onboardingCompleted());
     }
 
     @PostMapping("/me/diagnosis-request")
@@ -69,7 +70,9 @@ public class UserController {
     public record UpdateProfileRequest(
             @NotBlank String nickname,
             String profileImageUrl,
-            Set<String> preferredStyles) {
+            Set<String> preferredStyles,
+            Set<String> preferredColors,
+            Boolean onboardingCompleted) {
     }
 
     public record DiagnosisRequest(

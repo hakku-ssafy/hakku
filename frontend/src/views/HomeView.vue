@@ -90,6 +90,14 @@
                 <p class="text-white/70 text-sm font-medium mb-1">내 퍼스널컬러</p>
                 <h2 class="text-2xl sm:text-3xl font-bold text-white mb-3">{{ formatPersonalColor(personalColor) }}</h2>
                 <p class="text-white/70 text-sm mb-6">당신의 계절 타입에 딱 맞는 상품을 추천해드려요.</p>
+                <button
+                  v-if="diagnosisImageUrl"
+                  type="button"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 mr-2 bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-colors text-sm"
+                  @click="showDiagnosisModal = true"
+                >
+                  진단 이미지 보기
+                </button>
                 <router-link to="/recommendations" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-xl font-medium hover:bg-white/30 transition-colors text-sm">
                   맞춤 상품 보기
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -201,6 +209,18 @@
         <p class="text-gray-400 text-sm">아직 게시글이 없어요</p>
       </div>
     </section>
+    <Teleport to="body">
+      <div
+        v-if="showDiagnosisModal && diagnosisImageUrl"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+        @click.self="showDiagnosisModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-xl p-4">
+          <img :src="diagnosisImageUrl" alt="진단 이미지" class="w-full rounded-lg" />
+          <p v-if="personalColor" class="text-center text-sm text-purple-600 font-medium mt-3">{{ formatPersonalColor(personalColor) }}</p>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -210,7 +230,7 @@ import { useAuthStore } from '@/stores/auth'
 import { usePostStore } from '@/stores/posts'
 import { useProductStore } from '@/stores/products'
 import apiClient from '@/api/client'
-import type { DiagnosisStatus, User, RecommendationItem } from '@/types'
+import { formatPersonalColor, type DiagnosisStatus, type User, type RecommendationItem } from '@/types'
 
 const authStore = useAuthStore()
 const postStore = usePostStore()
@@ -220,6 +240,8 @@ const profileLoading = ref(false)
 const postsLoading = ref(false)
 const diagnosisStatus = ref<DiagnosisStatus>('NONE')
 const personalColor = ref<string | null>(null)
+const diagnosisImageUrl = ref<string | null>(null)
+const showDiagnosisModal = ref(false)
 const recommendations = ref<RecommendationItem[]>([])
 
 const recentPosts = computed(() => postStore.posts.slice(0, 5))
@@ -240,29 +262,6 @@ const seasonGradient = computed(() => {
   return 'from-purple-600 via-purple-500 to-pink-500'
 })
 
-const PERSONAL_COLOR_LABELS: Record<string, string> = {
-  LIGHT_SPRING: '라이트 스프링',
-  WARM_SPRING: '웜 스프링',
-  BRIGHT_SPRING: '브라이트 스프링',
-  CLEAR_SPRING: '클리어 스프링',
-  LIGHT_SUMMER: '라이트 서머',
-  COOL_SUMMER: '쿨 서머',
-  SOFT_SUMMER: '소프트 서머',
-  MUTED_SUMMER: '뮤트 서머',
-  SOFT_AUTUMN: '소프트 어텀',
-  WARM_AUTUMN: '웜 어텀',
-  DEEP_AUTUMN: '딥 어텀',
-  MUTED_AUTUMN: '뮤트 어텀',
-  CLEAR_WINTER: '클리어 윈터',
-  COOL_WINTER: '쿨 윈터',
-  DEEP_WINTER: '딥 윈터',
-  BRIGHT_WINTER: '브라이트 윈터',
-}
-
-function formatPersonalColor(code: string | null): string {
-  if (!code) return ''
-  return PERSONAL_COLOR_LABELS[code] ?? code
-}
 
 function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR')
@@ -292,6 +291,7 @@ onMounted(async () => {
     const { data } = await apiClient.get<User>('/users/me')
     diagnosisStatus.value = data.diagnosisStatus
     personalColor.value = data.personalColor
+    diagnosisImageUrl.value = data.diagnosisImageUrl ?? data.profileImageUrl
 
     if (data.diagnosisStatus === 'COMPLETED') {
       try {

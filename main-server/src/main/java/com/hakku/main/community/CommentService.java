@@ -8,8 +8,10 @@ import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.community.repository.CommentRepository;
 import com.hakku.main.community.repository.PostRepository;
 import com.hakku.main.notification.NotificationEvent;
+import com.hakku.main.notification.NotificationMessageFormatter;
 import com.hakku.main.notification.NotificationProducer;
 import com.hakku.main.notification.domain.NotificationType;
+import com.hakku.main.user.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -23,12 +25,14 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
     private final NotificationProducer notificationProducer;
 
     public CommentService(CommentRepository commentRepository, PostRepository postRepository,
-                          NotificationProducer notificationProducer) {
+                          UserRepository userRepository, NotificationProducer notificationProducer) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
         this.notificationProducer = notificationProducer;
     }
 
@@ -38,17 +42,27 @@ public class CommentService {
                 .orElseThrow(() -> new PostNotFoundException(postId));
         Comment saved = commentRepository.save(new Comment(postId, authorId, content));
         if (!post.getAuthorId().equals(authorId)) {
+            String actorNickname = userRepository.findById(authorId)
+                    .map(user -> user.getNickname())
+                    .orElse("누군가");
+            String preview = post.getTitle();
             notificationProducer.publish(new NotificationEvent(
-                    NotificationType.COMMENT, post.getAuthorId(), authorId,
-                    "댓글을 달았습니다.", Instant.now().toEpochMilli()));
+                    NotificationType.COMMENT,
+                    post.getAuthorId(),
+                    authorId,
+                    actorNickname,
+                    postId,
+                    preview,
+                    NotificationMessageFormatter.comment(actorNickname, preview),
+                    Instant.now().toEpochMilli()));
         }
-        return CommentResponse.from(saved);
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
     public List<CommentResponse> listByPost(Long postId) {
         return commentRepository.findByPostIdOrderByIdAsc(postId).stream()
-                .map(CommentResponse::from)
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -57,7 +71,7 @@ public class CommentService {
         Comment comment = findOrThrow(commentId);
         requireAuthor(comment, requesterId);
         comment.update(content);
-        return CommentResponse.from(comment);
+        return toResponse(comment);
     }
 
     @Transactional
@@ -65,6 +79,13 @@ public class CommentService {
         Comment comment = findOrThrow(commentId);
         requireAuthor(comment, requesterId);
         commentRepository.delete(comment);
+    }
+
+    private CommentResponse toResponse(Comment comment) {
+        String authorNickname = userRepository.findById(comment.getAuthorId())
+                .map(user -> user.getNickname())
+                .orElse("알 수 없음");
+        return CommentResponse.from(comment, authorNickname);
     }
 
     private Comment findOrThrow(Long commentId) {

@@ -61,10 +61,22 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "diagnosis_image_url")
+    private String diagnosisImageUrl;
+
     @ElementCollection
     @CollectionTable(name = "user_preferred_styles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "style")
     private Set<String> preferredStyles = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "user_preferred_colors", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "color")
+    private Set<String> preferredColors = new HashSet<>();
+
+    @Column(name = "onboarding_completed", nullable = false)
+    @ColumnDefault("false")
+    private boolean onboardingCompleted = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -103,10 +115,22 @@ public class User {
         this.diagnosisStatus = DiagnosisStatus.NONE;
     }
 
-    /** 프로필(닉네임/이미지/선호 스타일)을 갱신한다. */
-    public void updateProfile(String nickname, String profileImageUrl, Set<String> preferredStyles) {
+    /** AI 진단 결과 이미지 URL을 저장한다. */
+    public void assignDiagnosisImage(String diagnosisImageUrl) {
+        this.diagnosisImageUrl = diagnosisImageUrl;
+    }
+
+    /** 프로필(닉네임/이미지/선호 스타일·컬러)을 갱신한다. */
+    public void updateProfile(String nickname, String profileImageUrl,
+                             Set<String> preferredStyles, Set<String> preferredColors) {
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
         this.preferredStyles = preferredStyles == null ? new HashSet<>() : new HashSet<>(preferredStyles);
+        this.preferredColors = preferredColors == null ? new HashSet<>() : new HashSet<>(preferredColors);
+    }
+
+    /** 온보딩(컬러 취향 설정)을 완료 처리한다. */
+    public void completeOnboarding() {
+        this.onboardingCompleted = true;
     }
 }

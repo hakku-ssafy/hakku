@@ -13,5 +13,8 @@ app.use(router)
 
 const authStore = useAuthStore()
 authStore.init()
+if (authStore.isAuthenticated) {
+  authStore.fetchMe().catch(() => authStore.logout())
+}
 
 app.mount('#app')

@@ -1,29 +1,32 @@
 import apiClient from './client'
-import type { Product, Review } from '@/types'
+import { normalizeProduct, type Product, type Review } from '@/types'
 
 export interface CreateProductRequest {
   name: string
   description: string
   price: number
+  category?: string
   imageUrl?: string
   keyColor?: string
   subColor?: string
+  colors?: string[]
   styles?: string[]
+  purchaseUrl?: string
 }
 
 export async function getProducts(): Promise<Product[]> {
   const { data } = await apiClient.get<Product[]>('/products')
-  return data
+  return data.map(normalizeProduct)
 }
 
 export async function getProduct(id: number): Promise<Product> {
   const { data } = await apiClient.get<Product>(`/products/${id}`)
-  return data
+  return normalizeProduct(data)
 }
 
 export async function createProduct(request: CreateProductRequest): Promise<Product> {
   const { data } = await apiClient.post<Product>('/products', request)
-  return data
+  return normalizeProduct(data)
 }
 
 export async function updateProduct(id: number, request: Partial<CreateProductRequest>): Promise<Product> {
@@ -40,10 +43,7 @@ export async function getReviews(productId: number): Promise<Review[]> {
   return data
 }
 
-export async function createReview(
-  productId: number,
-  request: { rating: number; content: string }
-): Promise<Review> {
+export async function createReview(productId: number, request: { rating: number; content: string }): Promise<Review> {
   const { data } = await apiClient.post<Review>(`/products/${productId}/reviews`, request)
   return data
 }

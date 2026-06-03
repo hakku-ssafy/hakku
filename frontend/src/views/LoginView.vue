@@ -78,7 +78,12 @@ async function handleLogin() {
   errorMessage.value = ''
   try {
     await authStore.loginAction({ email: email.value, password: password.value })
-    router.push('/')
+    await authStore.fetchMe()
+    if (authStore.user?.role === 'NORMAL' && !authStore.user.onboardingCompleted) {
+      router.push('/onboarding')
+    } else {
+      router.push('/')
+    }
   } catch (e: unknown) {
     errorMessage.value = e instanceof Error ? e.message : '로그인에 실패했습니다'
   } finally {

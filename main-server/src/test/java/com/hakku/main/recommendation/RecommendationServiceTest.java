@@ -107,12 +107,12 @@ class RecommendationServiceTest {
         if (color != null) {
             user.assignPersonalColor(color);
         }
-        user.updateProfile("회원", null, preferredStyles);
+        user.updateProfile("회원", null, preferredStyles, Set.of());
         return user;
     }
 
     private Product product(long id, String name, String keyColor, String subColor, Set<String> styles) {
-        Product product = new Product(2L, name, "설명", 10000L, keyColor, subColor, styles, null);
+        Product product = new Product(2L, name, "설명", 10000L, "기타", keyColor, subColor, Set.of(), styles, null, null);
         ReflectionTestUtils.setField(product, "id", id);
         return product;
     }

@@ -42,7 +42,7 @@ class NotificationServiceTest {
     void getNotifications_returnsListFromRedis() throws Exception {
         long now = Instant.now().toEpochMilli();
         String json = objectMapper.writeValueAsString(
-                new NotificationResponse(NotificationType.COMMENT, 2L, "테스트 댓글", now));
+                new NotificationResponse(NotificationType.COMMENT, 2L, "테스터", 10L, "제목", "테스트 댓글", now));
         given(listOps.range(anyString(), anyLong(), anyLong())).willReturn(List.of(json));
 
         List<NotificationResponse> result = service.getNotifications(1L);
@@ -66,7 +66,7 @@ class NotificationServiceTest {
     @DisplayName("saveNotification - Redis에 LPUSH 후 LTRIM")
     void saveNotification_pushesToRedisAndTrims() {
         NotificationEvent event = new NotificationEvent(
-                NotificationType.COMMENT, 1L, 2L, "댓글을 달았습니다.", Instant.now().toEpochMilli());
+                NotificationType.COMMENT, 1L, 2L, "테스터", 10L, "제목", "댓글을 달았습니다.", Instant.now().toEpochMilli());
 
         service.saveNotification(event);
 

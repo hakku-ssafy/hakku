@@ -22,22 +22,28 @@ const mockProducts = [
     name: '봄 스티커 세트',
     description: '파스텔 스티커',
     price: 5900,
+    category: '꾸미기 스티커',
     imageUrl: null,
     keyColor: 'SPRING',
     subColor: null,
+    colors: ['pink'],
     styles: ['CUTE'],
-    sellerId: 10
+    sellerId: 10,
+  purchaseUrl: null
   },
   {
     id: 2,
     name: '겨울 배지 세트',
     description: '쿨톤 배지',
     price: 7900,
+    category: '핀뱃지',
     imageUrl: null,
     keyColor: 'WINTER',
     subColor: null,
+    colors: ['blue'],
     styles: ['COOL'],
-    sellerId: 10
+    sellerId: 10,
+  purchaseUrl: null
   }
 ]
 

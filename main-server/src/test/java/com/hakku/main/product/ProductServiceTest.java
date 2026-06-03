@@ -40,7 +40,7 @@ class ProductServiceTest {
 
     private ProductCommand command() {
         return new ProductCommand("코트", "겨울 코트", 89000L, "WINTER", null,
-                Set.of("미니멀", "클래식"), "https://img/coat.png");
+                Set.of("미니멀", "클래식"), "https://img/coat.png", null);
     }
 
     @Test
@@ -128,7 +128,6 @@ class ProductServiceTest {
     }
 
     private Product product() {
-        return new Product(SELLER, "코트", "겨울 코트", 89000L, "WINTER", null,
-                Set.of("미니멀", "클래식"), "https://img/coat.png");
+        return new Product(SELLER, "코트", "겨울 코트", 89000L, "기타", "WINTER", null, Set.of(), Set.of("미니멀", "클래식"), "https://img/coat.png", null);
     }
 }

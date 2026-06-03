@@ -52,6 +52,14 @@ public class Product {
     @Column(name = "sub_color")
     private String subColor;
 
+    @Column(name = "category")
+    private String category;
+
+    @ElementCollection
+    @CollectionTable(name = "product_colors", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "color")
+    private Set<String> colors = new HashSet<>();
+
     @ElementCollection
     @CollectionTable(name = "product_styles", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "style")
@@ -59,6 +67,9 @@ public class Product {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "purchase_url")
+    private String purchaseUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -69,27 +80,35 @@ public class Product {
     private Instant updatedAt;
 
     public Product(Long sellerId, String name, String description, long price,
-                   String keyColor, String subColor, Set<String> styles, String imageUrl) {
+                   String category, String keyColor, String subColor,
+                   Set<String> colors, Set<String> styles, String imageUrl, String purchaseUrl) {
         this.sellerId = sellerId;
         this.name = name;
         this.description = description;
         this.price = price;
+        this.category = category;
         this.keyColor = keyColor;
         this.subColor = subColor;
+        this.colors = colors == null ? new HashSet<>() : new HashSet<>(colors);
         this.styles = styles == null ? new HashSet<>() : new HashSet<>(styles);
         this.imageUrl = imageUrl;
+        this.purchaseUrl = purchaseUrl;
     }
 
     /** 상품 정보를 갱신한다. */
-    public void update(String name, String description, long price,
-                       String keyColor, String subColor, Set<String> styles, String imageUrl) {
+    public void update(String name, String description, long price, String category,
+                       String keyColor, String subColor, Set<String> colors,
+                       Set<String> styles, String imageUrl, String purchaseUrl) {
         this.name = name;
         this.description = description;
         this.price = price;
+        this.category = category;
         this.keyColor = keyColor;
         this.subColor = subColor;
+        this.colors = colors == null ? new HashSet<>() : new HashSet<>(colors);
         this.styles = styles == null ? new HashSet<>() : new HashSet<>(styles);
         this.imageUrl = imageUrl;
+        this.purchaseUrl = purchaseUrl;
     }
 
     /** 주어진 회원이 이 상품을 등록한 판매자인지 여부. */
