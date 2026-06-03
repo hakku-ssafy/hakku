@@ -52,9 +52,9 @@ cd main-server && ./gradlew bootRun
 TDD(테스트 우선) + 단계별 구현. 자세한 단계는 PR/커밋 히스토리 참고.
 
 - [x] Phase 0 — 모노레포 + 로컬 인프라 스캐폴딩
-- [ ] Phase 1 — Main Server 코어 (스키마·도메인)
-- [ ] Phase 2 — 인증 (OAuth + JWT)
-- [ ] Phase 3 — 회원 / 커뮤니티
+- [x] Phase 1 — Main Server 코어 (추천 점수기 · 16종 퍼스널컬러 · User 도메인/스키마)
+- [x] Phase 2 — 인증 (JWT-only; OAuth 제외) — signup/login/SecurityConfig/JWT 필터
+- [ ] Phase 3 — 회원 / 커뮤니티  ← **다음 작업**
 - [ ] Phase 4 — 상품 / 장바구니 / 리뷰
 - [ ] Phase 5 — Storage Server (Go)
 - [ ] Phase 6 — AI Server (FastAPI)
