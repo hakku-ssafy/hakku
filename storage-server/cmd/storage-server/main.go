@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/hakku/storage-server/internal/api"
+	"github.com/hakku/storage-server/internal/metrics"
 	"github.com/hakku/storage-server/internal/storage"
 )
 
@@ -21,8 +22,12 @@ func main() {
 		log.Fatalf("storage init: %v", err)
 	}
 
+	mux := http.NewServeMux()
+	mux.Handle("/storage/", api.Handler(store))
+	mux.Handle("GET /metrics", metrics.Handler())
+
 	log.Printf("storage-server listening on %s (base path %s)", addr, basePath)
-	if err := http.ListenAndServe(addr, api.Handler(store)); err != nil {
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("server: %v", err)
 	}
 }
