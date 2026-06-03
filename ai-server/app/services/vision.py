@@ -1,15 +1,18 @@
 """OpenAI Vision service for extracting personal color type from result image.
 
-Uses gpt-5.4-mini vision to read the generated dashboard image and extract the
-personal color type text, then delegates to ocr.extract_personal_color_type().
+Uses the Responses API (recommended for vision) with gpt-5.4-mini to read the
+generated dashboard image and extract the personal color type text, then
+delegates to ocr.extract_personal_color_type().
+
+See: https://developers.openai.com/api/docs/guides/vision
 """
 
 import base64
+
 from openai import AsyncOpenAI
 
 from app.config import settings
 from app.services.ocr import extract_personal_color_type
-
 
 _EXTRACT_PROMPT = (
     "이 이미지에서 퍼스널 컬러 진단 결과 텍스트를 찾아 그대로 추출해줘. "
@@ -18,34 +21,28 @@ _EXTRACT_PROMPT = (
 
 
 async def extract_color_from_image(image_bytes: bytes) -> str | None:
-    """Extract PersonalColorType enum name from the generated result image.
-
-    Args:
-        image_bytes: Generated result image bytes.
-
-    Returns:
-        PersonalColorType name like 'LIGHT_SUMMER', or None if unrecognised.
-    """
+    """Extract PersonalColorType enum name from the generated result image."""
     client = AsyncOpenAI(api_key=settings.openai_api_key)
     b64 = base64.b64encode(image_bytes).decode()
 
-    response = await client.chat.completions.create(
+    response = await client.responses.create(
         model="gpt-5.4-mini",
-        messages=[
+        reasoning={"effort": "low"},
+        input=[
             {
                 "role": "user",
                 "content": [
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{b64}"},
+                        "type": "input_image",
+                        "image_url": f"data:image/png;base64,{b64}",
+                        "detail": "high",
                     },
-                    {"type": "text", "text": _EXTRACT_PROMPT},
+                    {"type": "input_text", "text": _EXTRACT_PROMPT},
                 ],
             }
         ],
-        max_tokens=100,
-        temperature=0,
+        max_output_tokens=512,
     )
 
-    raw_text = response.choices[0].message.content or ""
+    raw_text = response.output_text or ""
     return extract_personal_color_type(raw_text)

@@ -3,10 +3,13 @@
 Sends the user's (preprocessed) photo alongside the template image to
 gpt-image-2 with a detailed Korean personal color draping prompt.
 Returns the generated result image as bytes.
+
+See: https://developers.openai.com/api/docs/guides/image-generation
 """
 
 import base64
-import io
+from pathlib import Path
+
 from openai import AsyncOpenAI
 
 from app.config import settings
@@ -44,31 +47,28 @@ _PROMPT = """업로드된 인물 사진을 기반으로 퍼스널 컬러 드레�
 
 업로드된 템플릿(첫 번째 이미지)의 양식에 따라 생성할 것."""
 
+# 9:16 portrait — both edges are multiples of 16 (gpt-image-2 constraint)
+_OUTPUT_SIZE = "1024x1824"
+
 
 async def generate_analysis_image(user_image_bytes: bytes) -> bytes:
-    """Generate a personal color analysis dashboard image.
-
-    Args:
-        user_image_bytes: Preprocessed user photo bytes (JPEG/PNG).
-
-    Returns:
-        Generated result image bytes (PNG).
-    """
+    """Generate a personal color analysis dashboard image."""
     client = AsyncOpenAI(api_key=settings.openai_api_key)
+    template_path = Path(settings.template_image_path)
 
-    with open(settings.template_image_path, "rb") as f:
-        template_bytes = f.read()
-
-    # gpt-image-2 accepts file-like objects (BytesIO) as reference images
-    response = await client.images.edit(
-        model="gpt-image-2",
-        image=[
-            io.BytesIO(template_bytes),
-            io.BytesIO(user_image_bytes),
-        ],
-        prompt=_PROMPT,
-        size="1024x1792",  # 9:16 근사 (16배수, 비율 1:3~3:1 범위 내)
-        n=1,
-    )
+    template_file = open(template_path, "rb")
+    try:
+        response = await client.images.edit(
+            model="gpt-image-2",
+            image=[
+                template_file,
+                ("user.jpg", user_image_bytes, "image/jpeg"),
+            ],
+            prompt=_PROMPT,
+            size=_OUTPUT_SIZE,
+            n=1,
+        )
+    finally:
+        template_file.close()
 
     return base64.b64decode(response.data[0].b64_json)
