@@ -1,0 +1,15 @@
+{
+  "label": "go",
+  "storageUrl": "http://localhost:19001",
+  "baseUrl": "http://localhost:19001",
+  "httpReqs": 2349,
+  "httpReqFailedRate": 0,
+  "httpDurationAvg": 11.542845572158384,
+  "httpDurationP95": 25.5563568,
+  "productP95": 25.830499,
+  "recommendP95": 28.0364149,
+  "notificationP95": 3.6728318,
+  "uploadP95": 2.203912,
+  "uploadAvg": 1.6311460511945417,
+  "errorRate": 0
+}

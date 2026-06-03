@@ -82,3 +82,10 @@ class TestExtractPersonalColorType:
         # "cool" appears in COOL_SUMMER and TRUE_WINTER — season scope disambiguates
         assert extract_personal_color_type("summer cool") == "COOL_SUMMER"
         assert extract_personal_color_type("winter cool") == "TRUE_WINTER"
+
+    def test_enum_from_dashboard_label(self):
+        assert extract_personal_color_type("세부 타입: 가을 소프트 (SOFT_AUTUMN)") == "SOFT_AUTUMN"
+
+    def test_deep_winter_korean_with_cool(self):
+        assert extract_personal_color_type("세부 타입: 겨울 쿨 딥 (DEEP_WINTER)") == "DEEP_WINTER"
+        assert extract_personal_color_type("겨울 쿨 딥") == "DEEP_WINTER"

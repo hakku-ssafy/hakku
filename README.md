@@ -24,6 +24,21 @@ Kafka로 비동기 이벤트를, Redis로 캐시/알림/행동 로그를 처리�
 관측성은 `docker-compose.obs.yml`로 별도 기동하며, 세 백엔드(main/storage/ai) 모두
 `/metrics` 또는 actuator Prometheus 엔드포인트를 노출한다. 부하 테스트는 `k6/`.
 
+### Storage Server (Spring 비교 구현)
+
+Go `storage-server`와 동일 API를 제공하는 Spring Boot 구현체: `storage-server-spring/` (포트 **8082**).
+
+```bash
+# Spring storage 기동
+docker compose -f docker-compose.storage-spring.yml up -d --build
+
+# Go vs Spring 아키텍처 부하 테스트 (AI 제외) + 비교
+./scripts/benchmark-storage.sh
+```
+
+결과 JSON: `k6/results/go.json`, `k6/results/spring.json`
+
+
 ## 디렉터리 구조
 
 ```

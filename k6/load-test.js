@@ -63,10 +63,11 @@ export default function () {
     errorRate.add(!ok)
 
   } else {
-    const payload = {
-      file: http.file(new Uint8Array(1024).fill(0), 'test.bin', 'application/octet-stream'),
-    }
-    const res = http.post(`${STORAGE_URL}/storage/images?kind=raw`, payload)
+    const res = http.post(
+      `${STORAGE_URL}/storage/images?kind=raw`,
+      '0'.repeat(1024),
+      { headers: { 'Content-Type': 'application/octet-stream' } },
+    )
     const ok = check(res, {
       'upload: status 201': (r) => r.status === 201,
     })

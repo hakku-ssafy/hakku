@@ -13,8 +13,11 @@ from pathlib import Path
 from openai import AsyncOpenAI
 
 from app.config import settings
+from app.services.ocr import format_labels_for_generator_prompt
 
-_PROMPT = """업로드된 인물 사진을 기반으로 퍼스널 컬러 드레이핑 분석 대시보드를 생성해 줘. 모든 텍스트는 한국어로 작성하고, 결과는 9:16 비율의 하나의 이미지로 만들어 줘.
+_LABEL_OPTIONS = format_labels_for_generator_prompt()
+
+_PROMPT = f"""업로드된 인물 사진을 기반으로 퍼스널 컬러 드레이핑 분석 대시보드를 생성해 줘. 모든 텍스트는 한국어로 작성하고, 결과는 9:16 비율의 하나의 이미지로 만들어 줘.
 
 - 얼굴 중심으로 피부 톤(밝기, 채도, 언더톤), 눈동자, 머리색, 대비감 분석
 - 조명 영향을 고려해 실제 컬러 기준으로 판단
@@ -23,8 +26,11 @@ _PROMPT = """업로드된 인물 사진을 기반으로 퍼스널 컬러 드레�
 [구성]
 1. 상단
 - "퍼스널 컬러 분석 리포트"
-- 웜톤 / 쿨톤 / 뉴트럴 요약
-- 세부 타입 (예: 봄 웜 라이트, 겨울 쿨 딥)
+- 웜톤 / 쿨톤 / 뉴트럴 요약 (한 줄)
+- 세부 타입 라벨 — 분석 결과에 맞는 항목 하나를 아래 형식 그대로 한 줄로 표시 (한글·ENUM 모두 필수):
+  "세부 타입: {{한글명}} ({{ENUM}})"
+  허용되는 한글명과 ENUM (16종 중 정확히 하나):
+{_LABEL_OPTIONS}
 
 2. 중앙 (핵심)
 - 얼굴을 중심에 배치
@@ -45,7 +51,7 @@ _PROMPT = """업로드된 인물 사진을 기반으로 퍼스널 컬러 드레�
 - 깔끔하고 프리미엄한 대시보드 디자인
 - 자연스러운 피부 표현, 과한 효과 금지
 
-업로드된 템플릿(첫 번째 이미지)의 양식에 따라 생성할 것."""
+업로드된 템플릿(첫 번째 이미지)의 양식에 따라 생성할 것. 세부 타입 라벨 형식은 위 규칙을 반드시 따를 것."""
 
 # 9:16 portrait — both edges are multiples of 16 (gpt-image-2 constraint)
 _OUTPUT_SIZE = "1024x1824"

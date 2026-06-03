@@ -15,8 +15,11 @@ from app.config import settings
 from app.services.ocr import extract_personal_color_type
 
 _EXTRACT_PROMPT = (
-    "이 이미지에서 퍼스널 컬러 진단 결과 텍스트를 찾아 그대로 추출해줘. "
-    "예: '여름 쿨 라이트 (Summer Cool Light)'. 진단 결과 텍스트만 출력해."
+    "이 이미지는 퍼스널 컬러 분석 대시보드입니다. "
+    "상단의 '세부 타입' 라벨 한 줄을 그대로 추출해줘. "
+    "형식 예: '세부 타입: 가을 소프트 (SOFT_AUTUMN)' 또는 '세부 타입: 여름 쿨 라이트 (LIGHT_SUMMER)'. "
+    "괄호 안 ENUM 코드(SOFT_AUTUMN 등)가 있으면 반드시 포함해서 출력해. "
+    "해당 라인만 출력해."
 )
 
 
