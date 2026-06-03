@@ -36,7 +36,8 @@ hakku/
 
 ## 로컬 개발 시작
 
-데이터셋 다운로드 후 
+데이터셋 다운로드 후 루트에 위치
+[구글 드라이브](https://drive.google.com/file/d/1OtBROPRBg4sGTOoLM843mMl1klmXItge/view?usp=sharing)
 
 ```bash
 # 1. 환경변수 준비
