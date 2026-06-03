@@ -6,6 +6,8 @@ import com.hakku.main.community.exception.CommentAccessDeniedException;
 import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
+import com.hakku.main.product.exception.ProductAccessDeniedException;
+import com.hakku.main.product.exception.ProductNotFoundException;
 import com.hakku.main.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +56,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CommentAccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleCommentAccessDenied(CommentAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFound(ProductNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ProductAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleProductAccessDenied(ProductAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
     }
 
