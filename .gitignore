@@ -38,3 +38,6 @@ npm-debug.log*
 coupang_images/
 coupang_badge.csv
 coupang_keyring.csv
+coupang_products.xlsx
+coupang_sticker.csv
+hakku_dataset.zip
