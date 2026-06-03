@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -114,6 +116,47 @@ func TestFSStore_InvalidKind_Rejected(t *testing.T) {
 
 	if _, err := store.Put(storage.Kind("bogus"), "image/png", strings.NewReader("x")); !errors.Is(err, storage.ErrInvalidKind) {
 		t.Errorf("Put invalid kind err = %v, want ErrInvalidKind", err)
+	}
+}
+
+func TestNewFSStore_EmptyBasePath_Errors(t *testing.T) {
+	if _, err := storage.NewFSStore(""); err == nil {
+		t.Error("expected error for empty base path")
+	}
+}
+
+func TestNewFSStore_BasePathIsFile_Errors(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if _, err := storage.NewFSStore(file); err == nil {
+		t.Error("expected error when base path is an existing file")
+	}
+}
+
+// errReader fails partway to exercise Put's write-error cleanup path.
+type errReader struct{}
+
+func (errReader) Read([]byte) (int, error) { return 0, errors.New("boom") }
+
+func TestFSStore_Put_ReaderError_CleansUp(t *testing.T) {
+	base := t.TempDir()
+	store, err := storage.NewFSStore(base)
+	if err != nil {
+		t.Fatalf("NewFSStore: %v", err)
+	}
+
+	if _, err := store.Put(storage.KindRaw, "image/png", errReader{}); err == nil {
+		t.Fatal("expected error from failing reader")
+	}
+
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		t.Fatalf("ReadDir: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("expected base dir empty after failed Put, found %d entries", len(entries))
 	}
 }
 
