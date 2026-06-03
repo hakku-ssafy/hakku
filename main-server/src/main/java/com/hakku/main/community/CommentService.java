@@ -1,11 +1,16 @@
 package com.hakku.main.community;
 
 import com.hakku.main.community.domain.Comment;
+import com.hakku.main.community.domain.Post;
 import com.hakku.main.community.exception.CommentAccessDeniedException;
 import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.community.repository.CommentRepository;
 import com.hakku.main.community.repository.PostRepository;
+import com.hakku.main.notification.NotificationEvent;
+import com.hakku.main.notification.NotificationProducer;
+import com.hakku.main.notification.domain.NotificationType;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,18 +23,25 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final NotificationProducer notificationProducer;
 
-    public CommentService(CommentRepository commentRepository, PostRepository postRepository) {
+    public CommentService(CommentRepository commentRepository, PostRepository postRepository,
+                          NotificationProducer notificationProducer) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
+        this.notificationProducer = notificationProducer;
     }
 
     @Transactional
     public CommentResponse create(Long postId, Long authorId, String content) {
-        if (!postRepository.existsById(postId)) {
-            throw new PostNotFoundException(postId);
-        }
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException(postId));
         Comment saved = commentRepository.save(new Comment(postId, authorId, content));
+        if (!post.getAuthorId().equals(authorId)) {
+            notificationProducer.publish(new NotificationEvent(
+                    NotificationType.COMMENT, post.getAuthorId(), authorId,
+                    "댓글을 달았습니다.", Instant.now().toEpochMilli()));
+        }
         return CommentResponse.from(saved);
     }
 

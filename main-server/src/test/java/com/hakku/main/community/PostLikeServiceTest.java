@@ -7,10 +7,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hakku.main.community.domain.Post;
 import com.hakku.main.community.domain.PostLike;
 import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.community.repository.PostLikeRepository;
 import com.hakku.main.community.repository.PostRepository;
+import com.hakku.main.notification.NotificationProducer;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,17 +33,20 @@ class PostLikeServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private NotificationProducer notificationProducer;
+
     private PostLikeService postLikeService;
 
     @BeforeEach
     void setUp() {
-        postLikeService = new PostLikeService(postLikeRepository, postRepository);
+        postLikeService = new PostLikeService(postLikeRepository, postRepository, notificationProducer);
     }
 
     @Test
     @DisplayName("toggle: 처음 누르면 좋아요를 추가하고 liked=true")
     void toggle_firstTime_likes() {
-        when(postRepository.existsById(POST)).thenReturn(true);
+        when(postRepository.findById(POST)).thenReturn(Optional.of(new Post(99L, "제목", "본문")));
         when(postLikeRepository.existsByPostIdAndUserId(POST, USER)).thenReturn(false);
         when(postLikeRepository.countByPostId(POST)).thenReturn(1L);
 
@@ -54,7 +60,7 @@ class PostLikeServiceTest {
     @Test
     @DisplayName("toggle: 이미 눌렀으면 좋아요를 취소하고 liked=false")
     void toggle_alreadyLiked_unlikes() {
-        when(postRepository.existsById(POST)).thenReturn(true);
+        when(postRepository.findById(POST)).thenReturn(Optional.of(new Post(99L, "제목", "본문")));
         when(postLikeRepository.existsByPostIdAndUserId(POST, USER)).thenReturn(true);
         when(postLikeRepository.countByPostId(POST)).thenReturn(0L);
 
@@ -69,7 +75,7 @@ class PostLikeServiceTest {
     @Test
     @DisplayName("toggle: 없는 게시글이면 PostNotFoundException")
     void toggle_missingPost_throws() {
-        when(postRepository.existsById(POST)).thenReturn(false);
+        when(postRepository.findById(POST)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> postLikeService.toggle(POST, USER))
                 .isInstanceOf(PostNotFoundException.class);

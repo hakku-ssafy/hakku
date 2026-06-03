@@ -11,8 +11,10 @@ import com.hakku.main.community.domain.Comment;
 import com.hakku.main.community.exception.CommentAccessDeniedException;
 import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostNotFoundException;
+import com.hakku.main.community.domain.Post;
 import com.hakku.main.community.repository.CommentRepository;
 import com.hakku.main.community.repository.PostRepository;
+import com.hakku.main.notification.NotificationProducer;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,17 +37,20 @@ class CommentServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private NotificationProducer notificationProducer;
+
     private CommentService commentService;
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentRepository, postRepository);
+        commentService = new CommentService(commentRepository, postRepository, notificationProducer);
     }
 
     @Test
     @DisplayName("create: 게시글이 존재하면 댓글을 저장한다")
     void create_savesComment() {
-        when(postRepository.existsById(POST)).thenReturn(true);
+        when(postRepository.findById(POST)).thenReturn(Optional.of(new Post(99L, "제목", "본문")));
         when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CommentResponse response = commentService.create(POST, AUTHOR, "좋은 글이네요");
@@ -58,7 +63,7 @@ class CommentServiceTest {
     @Test
     @DisplayName("create: 게시글이 없으면 PostNotFoundException, 저장하지 않는다")
     void create_missingPost_throws() {
-        when(postRepository.existsById(POST)).thenReturn(false);
+        when(postRepository.findById(POST)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.create(POST, AUTHOR, "x"))
                 .isInstanceOf(PostNotFoundException.class);
