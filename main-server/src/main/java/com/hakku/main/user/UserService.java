@@ -1,5 +1,6 @@
 package com.hakku.main.user;
 
+import com.hakku.main.personalcolor.domain.PersonalColorType;
 import com.hakku.main.user.domain.User;
 import com.hakku.main.user.exception.UserNotFoundException;
 import com.hakku.main.user.repository.UserRepository;
@@ -29,6 +30,16 @@ public class UserService {
                                              String profileImageUrl, Set<String> preferredStyles) {
         User user = findOrThrow(userId);
         user.updateProfile(nickname, profileImageUrl, preferredStyles);
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional
+    public UserProfileResponse assignDiagnosis(Long userId,
+                                               PersonalColorType personalColor,
+                                               String resultImageUrl) {
+        User user = findOrThrow(userId);
+        user.assignPersonalColor(personalColor);
+        user.updateProfile(user.getNickname(), resultImageUrl, user.getPreferredStyles());
         return UserProfileResponse.from(user);
     }
 

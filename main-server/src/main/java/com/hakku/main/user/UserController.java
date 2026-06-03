@@ -1,10 +1,13 @@
 package com.hakku.main.user;
 
+import com.hakku.main.personalcolor.domain.PersonalColorType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.Set;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,9 +41,23 @@ public class UserController {
                 request.preferredStyles());
     }
 
+    @PatchMapping("/me/personal-color")
+    public UserProfileResponse updateDiagnosis(@AuthenticationPrincipal String userId,
+                                               @Valid @RequestBody DiagnosisRequest request) {
+        return userService.assignDiagnosis(
+                Long.valueOf(userId),
+                request.personalColor(),
+                request.resultImageUrl());
+    }
+
     public record UpdateProfileRequest(
             @NotBlank String nickname,
             String profileImageUrl,
             Set<String> preferredStyles) {
+    }
+
+    public record DiagnosisRequest(
+            @NotNull PersonalColorType personalColor,
+            String resultImageUrl) {
     }
 }
