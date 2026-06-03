@@ -42,7 +42,7 @@ services:
       retries: 10
 
   kafka:
-    image: bitnami/kafka:3.7
+    image: bitnamilegacy/kafka:3.7
     container_name: hakku-kafka
     environment:
       # KRaft mode (no Zookeeper)

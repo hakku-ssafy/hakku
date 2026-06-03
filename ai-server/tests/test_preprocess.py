@@ -1,6 +1,7 @@
 """Image preprocessing tests — resize rules:
 - Portrait (height > width): width becomes 1024px, height scales proportionally
 - Landscape/square (width >= height): height becomes 1024px, width scales proportionally
+- RGBA / transparent PNG → white background, JPEG output
 """
 
 import io
@@ -60,3 +61,27 @@ class TestResizeForApi:
         result = resize_for_api(data)
         assert isinstance(result, bytes)
         assert len(result) > 0
+
+    def test_rgba_png_flattens_transparency_to_white_and_outputs_jpeg(self):
+        img = Image.new("RGBA", (200, 300), color=(255, 0, 0, 0))
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        result = resize_for_api(buf.getvalue())
+
+        out = Image.open(io.BytesIO(result))
+        assert out.format == "JPEG"
+        assert out.mode == "RGB"
+        assert out.width == 1024
+        assert out.getpixel((0, 0)) == (255, 255, 255)
+
+    def test_palette_png_with_transparency_outputs_jpeg(self):
+        img = Image.new("P", (400, 600))
+        img.putpalette([0, 0, 0, 255, 255, 255] + [0] * (256 - 2) * 3)
+        img.info["transparency"] = 0
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        result = resize_for_api(buf.getvalue())
+
+        out = Image.open(io.BytesIO(result))
+        assert out.format == "JPEG"
+        assert out.mode == "RGB"
