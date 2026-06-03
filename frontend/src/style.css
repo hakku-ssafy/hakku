@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #a855f7;
+  --color-primary-dark: #7c3aed;
+  --color-surface: #ffffff;
+  --color-surface-2: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+}
