@@ -1,0 +1,180 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  학꾸 (Hakku) — Full Stack
+#  한 번에 전체 서비스 기동
+#
+#  사전 준비:
+#    cp .env.example .env   # .env에 JWT_SECRET, OPENAI_API_KEY 등 입력
+#
+#  실행:
+#    docker compose up --build -d
+#
+#  서비스 엔드포인트 (Nginx 프록시):
+#    http://localhost          → 프론트엔드
+#    http://localhost/api/     → Main Server (Spring Boot)
+#    http://localhost/ai/      → AI Server (FastAPI)
+#    http://localhost/storage/ → Storage Server (Go)
+# ─────────────────────────────────────────────────────────────────────────────
+name: hakku
+
+services:
+
+  # ── Infra ────────────────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: hakku-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hakku}
+      POSTGRES_USER: ${POSTGRES_USER:-hakku}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hakku}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hakku} -d ${POSTGRES_DB:-hakku}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: hakku-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: hakku-kafka
+    environment:
+      KAFKA_CFG_NODE_ID: "1"
+      KAFKA_CFG_PROCESS_ROLES: "broker,controller"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ── Application Servers ───────────────────────────────────────────────────────
+
+  main-server:
+    build:
+      context: ./main-server
+      dockerfile: Dockerfile
+    container_name: hakku-main-server
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-hakku}
+      POSTGRES_USER: ${POSTGRES_USER:-hakku}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hakku}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL_SECONDS: ${JWT_ACCESS_TTL_SECONDS:-3600}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  storage-server:
+    build:
+      context: ./storage-server
+      dockerfile: Dockerfile
+    container_name: hakku-storage-server
+    environment:
+      STORAGE_BASE_PATH: /data/images
+      STORAGE_ADDR: :8080
+    volumes:
+      - storage_data:/data/images
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/metrics || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  ai-server:
+    build:
+      context: .
+      dockerfile: ai-server/Dockerfile
+    container_name: hakku-ai-server
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      STORAGE_SERVER_URL: http://storage-server:8080
+      MAIN_SERVER_URL: http://main-server:8080
+    depends_on:
+      storage-server:
+        condition: service_healthy
+      main-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hakku-frontend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Reverse Proxy ─────────────────────────────────────────────────────────────
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: hakku-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      main-server:
+        condition: service_healthy
+      ai-server:
+        condition: service_healthy
+      storage-server:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  redis_data:
+  kafka_data:
+  storage_data:
