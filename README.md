@@ -58,10 +58,10 @@ TDD(테스트 우선) + 단계별 구현. 자세한 단계는 PR/커밋 히스�
 - [x] Phase 1 — Main Server 코어 (추천 점수기 · 16종 퍼스널컬러 · User 도메인/스키마)
 - [x] Phase 2 — 인증 (JWT-only; OAuth 제외) — signup/login/SecurityConfig/JWT 필터
 - [x] Phase 3 — 회원 / 커뮤니티 (프로필 `/api/users/me` · 게시글·댓글 CRUD/작성자권한 · 좋아요 토글)
-- [ ] Phase 4 — 상품 / 장바구니 / 리뷰  ← **다음 작업**
+- [x] Phase 4 — 상품 / 장바구니 / 리뷰 (판매자권한 상품 CRUD · 장바구니 토글/수량 · 리뷰 CRUD/중복방지)
 - [ ] Phase 5 — Storage Server (Go)
 - [ ] Phase 6 — AI Server (FastAPI)
-- [ ] Phase 7 — 추천 엔진
+- [ ] Phase 7 — 추천 엔진  ← **다음 작업**
 - [ ] Phase 8 — 알림
 - [ ] Phase 9 — Frontend (Vue)
 - [ ] Phase 10 — 관측성 / 부하 테스트
