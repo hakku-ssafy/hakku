@@ -2,6 +2,7 @@ package com.hakku.main.common.web;
 
 import com.hakku.main.auth.exception.EmailAlreadyExistsException;
 import com.hakku.main.auth.exception.InvalidCredentialsException;
+import com.hakku.main.cart.exception.CartItemNotFoundException;
 import com.hakku.main.community.exception.CommentAccessDeniedException;
 import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostAccessDeniedException;
@@ -67,6 +68,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ProductAccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleProductAccessDenied(ProductAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CartItemNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCartItemNotFound(CartItemNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
