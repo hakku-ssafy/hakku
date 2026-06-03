@@ -35,3 +35,6 @@ npm-debug.log*
 # ── Data / Volumes ─────────────────────────────
 .data/
 *.log
+coupang_images/
+coupang_badge.csv
+coupang_keyring.csv

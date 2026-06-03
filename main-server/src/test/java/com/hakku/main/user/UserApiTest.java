@@ -23,8 +23,7 @@ class UserApiTest {
     @Autowired
     private MockMvc mvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** 회원가입 + 로그인 후 Bearer 토큰을 반환한다. */
     private String tokenFor(String email) throws Exception {
