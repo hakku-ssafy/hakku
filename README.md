@@ -59,8 +59,8 @@ TDD(테스트 우선) + 단계별 구현. 자세한 단계는 PR/커밋 히스�
 - [x] Phase 2 — 인증 (JWT-only; OAuth 제외) — signup/login/SecurityConfig/JWT 필터
 - [x] Phase 3 — 회원 / 커뮤니티 (프로필 `/api/users/me` · 게시글·댓글 CRUD/작성자권한 · 좋아요 토글)
 - [x] Phase 4 — 상품 / 장바구니 / 리뷰 (판매자권한 상품 CRUD · 장바구니 토글/수량 · 리뷰 CRUD/중복방지)
-- [ ] Phase 5 — Storage Server (Go)  ← **다음 작업**
-- [ ] Phase 6 — AI Server (FastAPI)
+- [x] Phase 5 — Storage Server (Go) — 파일시스템 이미지 저장 (`/storage` 업로드·다운로드·삭제·메타 · FSStore)
+- [ ] Phase 6 — AI Server (FastAPI)  ← **다음 작업**
 - [x] Phase 7 — 추천 엔진 (`GET /api/recommendations` · 회원 프로필+상품 피처 점수화/정렬 · 설명 가능한 점수 분해)
 - [ ] Phase 8 — 알림
 - [ ] Phase 9 — Frontend (Vue)
