@@ -8,83 +8,130 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/hakku/storage-server/internal/storage"
 )
 
 const defaultContentType = "application/octet-stream"
 
-// Handler wires the storage routes onto a ServeMux backed by the given store.
-func Handler(store storage.Store) http.Handler {
+// Validator extracts and verifies a JWT Bearer token's subject claim.
+// Return an error if the token is missing, malformed, or expired.
+type Validator interface {
+	Subject(token string) (string, error)
+}
+
+// Option configures a Handler.
+type Option func(*router)
+
+// WithJWT enables JWT authentication for result-kind image operations.
+// Upload requires a valid token; download requires the token subject to match the owner.
+func WithJWT(v Validator) Option {
+	return func(r *router) { r.validator = v }
+}
+
+type router struct {
+	store     storage.Store
+	validator Validator // nil = no auth required (dev mode)
+}
+
+// Handler returns an HTTP handler for the storage routes.
+// Pass WithJWT to enforce JWT authentication for result-kind images.
+func Handler(store storage.Store, opts ...Option) http.Handler {
+	r := &router{store: store}
+	for _, o := range opts {
+		o(r)
+	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /storage/images", upload(store))
-	mux.HandleFunc("GET /storage/images/{id}", download(store))
-	mux.HandleFunc("GET /storage/images/{id}/meta", stat(store))
-	mux.HandleFunc("DELETE /storage/images/{id}", remove(store))
+	mux.HandleFunc("POST /storage/images", r.upload)
+	mux.HandleFunc("GET /storage/images/{id}", r.download)
+	mux.HandleFunc("GET /storage/images/{id}/meta", r.stat)
+	mux.HandleFunc("DELETE /storage/images/{id}", r.remove)
 	return mux
 }
 
-// upload stores the request body. The image kind comes from the ?kind= query
-// (defaults to raw) and the content type from the Content-Type header.
-func upload(store storage.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		kind := storage.Kind(r.URL.Query().Get("kind"))
-		if kind == "" {
-			kind = storage.KindRaw
-		}
-		contentType := r.Header.Get("Content-Type")
-		if contentType == "" {
-			contentType = defaultContentType
-		}
-		defer r.Body.Close()
-
-		meta, err := store.Put(kind, contentType, r.Body)
-		if err != nil {
-			if errors.Is(err, storage.ErrInvalidKind) {
-				writeError(w, http.StatusBadRequest, "invalid image kind")
-				return
-			}
-			writeError(w, http.StatusInternalServerError, "failed to store image")
-			return
-		}
-		writeJSON(w, http.StatusCreated, meta)
+func (r *router) bearerSubject(req *http.Request) (string, error) {
+	auth := req.Header.Get("Authorization")
+	if !strings.HasPrefix(auth, "Bearer ") {
+		return "", errors.New("missing bearer token")
 	}
+	return r.validator.Subject(strings.TrimPrefix(auth, "Bearer "))
 }
 
-func download(store storage.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		body, meta, err := store.Get(r.PathValue("id"))
+func (r *router) upload(w http.ResponseWriter, req *http.Request) {
+	kind := storage.Kind(req.URL.Query().Get("kind"))
+	if kind == "" {
+		kind = storage.KindRaw
+	}
+	contentType := req.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = defaultContentType
+	}
+
+	var ownerID string
+	if kind == storage.KindResult && r.validator != nil {
+		sub, err := r.bearerSubject(req)
 		if err != nil {
-			writeStoreError(w, err)
+			writeError(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
-		defer body.Close()
-		w.Header().Set("Content-Type", meta.ContentType)
-		w.Header().Set("Content-Length", strconv.FormatInt(meta.Size, 10))
-		w.WriteHeader(http.StatusOK)
-		_, _ = io.Copy(w, body)
+		ownerID = sub
 	}
+
+	defer req.Body.Close()
+	meta, err := r.store.Put(kind, contentType, ownerID, req.Body)
+	if err != nil {
+		if errors.Is(err, storage.ErrInvalidKind) {
+			writeError(w, http.StatusBadRequest, "invalid image kind")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "failed to store image")
+		return
+	}
+	writeJSON(w, http.StatusCreated, meta)
 }
 
-func stat(store storage.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		meta, err := store.Stat(r.PathValue("id"))
+func (r *router) download(w http.ResponseWriter, req *http.Request) {
+	body, meta, err := r.store.Get(req.PathValue("id"))
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
+	defer body.Close()
+
+	if meta.Kind == storage.KindResult && r.validator != nil {
+		sub, err := r.bearerSubject(req)
 		if err != nil {
-			writeStoreError(w, err)
+			writeError(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
-		writeJSON(w, http.StatusOK, meta)
+		if meta.OwnerID != "" && sub != meta.OwnerID {
+			writeError(w, http.StatusForbidden, "access denied")
+			return
+		}
 	}
+
+	w.Header().Set("Content-Type", meta.ContentType)
+	w.Header().Set("Content-Length", strconv.FormatInt(meta.Size, 10))
+	w.WriteHeader(http.StatusOK)
+	_, _ = io.Copy(w, body)
 }
 
-func remove(store storage.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := store.Delete(r.PathValue("id")); err != nil {
-			writeStoreError(w, err)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
+func (r *router) stat(w http.ResponseWriter, req *http.Request) {
+	meta, err := r.store.Stat(req.PathValue("id"))
+	if err != nil {
+		writeStoreError(w, err)
+		return
 	}
+	writeJSON(w, http.StatusOK, meta)
+}
+
+func (r *router) remove(w http.ResponseWriter, req *http.Request) {
+	if err := r.store.Delete(req.PathValue("id")); err != nil {
+		writeStoreError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func writeStoreError(w http.ResponseWriter, err error) {

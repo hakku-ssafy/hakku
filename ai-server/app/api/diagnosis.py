@@ -38,7 +38,7 @@ async def _run_pipeline(authorization: str, raw_bytes: bytes) -> None:
     try:
         processed = resize_for_api(raw_bytes)
         result_image = await generator.generate_analysis_image(processed)
-        meta = await storage.upload_result_image(result_image)
+        meta = await storage.upload_result_image(result_image, authorization)
         result_url = meta["url"]
         color_type = await vision.extract_color_from_image(result_image)
         if color_type is None:

@@ -8,7 +8,7 @@ import httpx
 from app.config import settings
 
 
-async def upload_result_image(image_bytes: bytes) -> dict:
+async def upload_result_image(image_bytes: bytes, authorization: str) -> dict:
     """Upload image to storage-server with kind=result.
 
     Returns:
@@ -20,7 +20,7 @@ async def upload_result_image(image_bytes: bytes) -> dict:
             url,
             params={"kind": "result"},
             content=image_bytes,
-            headers={"Content-Type": "image/png"},
+            headers={"Content-Type": "image/png", "Authorization": authorization},
             timeout=30.0,
         )
         r.raise_for_status()

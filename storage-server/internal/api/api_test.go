@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -139,5 +140,128 @@ func TestDelete_UnknownID_404(t *testing.T) {
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d, want 404", rec.Code)
+	}
+}
+
+// ── JWT auth tests ────────────────────────────────────────────────────────────
+
+// mapValidator is a test-only Validator backed by a static token→subject map.
+type mapValidator struct {
+	tokens map[string]string
+}
+
+func (v *mapValidator) Subject(token string) (string, error) {
+	sub, ok := v.tokens[token]
+	if !ok {
+		return "", errors.New("invalid token")
+	}
+	return sub, nil
+}
+
+func newServerWithAuth(t *testing.T, tokens map[string]string) http.Handler {
+	t.Helper()
+	store, err := storage.NewFSStore(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewFSStore: %v", err)
+	}
+	return api.Handler(store, api.WithJWT(&mapValidator{tokens}))
+}
+
+func uploadWithToken(t *testing.T, h http.Handler, token, kindQuery, contentType, body string) storage.Metadata {
+	t.Helper()
+	target := "/storage/images"
+	if kindQuery != "" {
+		target += "?kind=" + kindQuery
+	}
+	req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(body))
+	req.Header.Set("Content-Type", contentType)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("upload status = %d, want 201 (body %s)", rec.Code, rec.Body.String())
+	}
+	var meta storage.Metadata
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+		t.Fatalf("decode metadata: %v", err)
+	}
+	return meta
+}
+
+func TestDownloadResult_RequiresAuth(t *testing.T) {
+	tokens := map[string]string{"tok1": "user1"}
+	h := newServerWithAuth(t, tokens)
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID, nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", rec.Code)
+	}
+}
+
+func TestDownloadResult_AsOwner_Succeeds(t *testing.T) {
+	tokens := map[string]string{"tok1": "user1"}
+	h := newServerWithAuth(t, tokens)
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID, nil)
+	req.Header.Set("Authorization", "Bearer tok1")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", rec.Code)
+	}
+}
+
+func TestDownloadResult_AsNonOwner_Forbidden(t *testing.T) {
+	tokens := map[string]string{"tok1": "user1", "tok2": "user2"}
+	h := newServerWithAuth(t, tokens)
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID, nil)
+	req.Header.Set("Authorization", "Bearer tok2")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", rec.Code)
+	}
+}
+
+func TestUploadResult_WithoutAuth_Rejected(t *testing.T) {
+	tokens := map[string]string{"tok1": "user1"}
+	h := newServerWithAuth(t, tokens)
+
+	req := httptest.NewRequest(http.MethodPost, "/storage/images?kind=result", strings.NewReader("fake-png"))
+	req.Header.Set("Content-Type", "image/png")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", rec.Code)
+	}
+}
+
+func TestUploadResult_WithAuth_StoresOwnerID(t *testing.T) {
+	tokens := map[string]string{"tok1": "42"}
+	h := newServerWithAuth(t, tokens)
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+	if meta.OwnerID != "42" {
+		t.Errorf("ownerID = %q, want \"42\"", meta.OwnerID)
+	}
+}
+
+func TestDownloadRaw_WithoutAuth_Succeeds(t *testing.T) {
+	tokens := map[string]string{"tok1": "user1"}
+	h := newServerWithAuth(t, tokens)
+	meta := upload(t, h, "raw", "image/png", "raw-data")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID, nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", rec.Code)
 	}
 }

@@ -25,7 +25,7 @@ func TestFSStore_PutThenGet_RoundTrips(t *testing.T) {
 	store := newStore(t)
 	content := []byte("fake-png-bytes")
 
-	meta, err := store.Put(storage.KindResult, "image/png", bytes.NewReader(content))
+	meta, err := store.Put(storage.KindResult, "image/png", "", bytes.NewReader(content))
 	if err != nil {
 		t.Fatalf("Put: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestFSStore_PutThenGet_RoundTrips(t *testing.T) {
 
 func TestFSStore_Stat_ReturnsMetadataWithoutBody(t *testing.T) {
 	store := newStore(t)
-	meta, err := store.Put(storage.KindRaw, "image/jpeg", strings.NewReader("jpeg"))
+	meta, err := store.Put(storage.KindRaw, "image/jpeg", "", strings.NewReader("jpeg"))
 	if err != nil {
 		t.Fatalf("Put: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestFSStore_Stat_ReturnsMetadataWithoutBody(t *testing.T) {
 
 func TestFSStore_Delete_RemovesImage(t *testing.T) {
 	store := newStore(t)
-	meta, err := store.Put(storage.KindRaw, "image/png", strings.NewReader("x"))
+	meta, err := store.Put(storage.KindRaw, "image/png", "", strings.NewReader("x"))
 	if err != nil {
 		t.Fatalf("Put: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestFSStore_UnknownID_ReturnsNotFound(t *testing.T) {
 func TestFSStore_InvalidKind_Rejected(t *testing.T) {
 	store := newStore(t)
 
-	if _, err := store.Put(storage.Kind("bogus"), "image/png", strings.NewReader("x")); !errors.Is(err, storage.ErrInvalidKind) {
+	if _, err := store.Put(storage.Kind("bogus"), "image/png", "", strings.NewReader("x")); !errors.Is(err, storage.ErrInvalidKind) {
 		t.Errorf("Put invalid kind err = %v, want ErrInvalidKind", err)
 	}
 }
@@ -147,7 +147,7 @@ func TestFSStore_Put_ReaderError_CleansUp(t *testing.T) {
 		t.Fatalf("NewFSStore: %v", err)
 	}
 
-	if _, err := store.Put(storage.KindRaw, "image/png", errReader{}); err == nil {
+	if _, err := store.Put(storage.KindRaw, "image/png", "", errReader{}); err == nil {
 		t.Fatal("expected error from failing reader")
 	}
 
@@ -162,11 +162,11 @@ func TestFSStore_Put_ReaderError_CleansUp(t *testing.T) {
 
 func TestFSStore_DistinctIDsPerPut(t *testing.T) {
 	store := newStore(t)
-	a, err := store.Put(storage.KindRaw, "image/png", strings.NewReader("a"))
+	a, err := store.Put(storage.KindRaw, "image/png", "", strings.NewReader("a"))
 	if err != nil {
 		t.Fatalf("Put a: %v", err)
 	}
-	b, err := store.Put(storage.KindRaw, "image/png", strings.NewReader("b"))
+	b, err := store.Put(storage.KindRaw, "image/png", "", strings.NewReader("b"))
 	if err != nil {
 		t.Fatalf("Put b: %v", err)
 	}

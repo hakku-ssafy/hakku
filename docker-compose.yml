@@ -111,6 +111,7 @@ services:
     environment:
       STORAGE_BASE_PATH: /data/images
       STORAGE_ADDR: :8080
+      JWT_SECRET: ${JWT_SECRET}
     volumes:
       - storage_data:/data/images
     healthcheck:

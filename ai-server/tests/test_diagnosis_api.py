@@ -112,7 +112,7 @@ class TestDiagnosisEndpoint:
             headers={"Authorization": VALID_JWT},
             files={"image": ("photo.jpg", make_jpeg(), "image/jpeg")},
         )
-        mock_pipeline["storage"].assert_called_once_with(MOCK_RESULT_IMAGE)
+        mock_pipeline["storage"].assert_called_once_with(MOCK_RESULT_IMAGE, VALID_JWT)
 
     def test_diagnosis_calls_main_server_update(self, client, mock_pipeline):
         client.post(

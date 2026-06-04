@@ -25,12 +25,13 @@ class TestUploadResultImage:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value = mock_client
 
-            result = await upload_result_image(b"fake-image")
+            result = await upload_result_image(b"fake-image", "Bearer test-token")
 
         mock_client.post.assert_called_once()
         call_kwargs = mock_client.post.call_args
         assert call_kwargs.kwargs["params"] == {"kind": "result"}
         assert call_kwargs.kwargs["content"] == b"fake-image"
+        assert call_kwargs.kwargs["headers"]["Authorization"] == "Bearer test-token"
         assert result["id"] == "abc123"
         assert "url" in result
         assert "abc123" in result["url"]
@@ -49,7 +50,7 @@ class TestUploadResultImage:
             mock_client_cls.return_value = mock_client
 
             with pytest.raises(httpx.HTTPStatusError):
-                await upload_result_image(b"fake-image")
+                await upload_result_image(b"fake-image", "Bearer test-token")
 
 
 class TestUpdateUserDiagnosis:

@@ -34,6 +34,7 @@ type Metadata struct {
 	ContentType string    `json:"contentType"`
 	Size        int64     `json:"size"`
 	CreatedAt   time.Time `json:"createdAt"`
+	OwnerID     string    `json:"ownerId,omitempty"` // non-empty for result images; identifies the uploading user
 }
 
 var (
@@ -46,7 +47,7 @@ var (
 // Store is the image persistence boundary, kept abstract so the HTTP layer
 // depends on behaviour rather than the filesystem implementation.
 type Store interface {
-	Put(kind Kind, contentType string, r io.Reader) (Metadata, error)
+	Put(kind Kind, contentType string, ownerID string, r io.Reader) (Metadata, error)
 	Get(id string) (io.ReadCloser, Metadata, error)
 	Stat(id string) (Metadata, error)
 	Delete(id string) error
@@ -72,7 +73,7 @@ func NewFSStore(basePath string) (*FSStore, error) {
 }
 
 // Put writes the reader's bytes to a new blob and returns its metadata.
-func (s *FSStore) Put(kind Kind, contentType string, r io.Reader) (Metadata, error) {
+func (s *FSStore) Put(kind Kind, contentType string, ownerID string, r io.Reader) (Metadata, error) {
 	if !kind.valid() {
 		return Metadata{}, ErrInvalidKind
 	}
@@ -103,6 +104,7 @@ func (s *FSStore) Put(kind Kind, contentType string, r io.Reader) (Metadata, err
 		ContentType: contentType,
 		Size:        size,
 		CreatedAt:   time.Now().UTC(),
+		OwnerID:     ownerID,
 	}
 	if err := s.writeMeta(meta); err != nil {
 		_ = os.Remove(blobPath)
