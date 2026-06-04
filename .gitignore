@@ -34,8 +34,5 @@ npm-debug.log*
 
 # ── Data / Volumes ─────────────────────────────
 .data/
+data/
 *.log
-coupang_images/
-*.csv
-*.xlsx
-*.zip

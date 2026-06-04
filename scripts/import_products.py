@@ -6,9 +6,9 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-XLSX = ROOT / "coupang_products.xlsx"
+XLSX = ROOT / "data" / "coupang_products.xlsx"
 if not XLSX.exists():
-    XLSX = ROOT / "coupang_images" / "coupang_products.xlsx"
+    XLSX = ROOT / "coupang_products.xlsx"  # fallback: 루트에 파일이 있는 경우
 PUBLIC_BASE = sys.argv[1] if len(sys.argv) > 1 else "https://hakku.rearleg.com/product-images"
 SELLER_EMAIL = "seller@hakku.local"
 SELLER_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"

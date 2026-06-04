@@ -1,0 +1,24 @@
+# Spring Storage Server (Go storage-server와 API 동일, 비교/벤치마크용)
+name: hakku-storage-spring
+
+services:
+  storage-server-spring:
+    build:
+      context: ../storage-server-spring
+    image: hakku-storage-server-spring:latest
+    container_name: hakku-storage-spring
+    ports:
+      - "8082:8082"
+    environment:
+      STORAGE_PORT: 8082
+      STORAGE_BASE_PATH: /data/images
+    volumes:
+      - storage_spring_data:/data/images
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8082/actuator/health | grep -q UP || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  storage_spring_data:

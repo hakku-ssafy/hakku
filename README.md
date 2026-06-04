@@ -10,6 +10,50 @@ AI 퍼스널컬러 기반 꾸미기 아이템 추천 커머스·커뮤니티 플
 
 Nginx 리버스 프록시 뒤에 4개 서비스가 독립 실행되는 폴리글랏 마이크로서비스 구조.
 
+```mermaid
+graph TD
+    Client["🌐 클라이언트"]
+
+    subgraph proxy["Nginx :80"]
+        N["/ → frontend<br>/api/ → main-server<br>/ai/ → ai-server<br>/storage/ → storage-server"]
+    end
+
+    subgraph app["애플리케이션"]
+        FE["Frontend\nVue 3 · TypeScript · Tailwind"]
+        MS["Main Server\nSpring Boot 4 · Java 17"]
+        AI["AI Server\nFastAPI · Python 3.13"]
+        ST["Storage Server\nGo (표준 라이브러리)"]
+    end
+
+    subgraph infra["인프라"]
+        PG[("PostgreSQL 16")]
+        RD[("Redis 7")]
+        KF["Kafka 3.7\n(KRaft)"]
+    end
+
+    subgraph obs["관측성"]
+        PR["Prometheus"]
+        GF["Grafana :3000"]
+        JG["Jaeger :16686"]
+    end
+
+    Client --> proxy
+    proxy -->|"/"| FE
+    proxy -->|"/api/"| MS
+    proxy -->|"/ai/"| AI
+    proxy -->|"/storage/"| ST
+
+    MS --> PG & RD & KF
+    AI -->|"진단 결과 반영"| MS
+    AI -->|"이미지 저장·조회"| ST
+
+    MS -->|"/metrics"| PR
+    AI -->|"/metrics"| PR
+    ST -->|"/metrics"| PR
+    PR --> GF
+    MS -->|"traces"| JG
+```
+
 | 서비스 | 스택 | 책임 |
 |---|---|---|
 | `frontend` | Vue 3 + Vite + TypeScript + Tailwind + Pinia | 사용자 화면 |
@@ -82,7 +126,7 @@ Go 표준 라이브러리로 구현한 `storage-server`와 동일 API를 제공�
 
 > [Google Drive — hakku_dataset.zip 다운로드](https://drive.google.com/file/d/1OtBROPRBg4sGTOoLM843mMl1klmXItge/view?usp=sharing)
 
-다운로드 후 프로젝트 루트에 압축 해제한다.
+다운로드 후 `data/` 디렉터리에 압축 해제한다.
 
 ### 환경변수 설정
 
@@ -98,7 +142,7 @@ cp .env.example .env
 docker compose up -d --build
 
 # 관측성 스택 (선택)
-docker compose -f docker-compose.obs.yml up -d
+docker compose -f compose/obs.yml up -d
 ```
 
 | 엔드포인트 | 주소 |
