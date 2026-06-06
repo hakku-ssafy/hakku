@@ -6,10 +6,13 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-XLSX = ROOT / "data" / "coupang_products.xlsx"
+XLSX = ROOT / "data" / "coupang_images" / "coupang_products.xlsx"
+if not XLSX.exists():
+    XLSX = ROOT / "data" / "coupang_products.xlsx"  # fallback
 if not XLSX.exists():
     XLSX = ROOT / "coupang_products.xlsx"  # fallback: 루트에 파일이 있는 경우
-PUBLIC_BASE = sys.argv[1] if len(sys.argv) > 1 else "https://hakku.rearleg.com/product-images"
+# 상대경로 기본값 — 게이트웨이 nginx의 /product-images/ 로컬 서빙을 통해 호스트 무관하게 동작
+PUBLIC_BASE = sys.argv[1] if len(sys.argv) > 1 else "/product-images"
 SELLER_EMAIL = "seller@hakku.local"
 SELLER_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
 COLOR_FIX = {"yeloow": "yellow"}
