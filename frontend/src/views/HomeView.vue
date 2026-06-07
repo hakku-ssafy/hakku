@@ -42,7 +42,7 @@
             <div class="u-rise">
               <span class="u-eyebrow">AI Personal Color</span>
               <h1 class="u-serif text-display text-ink mt-5">
-                <span class="u-gradient-text">AI 퍼스널컬러</span> 진단 받고<br /><span class="u-gradient-text">학생증</span>을 꾸며보자!
+                <span class="u-gradient-text">AI 퍼스널컬러</span>로<br /><span class="u-gradient-text">학생증</span>을 꾸며보자!
               </h1>
               <p class="text-ink-soft mt-6 text-base sm:text-lg leading-relaxed max-w-md">
                 얼굴 사진 한 장이면 충분합니다. AI가 16종 퍼스널컬러를 진단하고,
