@@ -42,11 +42,11 @@
             <div class="u-rise">
               <span class="u-eyebrow">AI Personal Color</span>
               <h1 class="u-serif text-display text-ink mt-5">
-                <span class="u-gradient-text">나</span>에게 어울리는<br /><span class="u-gradient-text">색</span>을 찾다
+                <span class="u-gradient-text">AI 퍼스널컬러</span> 진단 받고<br /><span class="u-gradient-text">학생증</span>을 꾸며보자!
               </h1>
               <p class="text-ink-soft mt-6 text-base sm:text-lg leading-relaxed max-w-md">
                 얼굴 사진 한 장이면 충분합니다. AI가 16종 퍼스널컬러를 진단하고,
-                당신에게 꼭 맞는 꾸미기 아이템을 골라드려요.
+                당신에게 꼭 맞는 학생증 꾸미기 아이템을 골라드려요.
               </p>
               <div class="flex flex-col sm:flex-row gap-3 mt-9">
                 <AppButton to="/diagnosis" size="lg">퍼스널컬러 진단 받기</AppButton>
@@ -96,7 +96,7 @@
           </span>
           <div class="text-center sm:text-left">
             <h2 class="u-serif text-xl text-ink">AI가 퍼스널컬러를 분석하고 있어요</h2>
-            <p class="text-ink-soft text-sm mt-2">완료되면 알림으로 알려드릴게요. 자유롭게 둘러보셔도 좋아요.</p>
+            <p class="text-ink-soft text-sm mt-2">완료되면 알림으로 알려드릴게요. 어떻게 학생증을 꾸밀지 고민해보세요.</p>
           </div>
         </div>
       </template>
