@@ -65,23 +65,223 @@ graph TD
 
 ---
 
+## 핵심 서비스 흐름도
+
+### 사용자 여정
+
+```mermaid
+flowchart LR
+    subgraph auth["인증 · 온보딩"]
+        A1["회원가입<br>POST /api/auth/signup"]
+        A2["로그인<br>POST /api/auth/login"]
+        A3["온보딩<br>PUT /api/users/me"]
+    end
+
+    subgraph diagnosis["퍼스널컬러 진단"]
+        D1["사진 업로드<br>POST /ai/api/diagnosis"]
+        D2["백그라운드 AI 처리"]
+        D3["결과 확인<br>GET /api/users/me"]
+    end
+
+    subgraph commerce["쇼핑 · 추천"]
+        C1["맞춤 추천<br>GET /api/recommendations"]
+        C2["상품 탐색<br>GET /api/products"]
+        C3["장바구니<br>/api/cart/items"]
+    end
+
+    subgraph community["커뮤니티 · 알림"]
+        M1["글·댓글·좋아요<br>/api/posts"]
+        M2["알림 수신<br>GET /api/notifications"]
+    end
+
+    A1 --> A2 --> A3 --> D1 --> D2 --> D3
+    D3 --> C1 --> C2 --> C3
+    D3 --> M1 --> M2
+    D2 -.->|완료 알림| M2
+```
+
+| 단계 | 화면 | 핵심 API | 설명 |
+|---|---|---|---|
+| 1. 가입·로그인 | `/signup`, `/login` | `POST /api/auth/*` | JWT 발급, NORMAL은 온보딩 미완료 시 주요 페이지 접근 차단 |
+| 2. 온보딩 | `/onboarding` | `PUT /api/users/me` | 선호 컬러·스타일 설정, `onboardingCompleted=true` |
+| 3. 진단 요청 | `/diagnosis` | `POST /ai/api/diagnosis` | 즉시 202 반환, 백그라운드 처리 |
+| 4. 결과 확인 | `/my` | `GET /api/users/me` | `personalColor`, `diagnosisImageUrl` 표시 |
+| 5. 추천 | `/recommendations` | `GET /api/recommendations` | 퍼스널컬러·선호·행동 로그 기반 점수 산출 |
+| 6. 상품 | `/products` | `GET /api/products` | 외부 `purchaseUrl`로 구매 (결제 미구현) |
+| 7. 커뮤니티 | `/community` | `/api/posts`, `/api/comments` | 댓글·좋아요 시 대상자에게 알림 발행 |
+| 8. 알림 | `/notifications` | `GET /api/notifications` | Kafka→Redis 저장분을 폴링으로 조회 |
+
+### 서비스 간 상호작용
+
+프론트엔드는 비즈니스 API는 **Main Server**만, 진단은 **AI Server**만, 이미지는 **Storage Server**만 직접 호출한다. AI Server는 처리 중 Main·Storage를 서버 간 HTTP로 호출한다.
+
+```mermaid
+sequenceDiagram
+    actor User as 사용자
+    participant Nginx
+    participant FE as Frontend
+    participant MS as Main Server
+    participant AI as AI Server
+    participant ST as Storage Server
+    participant PG as PostgreSQL
+    participant KF as Kafka
+    participant RD as Redis
+
+    User->>FE: 사진 업로드
+    FE->>Nginx: POST /ai/api/diagnosis (JWT)
+    Nginx->>AI: 프록시
+
+    AI->>MS: POST /api/users/me/diagnosis-request
+    Note over MS: NONE → PENDING
+    MS-->>AI: 200
+    AI-->>FE: 202 Accepted
+
+    Note over AI: BackgroundTasks 파이프라인
+    AI->>ST: POST /storage/images?kind=result
+    AI->>MS: PATCH /api/users/me/personal-color
+    Note over MS: PENDING → COMPLETED
+    MS->>PG: 프로필·진단 결과 저장
+    MS->>KF: notification.created 발행
+    KF->>MS: NotificationConsumer
+    MS->>RD: LPUSH user:{id}:notifications
+
+    FE->>Nginx: GET /api/notifications
+    Nginx->>MS: 프록시
+    MS->>RD: 알림 조회
+    MS-->>FE: 알림 목록
+```
+
+### 진단 상태 머신
+
+사용자 프로필의 `diagnosisStatus`는 아래 상태 전이를 따른다.
+
+```mermaid
+stateDiagram-v2
+    [*] --> NONE
+    NONE --> PENDING: POST /diagnosis-request<br>(AI 요청 수락 시)
+    PENDING --> COMPLETED: PATCH /personal-color<br>(AI 성공 시)
+    PENDING --> NONE: DELETE /diagnosis-request<br>(AI 실패 시)
+    COMPLETED --> [*]
+```
+
+### 알림 파이프라인
+
+알림은 실시간 push 없이 **Kafka → Redis → 폴링** 구조로 동작한다.
+
+| 트리거 | `NotificationType` | 수신자 |
+|---|---|---|
+| 진단 완료 | `DIAGNOSIS_COMPLETE` | 본인 |
+| 댓글 작성 | `COMMENT` | 글 작성자 |
+| 좋아요 | `LIKE` | 글 작성자 |
+
+```
+Producer (Main Server) → Kafka topic: notification.created
+  → Consumer (NotificationConsumer) → Redis List: user:{userId}:notifications (최대 50건)
+    → Frontend 폴링: GET /api/notifications
+```
+
+### 추천 점수 산출
+
+`RecommendationScoreCalculator`가 아래 요소를 합산해 상품별 점수를 계산하고, 점수 구성 요소를 응답에 포함한다.
+
+| 요소 | 설명 |
+|---|---|
+| 퍼스널컬러 일치도 | 사용자 16종 세부 타입 → 계절 단위 환원 후 상품 태그와 비교 |
+| 선호 스타일·컬러 | 온보딩 시 설정한 `preferredStyles`, `preferredColors` |
+| 행동 로그 | 클릭·찜·장바구니 등 최근 활동 |
+| 상품 인기도 | 리뷰 평점·인기 지표 |
+
+---
+
+## AI 프로세스 흐름도
+
+### 전체 파이프라인
+
+사용자가 사진을 올리면 AI Server가 **슬롯 잠금 → 202 즉시 반환 → 백그라운드 처리** 순으로 동작한다. 페이지를 이탈해도 요청은 계속 처리되고, 완료 시 Kafka 알림이 발행된다.
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend
+    participant AI as ai-server
+    participant MS as main-server
+    participant OAI as OpenAI
+    participant ST as storage-server
+
+    FE->>AI: POST /api/diagnosis (image + JWT)
+
+    rect rgb(240, 248, 255)
+        Note over AI,MS: 동기 — 요청 스레드
+        AI->>AI: JWT 검증 (_require_auth)
+        AI->>AI: image.read()
+        AI->>MS: POST /api/users/me/diagnosis-request
+        MS-->>AI: 200 (NONE → PENDING)
+        AI-->>FE: 202 Accepted
+    end
+
+    rect rgb(255, 248, 240)
+        Note over AI,OAI: 비동기 — BackgroundTasks (_run_pipeline)
+        AI->>AI: resize_for_api() — 리사이즈·JPEG 변환
+        AI->>OAI: images.edit (gpt-image-2)
+        Note over OAI: 템플릿 + 사용자 사진 → 9:16 대시보드 PNG
+        OAI-->>AI: result PNG bytes
+        AI->>ST: POST /storage/images?kind=result
+        ST-->>AI: { id, ownerId, ... }
+        AI->>OAI: responses.create (gpt-5.4-mini)
+        Note over OAI: 결과 이미지에서 "세부 타입" 텍스트 추출
+        OAI-->>AI: "세부 타입: 가을 소프트 (SOFT_AUTUMN)"
+        AI->>AI: extract_personal_color_type() — 16종 ENUM 매칭
+        AI->>MS: PATCH /api/users/me/personal-color
+        Note over MS: COMPLETED + Kafka DIAGNOSIS_COMPLETE
+    end
+```
+
+### 단계별 처리 상세
+
+| # | 단계 | 모듈 | 함수 | sync/async | 설명 |
+|---|---|---|---|---|---|
+| 1 | 슬롯 잠금 | `main_client` | `request_diagnosis_start()` | sync | 중복 요청 시 409 |
+| 2 | 전처리 | `preprocess` | `resize_for_api()` | sync | 긴 변 1024px, RGBA→흰 배경, JPEG q=90 |
+| 3 | 이미지 생성 | `generator` | `generate_analysis_image()` | async | gpt-image-2 `images.edit`, 1024×1824 |
+| 4 | 결과 저장 | `storage` | `upload_result_image()` | async | `kind=result`, JWT→ownerId |
+| 5 | 텍스트 추출 | `vision` | `extract_color_from_image()` | async | gpt-5.4-mini Responses API |
+| 6 | ENUM 파싱 | `ocr` | `extract_personal_color_type()` | sync | 16종 퍼스널컬러 매칭 |
+| 7 | 결과 반영 | `main_client` | `update_user_diagnosis()` | async | personalColor + resultImageUrl |
+
+### OpenAI 모델 사용
+
+| 모델 | API | 입력 | 출력 |
+|---|---|---|---|
+| `gpt-image-2` | `images.edit()` | 템플릿(`result1.png`) + 전처리 JPEG | 9:16 퍼스널컬러 대시보드 PNG |
+| `gpt-5.4-mini` | `responses.create()` | 생성 PNG (base64) | `세부 타입: {한글명} ({ENUM})` 한 줄 |
+
+### 16종 퍼스널컬러 추출 (OCR)
+
+Vision API가 반환한 텍스트에서 `ocr.extract_personal_color_type()`이 아래 우선순위로 ENUM을 결정한다.
+
+1. **직접 ENUM 매칭** — 괄호 안 코드 검색 (예: `SOFT_AUTUMN`)
+2. **한글 라벨 매칭** — 16종 한글명 substring (가장 긴 키워드 우선)
+3. **계절 → 톤 fallback** — 계절 키워드 확정 후 톤 키워드로 세부 타입 추론
+
+| 계절 | 세부 타입 |
+|---|---|
+| 봄 | `LIGHT_SPRING`, `TRUE_SPRING`, `BRIGHT_SPRING`, `CLEAR_SPRING` |
+| 여름 | `LIGHT_SUMMER`, `TRUE_SUMMER`, `SOFT_SUMMER`, `COOL_SUMMER` |
+| 가을 | `SOFT_AUTUMN`, `TRUE_AUTUMN`, `DEEP_AUTUMN`, `MUTED_AUTUMN` |
+| 겨울 | `BRIGHT_WINTER`, `TRUE_WINTER`, `DEEP_WINTER`, `CLEAR_WINTER` |
+
+### 에러 처리
+
+| 실패 지점 | 동작 |
+|---|---|
+| 슬롯 잠금 409 | 즉시 409 반환 (이미 진행 중·완료) |
+| 파이프라인 예외 | `DELETE /api/users/me/diagnosis-request` → NONE 복구 |
+| OCR 매칭 실패 (`None`) | 동일하게 NONE 복구, 사용자 재시도 가능 |
+
+백그라운드 실패 시 클라이언트는 이미 202를 받은 상태이므로, 사용자는 프로필 폴링 또는 알림으로 결과를 확인한다.
+
+---
+
 ## 주요 특징
-
-### AI 진단 파이프라인
-
-사용자가 사진을 올리면 AI Server에서 전체 파이프라인이 비동기로 실행된다.
-
-```
-유저 사진 업로드
-→ 이미지 리사이즈 전처리
-→ 퍼스널컬러 템플릿 + 원본 사진을 OpenAI gpt-image-1에 전달 → 분석 결과 이미지 생성
-→ 결과 이미지 Storage Server 저장, 원본 폐기
-→ Vision OCR로 결과 이미지에서 16종 퍼스널컬러 추출
-→ Main Server에 결과 반영
-→ Kafka → Redis → 사용자 알림
-```
-
-페이지를 이탈해도 요청은 백그라운드에서 처리되고, 완료되면 알림이 온다.
 
 ### 이미지 트래픽 분리
 
