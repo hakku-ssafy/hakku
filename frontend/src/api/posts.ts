@@ -1,9 +1,11 @@
 import apiClient from './client'
-import type { Post, Comment } from '@/types'
+import type { Post, PostBoard, Comment } from '@/types'
 
 function normalizePost(raw: Post): Post {
   return {
     ...raw,
+    board: raw.board ?? 'GENERAL',
+    imageUrl: raw.imageUrl ?? null,
     authorNickname: raw.authorNickname ?? '알 수 없음',
     likeCount: raw.likeCount ?? 0,
     commentCount: raw.commentCount ?? 0,
@@ -21,10 +23,14 @@ function normalizeComment(raw: Comment): Comment {
 export interface CreatePostRequest {
   title: string
   content: string
+  board?: PostBoard
+  imageUrl?: string | null
 }
 
-export async function getPosts(): Promise<Post[]> {
-  const { data } = await apiClient.get<Post[]>('/posts')
+export async function getPosts(board?: PostBoard): Promise<Post[]> {
+  const { data } = await apiClient.get<Post[]>('/posts', {
+    params: board ? { board } : undefined,
+  })
   return data.map(normalizePost)
 }
 

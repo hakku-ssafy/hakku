@@ -1,16 +1,16 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    <div class="w-full max-w-lg">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-purple-600">학꾸</h1>
-        <p class="text-gray-500 mt-2">선호하는 컬러를 골라주세요</p>
+  <div class="u-container flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
+    <div class="w-full max-w-lg u-rise">
+      <div class="text-center mb-9">
+        <router-link to="/" class="u-serif text-3xl font-bold text-ink">학꾸</router-link>
+        <p class="text-ink-muted text-sm mt-2">선호하는 컬러를 골라주세요</p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">컬러 취향 설정</h2>
-        <p class="text-sm text-gray-500 mb-6">마음에 드는 컬러를 여러 개 선택할 수 있어요</p>
+      <AppCard>
+        <h1 class="u-serif text-2xl text-ink mb-1.5">컬러 취향 설정</h1>
+        <p class="text-sm text-ink-soft mb-6">마음에 드는 컬러를 여러 개 선택할 수 있어요.</p>
 
-        <div v-if="errorMessage" role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <div v-if="errorMessage" role="alert" class="mb-4 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
           {{ errorMessage }}
         </div>
 
@@ -21,28 +21,22 @@
             type="button"
             class="px-4 py-2 rounded-full text-sm font-medium border transition-colors"
             :class="selectedColors.includes(color.value)
-              ? 'border-purple-500 bg-purple-50 text-purple-700'
-              : 'border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50/50'"
+              ? 'border-ink bg-ink text-canvas'
+              : 'border-line-strong text-ink-soft hover:border-ink-muted hover:text-ink'"
             @click="toggleColor(color.value)"
           >
             {{ color.label }}
           </button>
         </div>
 
-        <button
-          type="button"
-          :disabled="loading"
-          class="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          @click="handleSubmit"
-        >
-          <span v-if="loading">저장 중...</span>
-          <span v-else>시작하기</span>
-        </button>
+        <AppButton block size="lg" :disabled="loading" :loading="loading" @click="handleSubmit">
+          시작하기
+        </AppButton>
 
         <p class="mt-4 text-center">
-          <button type="button" class="text-sm text-gray-400 hover:text-purple-600 transition-colors" @click="handleSkip">건너뛰기</button>
+          <button type="button" class="text-sm text-ink-muted hover:text-ink transition-colors" @click="handleSkip">건너뛰기</button>
         </p>
-      </div>
+      </AppCard>
     </div>
   </div>
 </template>
@@ -54,6 +48,8 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { COLOR_OPTIONS } from '@/types'
 import type { User } from '@/types'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -19,10 +19,14 @@ export interface AuthTokens {
   accessToken: string
 }
 
+export type PostBoard = 'GENERAL' | 'STUDENT_ID'
+
 export interface Post {
   id: number
   title: string
   content: string
+  board: PostBoard
+  imageUrl: string | null
   authorId: number
   authorNickname: string
   likeCount: number

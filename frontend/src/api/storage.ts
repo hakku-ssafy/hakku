@@ -22,3 +22,20 @@ export async function uploadProductImage(file: File): Promise<string> {
   )
   return publicImageUrl(data.id)
 }
+
+/**
+ * '학생증 자랑' 공유 이미지를 업로드하고 공개 URL을 반환한다.
+ * 게시판은 누구나 볼 수 있어야 하므로 인증 없이 조회 가능한 raw 종류로 저장한다.
+ */
+export async function uploadShowcaseImage(file: File): Promise<string> {
+  const { data } = await storageClient.post<{ id: string }>(
+    '/images',
+    file,
+    {
+      params: { kind: 'raw' },
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      maxBodyLength: 10 * 1024 * 1024
+    }
+  )
+  return publicImageUrl(data.id)
+}

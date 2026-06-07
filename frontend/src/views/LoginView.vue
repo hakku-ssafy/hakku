@@ -1,68 +1,61 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    <div class="w-full max-w-md">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-purple-600">학꾸</h1>
-        <p class="text-gray-500 mt-2">퍼스널컬러 꾸미기 플랫폼</p>
+  <div class="u-container flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
+    <div class="w-full max-w-sm u-rise">
+      <div class="text-center mb-9">
+        <router-link to="/" class="u-serif text-3xl font-bold text-ink">학꾸</router-link>
+        <p class="text-ink-muted text-sm mt-2">AI 퍼스널컬러 꾸미기 플랫폼</p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">로그인</h2>
+      <AppCard>
+        <h1 class="u-serif text-2xl text-ink mb-6">로그인</h1>
 
-        <div v-if="errorMessage" role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <div
+          v-if="errorMessage"
+          role="alert"
+          class="mb-5 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
+        >
           {{ errorMessage }}
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-5">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-            <input
-              id="email"
-              v-model="email"
-              type="email"
-              autocomplete="email"
-              placeholder="example@email.com"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-            <input
-              id="password"
-              v-model="password"
-              type="password"
-              autocomplete="current-password"
-              placeholder="비밀번호를 입력하세요"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-
-          <button
-            type="submit"
-            :disabled="!canSubmit || loading"
-            class="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <span v-if="loading">로그인 중...</span>
-            <span v-else>로그인</span>
-          </button>
+        <form class="space-y-4" @submit.prevent="handleLogin">
+          <AppInput
+            v-model="email"
+            label="이메일"
+            type="email"
+            autocomplete="email"
+            placeholder="example@email.com"
+          />
+          <AppInput
+            v-model="password"
+            label="비밀번호"
+            type="password"
+            autocomplete="current-password"
+            placeholder="비밀번호를 입력하세요"
+          />
+          <AppButton type="submit" block size="lg" :disabled="!canSubmit || loading" :loading="loading">
+            로그인
+          </AppButton>
         </form>
 
-        <p class="mt-4 text-center text-sm text-gray-500">
+        <p class="mt-6 text-center text-sm text-ink-muted">
           계정이 없으신가요?
-          <router-link to="/signup" class="text-purple-600 font-medium hover:underline">회원가입</router-link>
+          <router-link to="/signup" class="text-ink font-medium hover:underline underline-offset-4">회원가입</router-link>
         </p>
-      </div>
+      </AppCard>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const email = ref('')
@@ -79,10 +72,11 @@ async function handleLogin() {
   try {
     await authStore.loginAction({ email: email.value, password: password.value })
     await authStore.fetchMe()
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
     if (authStore.user?.role === 'NORMAL' && !authStore.user.onboardingCompleted) {
       router.push('/onboarding')
     } else {
-      router.push('/')
+      router.push(redirect ?? '/')
     }
   } catch (e: unknown) {
     errorMessage.value = e instanceof Error ? e.message : '로그인에 실패했습니다'

@@ -1,5 +1,6 @@
 package com.hakku.main.community;
 
+import com.hakku.main.community.domain.PostBoard;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,13 +35,16 @@ public class PostController {
     @ResponseStatus(HttpStatus.CREATED)
     public PostResponse create(@AuthenticationPrincipal String userId,
                                @Valid @RequestBody PostRequest request) {
-        return postService.create(Long.valueOf(userId), request.title(), request.content());
+        return postService.create(Long.valueOf(userId), request.title(), request.content(),
+                PostBoard.fromNullable(request.board()), request.imageUrl());
     }
 
     @GetMapping
-    public List<PostResponse> list(@AuthenticationPrincipal String userId) {
+    public List<PostResponse> list(@AuthenticationPrincipal String userId,
+                                   @RequestParam(required = false) String board) {
         Long viewerId = userId != null ? Long.valueOf(userId) : null;
-        return postService.list(viewerId);
+        PostBoard boardFilter = board != null ? PostBoard.fromNullable(board) : null;
+        return postService.list(viewerId, boardFilter);
     }
 
     @GetMapping("/{id}")
@@ -63,6 +68,8 @@ public class PostController {
 
     public record PostRequest(
             @NotBlank String title,
-            @NotBlank String content) {
+            @NotBlank String content,
+            String board,
+            String imageUrl) {
     }
 }

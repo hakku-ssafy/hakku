@@ -2,6 +2,8 @@ package com.hakku.main.community.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,6 +37,14 @@ public class Post {
     @Column(nullable = false, columnDefinition = "text")
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private PostBoard board;
+
+    /** '학생증 자랑' 게시판에서 공유하는 이미지 URL (일반 글은 null). */
+    @Column(name = "image_url", columnDefinition = "text")
+    private String imageUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -44,9 +54,15 @@ public class Post {
     private Instant updatedAt;
 
     public Post(Long authorId, String title, String content) {
+        this(authorId, title, content, PostBoard.GENERAL, null);
+    }
+
+    public Post(Long authorId, String title, String content, PostBoard board, String imageUrl) {
         this.authorId = authorId;
         this.title = title;
         this.content = content;
+        this.board = board != null ? board : PostBoard.GENERAL;
+        this.imageUrl = imageUrl;
     }
 
     /** 제목/본문을 갱신한다. */

@@ -1,77 +1,74 @@
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-8">
+  <div class="u-container max-w-3xl py-8 sm:py-10">
     <router-link
       to="/community"
-      class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-purple-600 mb-6 transition-colors"
+      class="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink mb-7 transition-colors"
     >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
       </svg>
       커뮤니티
     </router-link>
 
-    <div v-if="loading" class="text-center py-20 text-gray-400">불러오는 중...</div>
+    <div v-if="loading" class="text-center py-20 text-ink-muted text-sm">불러오는 중...</div>
 
-    <div v-else-if="errorMessage" role="alert" class="text-center py-20 text-red-500">
+    <div v-else-if="errorMessage" role="alert" class="text-center py-20 text-red-500 text-sm">
       {{ errorMessage }}
     </div>
 
     <template v-else-if="post">
-      <article class="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-3">{{ post.title }}</h1>
-        <div class="flex items-center gap-3 text-sm text-gray-400 mb-4 flex-wrap">
-          <span class="font-medium text-gray-600">{{ post.authorNickname }}</span>
+      <article class="u-rise">
+        <h1 class="u-serif text-title text-ink mb-3">{{ post.title }}</h1>
+        <div class="flex items-center gap-3 text-sm text-ink-muted mb-6 flex-wrap pb-6 border-b border-line">
+          <span class="font-medium text-ink-soft">{{ post.authorNickname }}</span>
           <span>{{ formatDate(post.createdAt) }}</span>
           <button
             v-if="authStore.isAuthenticated"
             type="button"
-            class="flex items-center gap-1 transition-colors"
-            :class="post.liked ? 'text-red-500' : 'hover:text-red-500'"
+            class="flex items-center gap-1 transition-colors tabular-nums"
+            :class="post.liked ? 'text-accent' : 'hover:text-ink'"
             :disabled="likeLoading"
             @click="handleLike"
           >
-            <span>{{ post.liked ? '❤️' : '🤍' }}</span> {{ post.likeCount }}
+            <HeartIcon :filled="post.liked" /> {{ post.likeCount }}
           </button>
-          <span v-else class="flex items-center gap-1">❤️ {{ post.likeCount }}</span>
+          <span v-else class="flex items-center gap-1 tabular-nums"><HeartIcon :filled="false" /> {{ post.likeCount }}</span>
         </div>
-        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ post.content }}</p>
+        <img
+          v-if="post.imageUrl"
+          :src="post.imageUrl"
+          :alt="post.title"
+          class="w-full max-w-md mx-auto rounded-2xl border border-line mb-6 object-contain"
+        />
+        <p class="text-ink-soft leading-relaxed whitespace-pre-wrap">{{ post.content }}</p>
       </article>
 
-      <section class="bg-white rounded-xl border border-gray-100 p-6">
-        <h2 class="font-semibold text-gray-900 mb-4">댓글 {{ comments.length }}</h2>
+      <section class="mt-12">
+        <h2 class="u-serif text-lg text-ink mb-5">댓글 {{ comments.length }}</h2>
 
-        <div v-if="commentsLoading" class="text-sm text-gray-400 py-4">댓글 불러오는 중...</div>
-        <div v-else-if="comments.length === 0" class="text-sm text-gray-400 py-4">아직 댓글이 없습니다</div>
-        <ul v-else class="space-y-4 mb-6">
-          <li v-for="comment in comments" :key="comment.id" class="border-b border-gray-50 pb-4 last:border-0">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-sm font-medium text-gray-700">{{ comment.authorNickname }}</span>
-              <span class="text-xs text-gray-400">{{ formatDate(comment.createdAt) }}</span>
+        <div v-if="commentsLoading" class="text-sm text-ink-muted py-4">댓글 불러오는 중...</div>
+        <div v-else-if="comments.length === 0" class="text-sm text-ink-muted py-4">아직 댓글이 없습니다</div>
+        <ul v-else class="divide-y divide-line border-y border-line mb-7">
+          <li v-for="comment in comments" :key="comment.id" class="py-4">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="text-sm font-medium text-ink">{{ comment.authorNickname }}</span>
+              <span class="text-xs text-ink-muted">{{ formatDate(comment.createdAt) }}</span>
             </div>
-            <p class="text-sm text-gray-600">{{ comment.content }}</p>
+            <p class="text-sm text-ink-soft">{{ comment.content }}</p>
           </li>
         </ul>
 
         <form v-if="authStore.isAuthenticated" class="space-y-3" @submit.prevent="handleComment">
-          <textarea
-            v-model="newComment"
-            placeholder="댓글을 입력하세요"
-            rows="3"
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-          ></textarea>
+          <AppTextarea v-model="newComment" placeholder="댓글을 입력하세요" :rows="3" />
           <div v-if="commentError" role="alert" class="text-sm text-red-500">{{ commentError }}</div>
           <div class="flex justify-end">
-            <button
-              type="submit"
-              :disabled="!newComment.trim() || commentSubmitting"
-              class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
-            >
+            <AppButton type="submit" size="sm" :disabled="!newComment.trim() || commentSubmitting" :loading="commentSubmitting">
               댓글 등록
-            </button>
+            </AppButton>
           </div>
         </form>
-        <p v-else class="text-sm text-gray-400 text-center py-2">
-          <router-link to="/login" class="text-purple-600 hover:underline">로그인</router-link> 후 댓글을 작성할 수 있습니다
+        <p v-else class="text-sm text-ink-muted text-center py-2">
+          <router-link to="/login" class="text-ink font-medium hover:underline underline-offset-4">로그인</router-link> 후 댓글을 작성할 수 있습니다
         </p>
       </section>
     </template>
@@ -79,12 +76,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, h } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePostStore } from '@/stores/posts'
 import { getPost, getComments, createComment } from '@/api/posts'
 import type { Post, Comment } from '@/types'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppTextarea from '@/components/ui/AppTextarea.vue'
+
+const HeartIcon = (props: { filled?: boolean }) =>
+  h('svg', { class: 'w-4 h-4', viewBox: '0 0 24 24', fill: props.filled ? 'currentColor' : 'none', stroke: 'currentColor', 'stroke-width': 1.5 }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z' }),
+  ])
 
 const route = useRoute()
 const authStore = useAuthStore()

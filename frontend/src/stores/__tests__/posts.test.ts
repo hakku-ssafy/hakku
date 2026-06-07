@@ -13,12 +13,14 @@ const mockPost = {
   id: 1,
   title: '학꾸 후기',
   content: '스티커 너무 좋아요!',
+  board: 'GENERAL' as const,
+  imageUrl: null,
   authorId: 5,
   authorNickname: '테스터',
   likeCount: 3,
   commentCount: 1,
   liked: false,
-      createdAt: '2026-06-01T10:00:00'
+  createdAt: '2026-06-01T10:00:00'
 }
 
 describe('usePostStore', () => {

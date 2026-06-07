@@ -29,7 +29,7 @@ router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return '/login'
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {

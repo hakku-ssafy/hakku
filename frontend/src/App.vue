@@ -1,58 +1,87 @@
 <template>
-  <div id="app-root">
-    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <router-link to="/" class="flex items-center">
-          <span class="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">학꾸</span>
-        </router-link>
-
-        <div class="flex items-center gap-0.5">
-          <router-link to="/products" class="px-3 py-2 text-sm text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition-colors" active-class="text-purple-600 bg-purple-50 font-medium">상품</router-link>
-          <router-link to="/community" class="px-3 py-2 text-sm text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition-colors" active-class="text-purple-600 bg-purple-50 font-medium">커뮤니티</router-link>
-
-          <template v-if="authStore.isAuthenticated">
-            <router-link v-if="authStore.user?.role === 'SELLER'" to="/seller/products" class="px-3 py-2 text-sm text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition-colors" active-class="text-purple-600 bg-purple-50 font-medium">상품 올리기</router-link>
-            <router-link to="/cart" class="px-3 py-2 text-sm text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition-colors" active-class="text-purple-600 bg-purple-50 font-medium">장바구니</router-link>
-            <router-link to="/notifications" class="relative px-3 py-2 text-sm text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition-colors" active-class="text-purple-600 bg-purple-50 font-medium">
-              알림
-              <span v-if="notificationStore.hasUnread" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" aria-label="새 알림" />
-            </router-link>
-            <router-link to="/my" class="ml-1 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">마이페이지</router-link>
-          </template>
-          <template v-else>
-            <router-link to="/login" class="px-3 py-2 text-sm text-gray-600 hover:text-purple-600 rounded-lg hover:bg-purple-50 transition-colors">로그인</router-link>
-            <router-link to="/signup" class="ml-1 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">회원가입</router-link>
-          </template>
-        </div>
-      </div>
-    </nav>
-
-    <main>
-      <router-view />
+  <div id="app-root" class="flex min-h-screen flex-col bg-canvas pb-16 md:pb-0">
+    <AppHeader />
+    <main class="flex-1">
+      <router-view v-slot="{ Component }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
+    <AppFooter />
+    <AppBottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notifications'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
+import AppBottomNav from '@/components/layout/AppBottomNav.vue'
+import { applyPersonalColorTheme } from '@/composables/usePersonalColorTheme'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const route = useRoute()
+
+// 진단 완료/새 알림을 새로고침 없이 반영하기 위한 주기적 폴링 간격(ms).
+const POLL_INTERVAL_MS = 10000
+let pollTimer: ReturnType<typeof setInterval> | undefined
 
 async function refreshNotifications() {
   if (!authStore.isAuthenticated) return
   await notificationStore.fetchNotifications()
 }
 
-onMounted(refreshNotifications)
+// 인증 상태에서 알림을 갱신하고, 진단이 진행 중이면 사용자 정보를 다시 받아
+// PENDING → COMPLETED 전환을 실시간으로 스토어에 반영한다.
+async function poll() {
+  if (!authStore.isAuthenticated) return
+  const tasks: Promise<unknown>[] = [notificationStore.fetchNotifications()]
+  if (authStore.user?.diagnosisStatus === 'PENDING') {
+    tasks.push(authStore.fetchMe())
+  }
+  await Promise.allSettled(tasks)
+}
+
+function startPolling() {
+  stopPolling()
+  if (!authStore.isAuthenticated) return
+  pollTimer = setInterval(poll, POLL_INTERVAL_MS)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = undefined
+  }
+}
+
+onMounted(() => {
+  refreshNotifications()
+  startPolling()
+})
+
+onUnmounted(stopPolling)
 
 watch(() => authStore.isAuthenticated, (ok) => {
-  if (ok) refreshNotifications()
+  if (ok) {
+    refreshNotifications()
+    startPolling()
+  } else {
+    stopPolling()
+  }
 })
+
+// 퍼스널컬러 → 동적 액센트 주입. 진단 결과가 있으면 전체 UI가 그 색으로 물든다.
+watch(
+  () => authStore.user?.personalColor ?? null,
+  (color) => applyPersonalColorTheme(color),
+  { immediate: true },
+)
 
 watch(() => route.path, (path) => {
   if (path === '/notifications') {
@@ -62,3 +91,17 @@ watch(() => route.path, (path) => {
   }
 })
 </script>
+
+<style scoped>
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s var(--ease-out-expo);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-to {
+  opacity: 0;
+}
+</style>

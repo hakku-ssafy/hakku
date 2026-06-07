@@ -1,90 +1,87 @@
 <template>
-  <div class="max-w-2xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">상품 등록</h1>
+  <div class="u-container max-w-2xl py-10 sm:py-12">
+    <div class="border-b border-line pb-4 mb-7">
+      <span class="u-eyebrow">Seller</span>
+      <h1 class="u-serif text-title text-ink mt-2.5">상품 등록</h1>
+    </div>
 
-    <div v-if="!isSeller" role="alert" class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+    <div v-if="!isSeller" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
       판매자만 접근할 수 있습니다.
     </div>
 
     <template v-else>
-      <div v-if="successMessage" role="status" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+      <div v-if="successMessage" role="status" class="mb-4 px-3.5 py-3 bg-surface-sunken border border-line rounded-lg text-ink text-sm">
         {{ successMessage }}
       </div>
-      <div v-if="errorMessage" role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+      <div v-if="errorMessage" role="alert" class="mb-4 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
         {{ errorMessage }}
       </div>
 
-      <form class="bg-white rounded-xl border border-gray-100 p-6 space-y-5" @submit.prevent="handleSubmit">
-        <div>
-          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">상품명</label>
-          <input id="name" v-model="name" type="text" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-        </div>
+      <form class="rounded-xl border border-line bg-surface p-6 space-y-5" @submit.prevent="handleSubmit">
+        <AppInput v-model="name" label="상품명" type="text" required />
+        <AppTextarea v-model="description" label="설명" :rows="4" required />
+
+        <label class="block">
+          <span class="block text-sm font-medium text-ink mb-1.5">가격 (원)</span>
+          <input
+            v-model.number="price"
+            type="number"
+            min="0"
+            required
+            class="w-full h-11 px-3.5 bg-surface text-ink rounded-lg border border-line-strong placeholder:text-ink-muted transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 tabular-nums"
+          />
+        </label>
+
+        <AppSelect v-model="category" label="카테고리">
+          <option value="" disabled>카테고리 선택</option>
+          <option v-for="cat in PRODUCT_CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
+        </AppSelect>
 
         <div>
-          <label for="description" class="block text-sm font-medium text-gray-700 mb-1">설명</label>
-          <textarea id="description" v-model="description" rows="4" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" />
-        </div>
-
-        <div>
-          <label for="price" class="block text-sm font-medium text-gray-700 mb-1">가격 (원)</label>
-          <input id="price" v-model.number="price" type="number" min="0" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-        </div>
-
-        <div>
-          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-          <select id="category" v-model="category" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-            <option value="" disabled>카테고리 선택</option>
-            <option v-for="cat in PRODUCT_CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">컬러</label>
+          <span class="block text-sm font-medium text-ink mb-2">컬러</span>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="color in selectableColors"
               :key="color.value"
               type="button"
               class="px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
-              :class="selectedColors.includes(color.value) ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-600 hover:border-purple-300'"
+              :class="selectedColors.includes(color.value)
+                ? 'border-ink bg-ink text-canvas'
+                : 'border-line-strong text-ink-soft hover:border-ink-muted hover:text-ink'"
               @click="toggleColor(color.value)"
             >{{ color.label }}</button>
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">상품 이미지</label>
+          <span class="block text-sm font-medium text-ink mb-2">상품 이미지</span>
           <div
             class="border-2 border-dashed rounded-xl p-6 text-center transition-colors"
-            :class="isDragging ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-gray-300'"
+            :class="isDragging ? 'border-accent bg-accent-soft' : 'border-line-strong hover:border-ink-muted'"
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="handleDrop"
           >
             <div v-if="!previewUrl">
-              <p class="text-sm text-gray-600 mb-2">이미지를 드래그하거나 선택하세요</p>
-              <p class="text-xs text-gray-400 mb-3">JPG, PNG, WEBP (최대 10MB)</p>
-              <label class="inline-block cursor-pointer px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">
+              <p class="text-sm text-ink-soft mb-2">이미지를 드래그하거나 선택하세요</p>
+              <p class="text-xs text-ink-muted mb-3">JPG, PNG, WEBP (최대 10MB)</p>
+              <label class="inline-flex items-center cursor-pointer h-10 px-4 bg-accent text-accent-ink rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
                 파일 선택
                 <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileChange" />
               </label>
             </div>
             <div v-else class="relative inline-block">
               <img :src="previewUrl" alt="미리보기" class="max-h-48 rounded-lg object-contain" />
-              <button type="button" class="absolute top-2 right-2 w-7 h-7 bg-white rounded-full shadow text-gray-500 hover:text-gray-800" @click="clearImage">×</button>
+              <button type="button" aria-label="이미지 제거" class="absolute top-2 right-2 w-7 h-7 bg-canvas rounded-full shadow grid place-items-center text-ink-muted hover:text-ink" @click="clearImage">×</button>
             </div>
           </div>
         </div>
 
-        <div>
-          <label for="purchaseUrl" class="block text-sm font-medium text-gray-700 mb-1">구매 링크 (선택)</label>
-          <input id="purchaseUrl" v-model="purchaseUrl" type="url" placeholder="https://..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-        </div>
+        <AppInput v-model="purchaseUrl" label="구매 링크 (선택)" type="url" placeholder="https://..." />
 
-        <button type="submit" :disabled="loading || !canSubmit" class="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50">
-          <span v-if="loading">{{ uploadingImage ? '이미지 업로드 중...' : '등록 중...' }}</span>
-          <span v-else>상품 등록</span>
-        </button>
+        <AppButton type="submit" block size="lg" :disabled="loading || !canSubmit" :loading="loading">
+          {{ loading ? (uploadingImage ? '이미지 업로드 중...' : '등록 중...') : '상품 등록' }}
+        </AppButton>
       </form>
     </template>
   </div>
@@ -97,6 +94,10 @@ import { useAuthStore } from '@/stores/auth'
 import { createProduct } from '@/api/products'
 import { uploadProductImage } from '@/api/storage'
 import { COLOR_OPTIONS, PRODUCT_CATEGORIES } from '@/types'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppTextarea from '@/components/ui/AppTextarea.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -1,27 +1,246 @@
 @import "tailwindcss";
 
-:root {
-  --color-primary: #a855f7;
-  --color-primary-dark: #7c3aed;
+/* ============================================================
+   학꾸 · 비비드 플레이풀 꾸미기 커머스 디자인 시스템
+   웜 오프화이트 캔버스 + 플럼 잉크 + 핑크→바이올렛 그라데이션 액센트.
+   --color-accent / --color-accent-2 는 "퍼스널컬러가 들어앉는 자리"다.
+   기본값은 비비드 핑크→바이올렛, 진단 완료 시 런타임 치환된다.
+   토큰 *이름* 은 전부 보존(뷰가 참조). 값과 유틸만 리캐스팅.
+   ============================================================ */
+
+@theme {
+  /* 캔버스 & 표면 — 웜 오프화이트 + 미세 핑크 틴트 */
+  --color-canvas: #fffdfb;
   --color-surface: #ffffff;
-  --color-surface-2: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
+  --color-surface-soft: #fdf6f9;
+  --color-surface-sunken: #f8eef3;
+
+  /* 라인 (hairline) — 살짝 핑크 도는 회색 */
+  --color-line: #f2e9ee;
+  --color-line-strong: #e6dae1;
+
+  /* 잉크 (텍스트) — 중성 회색 대신 깊은 플럼-잉크 */
+  --color-ink: #211b26;
+  --color-ink-soft: #5c5360;
+  --color-ink-muted: #8b8290;
+
+  /* 액센트 — 비비드 핑크(퍼스널컬러 슬롯) + 바이올렛 2번째 스톱 */
+  --color-accent: #ff4d8d;
+  --color-accent-2: #7c5cff;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #ffeaf1;
+  --color-accent-line: #ffd0e0;
+
+  /* 타이포그래피 */
+  --font-sans: "Pretendard Variable", "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
+  --font-display: "Jua", "Pretendard Variable", "Noto Sans KR", sans-serif;
+
+  /* 디스플레이 스케일 — 유지 */
+  --text-display: clamp(2.75rem, 1.6rem + 5vw, 5.5rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.02em;
+  --text-headline: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+  --text-headline--line-height: 1.1;
+  --text-headline--letter-spacing: -0.015em;
+  --text-title: clamp(1.5rem, 1.2rem + 1.3vw, 2.125rem);
+  --text-title--line-height: 1.18;
+  --text-title--letter-spacing: -0.01em;
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.18em;
+
+  /* 반경 — 플레이풀하게 키움 */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+
+  /* 그림자 — 은은한 깊이 + 액센트 틴트 팝 */
+  --shadow-xs: 0 1px 2px rgba(33, 27, 38, 0.05);
+  --shadow-sm: 0 1px 3px rgba(33, 27, 38, 0.07), 0 1px 2px rgba(33, 27, 38, 0.04);
+  --shadow-md: 0 6px 20px rgba(33, 27, 38, 0.08);
+  --shadow-lg: 0 16px 48px rgba(33, 27, 38, 0.12);
+  --shadow-pop: 0 14px 32px -10px color-mix(in oklab, var(--color-accent) 50%, transparent);
+
+  /* 모션 */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
-  color: var(--color-text);
-  background: var(--color-surface-2);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  color: var(--color-ink);
+  background: var(--color-canvas);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
 #app {
   min-height: 100vh;
+}
+
+/* 액센트로 물든 선택 영역 */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/* 키보드 포커스 — 액센트 링 */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- 재사용 유틸리티 ---- */
+
+/* 페이지 컨테이너 */
+.u-container {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .u-container {
+    padding-inline: 2rem;
+  }
+}
+
+/* eyebrow 라벨 — 소제목 (액센트로 강조) */
+.u-eyebrow {
+  display: inline-block;
+  font-size: var(--text-eyebrow);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+/* 디스플레이 헤딩 — 둥근 한글 디스플레이 폰트(Jua) 리포인트.
+   전 화면의 .u-serif 헤딩이 클래스명 그대로 새 룩을 상속한다. */
+.u-serif {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+/* 진입 애니메이션 */
+@keyframes u-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.u-rise {
+  animation: u-rise 0.6s var(--ease-out-expo) both;
+}
+
+/* 핑크→바이올렛 그라데이션 면 */
+.u-gradient-accent {
+  background-image: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+}
+
+/* 그라데이션 텍스트 — 히어로 키워드 강조용 */
+.u-gradient-text {
+  background-image: linear-gradient(120deg, var(--color-accent), var(--color-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 호버 리프트(팝) — 카드/버튼 */
+.u-pop {
+  transition: transform 0.28s var(--ease-out-expo), box-shadow 0.28s var(--ease-out-expo);
+}
+.u-pop:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-pop);
+}
+
+/* 무한 가로 스크롤 띠(마퀴).
+   사용법: 부모에 `flex overflow-hidden`, 동일 콘텐츠의 .u-marquee 그룹 2개를 둔다.
+   각 그룹이 min-width:100% 로 뷰포트를 채우고 space-around 로 균등 분포하므로
+   화면 폭과 무관하게 빈틈 없이 -100% 순환한다(중간에서 끊기지 않음). */
+.u-marquee {
+  flex: 0 0 auto;
+  min-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  white-space: nowrap;
+  will-change: transform;
+  animation: u-marquee 30s linear infinite;
+}
+@keyframes u-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .u-marquee {
+    animation: none;
+    justify-content: flex-start;
+  }
+}
+
+/* 둥근 비대칭 블롭 — 히어로 배경 장식 */
+.u-blob {
+  border-radius: 42% 58% 63% 37% / 47% 38% 62% 53%;
+}
+
+/* 은은한 상하 부유 — 장식 요소 */
+@keyframes u-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+.u-float {
+  animation: u-float 6s var(--ease-out-soft) infinite;
+}
+
+/* 시머 스윕 — 스켈레톤 로딩 */
+@keyframes u-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }

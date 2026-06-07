@@ -1,6 +1,7 @@
 package com.hakku.main.community;
 
 import com.hakku.main.community.domain.Post;
+import com.hakku.main.community.domain.PostBoard;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.community.repository.CommentRepository;
@@ -34,7 +35,13 @@ public class PostService {
 
     @Transactional
     public PostResponse create(Long authorId, String title, String content) {
-        Post saved = postRepository.save(new Post(authorId, title, content));
+        return create(authorId, title, content, PostBoard.GENERAL, null);
+    }
+
+    @Transactional
+    public PostResponse create(Long authorId, String title, String content,
+                               PostBoard board, String imageUrl) {
+        Post saved = postRepository.save(new Post(authorId, title, content, board, imageUrl));
         return toResponse(saved, authorId);
     }
 
@@ -46,6 +53,16 @@ public class PostService {
     @Transactional(readOnly = true)
     public List<PostResponse> list(Long viewerId) {
         return postRepository.findAllByOrderByIdDesc().stream()
+                .map(post -> toResponse(post, viewerId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> list(Long viewerId, PostBoard board) {
+        if (board == null) {
+            return list(viewerId);
+        }
+        return postRepository.findAllByBoardOrderByIdDesc(board).stream()
                 .map(post -> toResponse(post, viewerId))
                 .toList();
     }

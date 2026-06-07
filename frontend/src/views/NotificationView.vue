@@ -1,17 +1,16 @@
 <template>
-  <div class="max-w-2xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">알림</h1>
+  <div class="u-container max-w-2xl py-10 sm:py-12">
+    <div class="border-b border-line pb-4 mb-7">
+      <span class="u-eyebrow">Notifications</span>
+      <h1 class="u-serif text-title text-ink mt-2.5">알림</h1>
+    </div>
 
     <div v-if="loading" class="space-y-2">
-      <div
-        v-for="n in 5"
-        :key="n"
-        class="bg-white rounded-xl border border-gray-100 p-4 animate-pulse flex gap-3"
-      >
-        <div class="w-9 h-9 bg-gray-100 rounded-full shrink-0" />
-        <div class="flex-1 space-y-2">
-          <div class="h-4 bg-gray-100 rounded w-3/4" />
-          <div class="h-3 bg-gray-100 rounded w-1/4" />
+      <div v-for="n in 5" :key="n" class="rounded-xl border border-line p-4 flex gap-3">
+        <SkeletonBlock height="2.25rem" width="2.25rem" class="shrink-0 !rounded-full" />
+        <div class="flex-1 space-y-2 pt-1">
+          <SkeletonBlock height="0.875rem" width="75%" />
+          <SkeletonBlock height="0.75rem" width="25%" />
         </div>
       </div>
     </div>
@@ -19,24 +18,17 @@
     <div
       v-else-if="errorMessage"
       role="alert"
-      class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm"
+      class="px-4 py-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm"
     >
       {{ errorMessage }}
     </div>
 
-    <div v-else-if="notifications.length === 0" class="py-20 text-center">
-      <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
-      </div>
-      <p class="text-gray-500 font-medium">새 알림이 없어요</p>
-    </div>
+    <EmptyState
+      v-else-if="notifications.length === 0"
+      icon="🔔"
+      title="새 알림이 없어요"
+      description="진단 완료, 댓글, 좋아요 소식이 여기에 표시돼요."
+    />
 
     <ul v-else class="space-y-2">
       <li
@@ -45,21 +37,16 @@
       >
         <button
           type="button"
-          class="w-full text-left bg-white rounded-xl border border-gray-100 p-4 flex items-start gap-3 hover:border-purple-200 hover:bg-purple-50/30 transition-colors"
-          :class="{ 'cursor-default hover:border-gray-100 hover:bg-white': !isClickable(notification) }"
+          class="w-full text-left rounded-xl border border-line bg-surface p-4 flex items-start gap-3 transition-colors"
+          :class="isClickable(notification) ? 'hover:border-line-strong hover:bg-surface-soft' : 'cursor-default'"
           @click="handleNotificationClick(notification)"
         >
-          <div
-            class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base"
-            :class="iconBg(notification.type)"
-          >
+          <div class="w-9 h-9 rounded-full bg-surface-sunken grid place-items-center shrink-0 text-base">
             {{ typeIcon(notification.type) }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm text-gray-800">{{ notification.message }}</p>
-            <time class="text-xs text-gray-400 mt-1 block">
-              {{ formatDate(notification.createdAt) }}
-            </time>
+            <p class="text-sm text-ink">{{ notification.message }}</p>
+            <time class="text-xs text-ink-muted mt-1 block">{{ formatDate(notification.createdAt) }}</time>
           </div>
         </button>
       </li>
@@ -73,6 +60,8 @@ import { useRouter } from 'vue-router'
 import { useNotificationStore } from '@/stores/notifications'
 import apiClient from '@/api/client'
 import type { Notification } from '@/types'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 
 const router = useRouter()
 const notificationStore = useNotificationStore()
@@ -86,15 +75,6 @@ function typeIcon(type: string): string {
     case 'LIKE': return '❤️'
     case 'DIAGNOSIS_COMPLETE': return '🎨'
     default: return '🔔'
-  }
-}
-
-function iconBg(type: string): string {
-  switch (type) {
-    case 'COMMENT': return 'bg-blue-50'
-    case 'LIKE': return 'bg-red-50'
-    case 'DIAGNOSIS_COMPLETE': return 'bg-purple-50'
-    default: return 'bg-gray-50'
   }
 }
 

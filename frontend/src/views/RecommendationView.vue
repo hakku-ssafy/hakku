@@ -1,60 +1,80 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">맞춤 추천 상품</h1>
+  <div class="u-container py-10 sm:py-12">
+    <SectionHeader eyebrow="For You" title="맞춤 추천 상품" description="퍼스널컬러와 취향, 활동을 바탕으로 골랐어요." />
+
+    <!-- 퍼스널컬러 컨텍스트 -->
+    <div v-if="personalColorLabel" class="-mt-3 mb-7 flex flex-wrap items-center gap-2.5">
+      <AppBadge variant="accent">
+        <span class="w-1.5 h-1.5 rounded-full u-gradient-accent" aria-hidden="true" />
+        {{ personalColorLabel }}
+      </AppBadge>
+      <span class="text-xs text-ink-muted">내 퍼스널컬러를 기준으로 정렬했어요</span>
+    </div>
 
     <div v-if="loading" role="status" class="flex justify-center py-20">
-      <svg class="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <svg class="animate-spin h-7 w-7 text-accent" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
+        <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
       </svg>
     </div>
 
-    <div v-else-if="error" class="text-center py-20 text-red-500">{{ error }}</div>
+    <div v-else-if="error" class="text-center py-20 text-red-500 text-sm">{{ error }}</div>
 
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <router-link
-        v-for="item in recommendations"
-        :key="item.product.id"
-        :to="`/products/${item.product.id}`"
-        class="block"
-      >
-        <article class="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-          <div class="aspect-square bg-gray-50 flex items-center justify-center">
-            <img v-if="item.product.imageUrl" :src="item.product.imageUrl" :alt="item.product.name" class="w-full h-full object-cover" />
-            <span v-else class="text-4xl">🎨</span>
-          </div>
-          <div class="p-3">
-            <h2 class="text-sm font-medium text-gray-900 truncate">{{ item.product.name }}</h2>
-            <p class="text-sm font-bold text-purple-600 mt-1">{{ formatPrice(item.product.price) }}원</p>
-            <div class="flex items-center gap-1 mt-2">
-              <span class="text-xs text-gray-400">추천점수</span>
-              <span class="text-xs font-semibold text-purple-600">{{ item.score.toFixed(1) }}</span>
+    <div v-else-if="recommendations.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+      <ProductCard v-for="item in recommendations" :key="item.product.id" :product="item.product">
+        <template #meta>
+          <div class="mt-2.5 pt-2.5 border-t border-line">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[0.6875rem] uppercase tracking-wider text-ink-muted">추천 점수</span>
+              <span class="text-xs font-bold tabular-nums text-accent">{{ item.score.toFixed(1) }}</span>
+            </div>
+            <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
+              <div
+                class="h-full rounded-full u-gradient-accent transition-[width] duration-500 ease-out"
+                :style="{ width: scorePercent(item.score) + '%' }"
+              />
             </div>
           </div>
-        </article>
-      </router-link>
+        </template>
+      </ProductCard>
     </div>
 
-    <div v-if="!loading && recommendations.length === 0" class="text-center py-20">
-      <p class="text-gray-400 mb-4">아직 추천 상품이 없습니다</p>
-      <router-link to="/diagnosis" class="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">
-        퍼스널컬러 진단받기
-      </router-link>
-    </div>
+    <EmptyState
+      v-else
+      icon="✦"
+      title="아직 추천 상품이 없어요"
+      description="퍼스널컬러 진단을 받으면 당신에게 어울리는 상품을 골라드릴게요."
+    >
+      <AppButton to="/diagnosis">퍼스널컬러 진단받기</AppButton>
+    </EmptyState>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import apiClient from '@/api/client'
-import type { RecommendationItem } from '@/types'
+import { formatPersonalColor, type RecommendationItem } from '@/types'
+import { useAuthStore } from '@/stores/auth'
+import ProductCard from '@/components/ui/ProductCard.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
+const authStore = useAuthStore()
 const recommendations = ref<RecommendationItem[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-function formatPrice(price: number): string {
-  return price.toLocaleString('ko-KR')
+// 내 퍼스널컬러 라벨 (있을 때만 컨텍스트 배지 노출)
+const personalColorLabel = computed(() => formatPersonalColor(authStore.user?.personalColor ?? null))
+
+// 게이지 정규화 — 현재 목록 내 최고 점수를 100%로 환산 (절대 스케일 비의존)
+const maxScore = computed(() =>
+  Math.max(1, ...recommendations.value.map((item) => item.score)),
+)
+function scorePercent(score: number): number {
+  return Math.round(Math.min(100, Math.max(8, (score / maxScore.value) * 100)))
 }
 
 onMounted(async () => {
