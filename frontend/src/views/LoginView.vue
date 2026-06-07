@@ -50,6 +50,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { authErrorMessage, isValidEmail } from '@/lib/authError'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -67,6 +68,10 @@ const canSubmit = computed(() => email.value.trim() !== '' && password.value.tri
 
 async function handleLogin() {
   if (!canSubmit.value) return
+  if (!isValidEmail(email.value)) {
+    errorMessage.value = '올바른 이메일 형식이 아니에요. 예: name@example.com'
+    return
+  }
   loading.value = true
   errorMessage.value = ''
   try {
@@ -79,7 +84,7 @@ async function handleLogin() {
       router.push(redirect ?? '/')
     }
   } catch (e: unknown) {
-    errorMessage.value = e instanceof Error ? e.message : '로그인에 실패했습니다'
+    errorMessage.value = authErrorMessage(e, 'login')
   } finally {
     loading.value = false
   }

@@ -21,6 +21,16 @@
           <AppInput v-model="email" label="이메일" type="email" autocomplete="email" />
           <AppInput v-model="nickname" label="닉네임" type="text" />
           <AppInput v-model="password" label="비밀번호" type="password" autocomplete="new-password" />
+          <div>
+            <AppInput
+              v-model="passwordConfirm"
+              label="비밀번호 확인"
+              type="password"
+              autocomplete="new-password"
+              placeholder="비밀번호를 한 번 더 입력하세요"
+            />
+            <p v-if="passwordMismatch" class="mt-1.5 text-xs text-red-500">비밀번호가 일치하지 않아요.</p>
+          </div>
 
           <div>
             <span class="block text-sm font-medium text-ink mb-2">가입 유형</span>
@@ -58,6 +68,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { authErrorMessage, isValidEmail } from '@/lib/authError'
 import type { UserRole } from '@/types'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -69,9 +80,14 @@ const authStore = useAuthStore()
 const email = ref('')
 const nickname = ref('')
 const password = ref('')
+const passwordConfirm = ref('')
 const role = ref<UserRole>('NORMAL')
 const loading = ref(false)
 const errorMessage = ref('')
+
+const passwordMismatch = computed(
+  () => passwordConfirm.value !== '' && password.value !== passwordConfirm.value,
+)
 
 const roleOptions = [
   { value: 'NORMAL' as UserRole, label: '일반 회원', icon: '🛍️' },
@@ -79,11 +95,24 @@ const roleOptions = [
 ]
 
 const canSubmit = computed(
-  () => email.value.trim() !== '' && nickname.value.trim() !== '' && password.value.trim() !== ''
+  () =>
+    email.value.trim() !== '' &&
+    nickname.value.trim() !== '' &&
+    password.value.trim() !== '' &&
+    passwordConfirm.value.trim() !== '' &&
+    password.value === passwordConfirm.value,
 )
 
 async function handleSignup() {
   if (!canSubmit.value) return
+  if (!isValidEmail(email.value)) {
+    errorMessage.value = '올바른 이메일 형식이 아니에요. 예: name@example.com'
+    return
+  }
+  if (password.value !== passwordConfirm.value) {
+    errorMessage.value = '비밀번호가 일치하지 않아요. 두 비밀번호를 같게 입력해 주세요.'
+    return
+  }
   loading.value = true
   errorMessage.value = ''
   try {
@@ -100,7 +129,7 @@ async function handleSignup() {
       router.push('/onboarding')
     }
   } catch (e: unknown) {
-    errorMessage.value = e instanceof Error ? e.message : '회원가입에 실패했습니다'
+    errorMessage.value = authErrorMessage(e, 'signup')
   } finally {
     loading.value = false
   }

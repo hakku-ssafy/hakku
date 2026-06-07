@@ -7,7 +7,7 @@
             <span class="u-gradient-text">학꾸</span>
           </p>
           <p class="text-sm text-ink-muted mt-3 max-w-xs leading-relaxed">
-            AI 퍼스널컬러 진단으로 나에게 어울리는 색을 찾고, 꾸미기 아이템을 추천받는 커머스·커뮤니티.
+            AI 퍼스널컬러 진단으로 나에게 어울리는 색을 찾고, 학생증 꾸미기 아이템을 추천받는 커머스·커뮤니티.
           </p>
         </div>
         <nav class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft" aria-label="푸터 메뉴">
