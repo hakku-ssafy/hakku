@@ -1,0 +1,68 @@
+name: 🐛 버그 리포트
+description: 예상치 못한 동작이나 오류를 신고합니다
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: input
+    id: component
+    attributes:
+      label: 발생 컴포넌트
+      description: 버그가 발생한 서비스/모듈을 적어주세요
+      placeholder: 예) frontend, ai-server, chatbot-service
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 버그 설명
+      description: 어떤 문제가 발생했는지 명확하게 설명해주세요
+      placeholder: 예) 학생증 이미지 업로드 후 AI 분석 결과가 반환되지 않음
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 방법
+      description: 버그를 재현하기 위한 단계를 순서대로 작성해주세요
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+      description: 정상적으로 동작했을 때 예상되는 결과를 작성해주세요
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+      description: 실제로 발생한 결과를 작성해주세요
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경 정보
+      value: |
+        - OS:
+        - 브라우저:
+        - 버전 / 브랜치:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 로그 / 스크린샷
+      description: 관련 에러 로그나 스크린샷을 첨부해주세요 (선택)
+      render: shell
