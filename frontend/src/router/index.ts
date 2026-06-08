@@ -5,9 +5,9 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: () => import('@/views/HomeView.vue') },
-    { path: '/login', component: () => import('@/views/LoginView.vue'), meta: { guestOnly: true } },
-    { path: '/signup', component: () => import('@/views/SignupView.vue'), meta: { guestOnly: true } },
-    { path: '/onboarding', component: () => import('@/views/OnboardingView.vue'), meta: { requiresAuth: true } },
+    { path: '/login', component: () => import('@/views/LoginView.vue'), meta: { guestOnly: true, hideChatFab: true } },
+    { path: '/signup', component: () => import('@/views/SignupView.vue'), meta: { guestOnly: true, hideChatFab: true } },
+    { path: '/onboarding', component: () => import('@/views/OnboardingView.vue'), meta: { requiresAuth: true, hideChatFab: true } },
     { path: '/products', component: () => import('@/views/ProductListView.vue') },
     { path: '/products/:id', component: () => import('@/views/ProductDetailView.vue') },
     { path: '/community', component: () => import('@/views/CommunityView.vue') },

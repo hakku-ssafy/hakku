@@ -10,6 +10,7 @@
     </main>
     <AppFooter />
     <AppBottomNav />
+    <ChatFab />
   </div>
 </template>
 
@@ -21,6 +22,7 @@ import { useNotificationStore } from '@/stores/notifications'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppBottomNav from '@/components/layout/AppBottomNav.vue'
+import ChatFab from '@/components/chat/ChatFab.vue'
 import { applyPersonalColorTheme } from '@/composables/usePersonalColorTheme'
 
 const authStore = useAuthStore()
