@@ -13,6 +13,7 @@ import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.community.repository.PostLikeRepository;
 import com.hakku.main.community.repository.PostRepository;
 import com.hakku.main.notification.NotificationProducer;
+import com.hakku.main.user.repository.UserRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,11 +37,14 @@ class PostLikeServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private UserRepository userRepository;
+
     private PostLikeService postLikeService;
 
     @BeforeEach
     void setUp() {
-        postLikeService = new PostLikeService(postLikeRepository, postRepository, notificationProducer);
+        postLikeService = new PostLikeService(postLikeRepository, postRepository, userRepository, notificationProducer);
     }
 
     @Test

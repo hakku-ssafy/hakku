@@ -42,6 +42,11 @@ public class ReviewController {
         return reviewService.listByProduct(productId);
     }
 
+    @GetMapping("/api/users/{userId}/reviews")
+    public List<ReviewResponse> listByAuthor(@PathVariable Long userId) {
+        return reviewService.listByAuthor(userId);
+    }
+
     @PutMapping("/api/reviews/{id}")
     public ReviewResponse update(@AuthenticationPrincipal String userId,
                                  @PathVariable Long id,

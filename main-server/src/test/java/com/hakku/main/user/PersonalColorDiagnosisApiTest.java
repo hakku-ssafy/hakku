@@ -60,7 +60,7 @@ class PersonalColorDiagnosisApiTest {
                             """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.personalColor").value("LIGHT_SUMMER"))
-                .andExpect(jsonPath("$.profileImageUrl").value("https://storage/result/abc.png"));
+                .andExpect(jsonPath("$.diagnosisImageUrl").value("https://storage/result/abc.png"));
     }
 
     @Test

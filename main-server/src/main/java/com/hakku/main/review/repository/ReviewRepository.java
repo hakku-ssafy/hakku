@@ -10,6 +10,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     /** 상품의 리뷰를 최신순(id 내림차순)으로 조회한다. */
     List<Review> findByProductIdOrderByIdDesc(Long productId);
 
+    /** 한 회원이 작성한 리뷰를 최신순(id 내림차순)으로 조회한다(마이페이지/프로필용). */
+    List<Review> findByAuthorIdOrderByIdDesc(Long authorId);
+
     boolean existsByProductIdAndAuthorId(Long productId, Long authorId);
 
     /**

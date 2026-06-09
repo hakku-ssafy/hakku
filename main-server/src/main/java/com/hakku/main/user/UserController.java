@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,6 +34,19 @@ public class UserController {
     @GetMapping("/me")
     public UserProfileResponse me(@AuthenticationPrincipal String userId) {
         return userService.getProfile(Long.valueOf(userId));
+    }
+
+    @GetMapping("/{id}")
+    public PublicProfileResponse publicProfile(@AuthenticationPrincipal String userId,
+                                               @PathVariable Long id) {
+        Long viewerId = userId != null ? Long.valueOf(userId) : null;
+        return userService.getPublicProfile(id, viewerId);
+    }
+
+    @PatchMapping("/me/preferred-colors")
+    public UserProfileResponse updatePreferredColors(@AuthenticationPrincipal String userId,
+                                                     @RequestBody PreferredColorsRequest request) {
+        return userService.updatePreferredColors(Long.valueOf(userId), request.preferredColors());
     }
 
     @PutMapping("/me")
@@ -78,5 +92,9 @@ public class UserController {
     public record DiagnosisRequest(
             @NotNull PersonalColorType personalColor,
             String resultImageUrl) {
+    }
+
+    public record PreferredColorsRequest(
+            Set<String> preferredColors) {
     }
 }

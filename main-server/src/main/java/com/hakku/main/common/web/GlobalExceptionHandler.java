@@ -7,6 +7,7 @@ import com.hakku.main.community.exception.CommentAccessDeniedException;
 import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
+import com.hakku.main.follow.exception.SelfFollowException;
 import com.hakku.main.product.exception.ProductAccessDeniedException;
 import com.hakku.main.product.exception.ProductNotFoundException;
 import com.hakku.main.review.exception.DuplicateReviewException;
@@ -14,6 +15,7 @@ import com.hakku.main.review.exception.ReviewAccessDeniedException;
 import com.hakku.main.review.exception.ReviewNotFoundException;
 import com.hakku.main.user.exception.DiagnosisAlreadyRequestedException;
 import com.hakku.main.user.exception.UserNotFoundException;
+import com.hakku.main.wishlist.exception.WishlistNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -97,6 +99,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateReviewException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateReview(DuplicateReviewException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SelfFollowException.class)
+    public ResponseEntity<ErrorResponse> handleSelfFollow(SelfFollowException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(WishlistNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWishlistNotFound(WishlistNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

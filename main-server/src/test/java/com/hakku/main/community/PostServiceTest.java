@@ -10,7 +10,10 @@ import static org.mockito.Mockito.when;
 import com.hakku.main.community.domain.Post;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
+import com.hakku.main.community.repository.CommentRepository;
+import com.hakku.main.community.repository.PostLikeRepository;
 import com.hakku.main.community.repository.PostRepository;
+import com.hakku.main.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +32,20 @@ class PostServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private PostLikeRepository postLikeRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
     private PostService postService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(postRepository);
+        postService = new PostService(postRepository, postLikeRepository, commentRepository, userRepository);
     }
 
     @Test
@@ -55,7 +67,7 @@ class PostServiceTest {
     void get_missing_throws() {
         when(postRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.get(99L))
+        assertThatThrownBy(() -> postService.get(99L, null))
                 .isInstanceOf(PostNotFoundException.class)
                 .hasMessageContaining("99");
     }
@@ -106,7 +118,7 @@ class PostServiceTest {
     void list_returnsAll() {
         when(postRepository.findAllByOrderByIdDesc()).thenReturn(List.of(post(), post()));
 
-        List<PostResponse> all = postService.list();
+        List<PostResponse> all = postService.list((Long) null);
 
         assertThat(all).hasSize(2);
     }

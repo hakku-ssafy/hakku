@@ -39,6 +39,11 @@ export async function getPost(id: number): Promise<Post> {
   return normalizePost(data)
 }
 
+export async function getPostsByAuthor(authorId: number): Promise<Post[]> {
+  const { data } = await apiClient.get<Post[]>('/posts', { params: { authorId } })
+  return data.map(normalizePost)
+}
+
 export async function createPost(request: CreatePostRequest): Promise<Post> {
   const { data } = await apiClient.post<Post>('/posts', request)
   return normalizePost(data)

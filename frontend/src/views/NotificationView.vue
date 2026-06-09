@@ -74,6 +74,8 @@ function typeIcon(type: string): string {
     case 'COMMENT': return '💬'
     case 'LIKE': return '❤️'
     case 'DIAGNOSIS_COMPLETE': return '🎨'
+    case 'FOLLOW': return '👤'
+    case 'WISHLIST_LIKE': return '💖'
     default: return '🔔'
   }
 }
@@ -100,12 +102,22 @@ function formatDate(createdAt: number): string {
 
 function isClickable(notification: Notification): boolean {
   if (notification.type === 'DIAGNOSIS_COMPLETE') return true
+  if (notification.type === 'FOLLOW') return notification.actorId != null
+  if (notification.type === 'WISHLIST_LIKE') return notification.productId != null
   return notification.postId != null
 }
 
 function handleNotificationClick(notification: Notification) {
   if (notification.type === 'DIAGNOSIS_COMPLETE') {
     router.push({ path: '/my', query: { view: 'diagnosis' } })
+    return
+  }
+  if (notification.type === 'FOLLOW' && notification.actorId != null) {
+    router.push(`/users/${notification.actorId}`)
+    return
+  }
+  if (notification.type === 'WISHLIST_LIKE' && notification.productId != null) {
+    router.push(`/products/${notification.productId}`)
     return
   }
   if (notification.postId != null) {
