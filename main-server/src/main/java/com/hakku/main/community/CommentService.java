@@ -53,6 +53,7 @@ public class CommentService {
                     actorNickname,
                     postId,
                     preview,
+                    null,
                     NotificationMessageFormatter.comment(actorNickname, preview),
                     Instant.now().toEpochMilli()));
         }

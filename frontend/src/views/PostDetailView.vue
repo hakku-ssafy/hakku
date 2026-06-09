@@ -20,7 +20,9 @@
       <article class="u-rise">
         <h1 class="u-serif text-title text-ink mb-3">{{ post.title }}</h1>
         <div class="flex items-center gap-3 text-sm text-ink-muted mb-6 flex-wrap pb-6 border-b border-line">
-          <span class="font-medium text-ink-soft">{{ post.authorNickname }}</span>
+          <router-link :to="`/users/${post.authorId}`" class="font-medium text-ink-soft hover:text-accent transition-colors">
+            {{ post.authorNickname }}
+          </router-link>
           <span>{{ formatDate(post.createdAt) }}</span>
           <button
             v-if="authStore.isAuthenticated"
@@ -51,7 +53,9 @@
         <ul v-else class="divide-y divide-line border-y border-line mb-7">
           <li v-for="comment in comments" :key="comment.id" class="py-4">
             <div class="flex items-center gap-2 mb-1.5">
-              <span class="text-sm font-medium text-ink">{{ comment.authorNickname }}</span>
+              <router-link :to="`/users/${comment.authorId}`" class="text-sm font-medium text-ink hover:text-accent transition-colors">
+                {{ comment.authorNickname }}
+              </router-link>
               <span class="text-xs text-ink-muted">{{ formatDate(comment.createdAt) }}</span>
             </div>
             <p class="text-sm text-ink-soft">{{ comment.content }}</p>

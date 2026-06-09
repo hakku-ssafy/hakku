@@ -74,7 +74,59 @@ export interface Review {
   authorId: number
   authorNickname: string
   productId: number
+  productName: string
   createdAt: string
+}
+
+/** 팔로워/팔로잉 목록 등에 쓰이는 회원 요약. */
+export interface UserSummary {
+  id: number
+  nickname: string
+  profileImageUrl: string | null
+  personalColor: string | null
+}
+
+/** 다른 회원의 공개 프로필 + 팔로우 통계. */
+export interface PublicProfile {
+  id: number
+  nickname: string
+  profileImageUrl: string | null
+  role: UserRole
+  personalColor: string | null
+  preferredColors: string[]
+  preferredStyles: string[]
+  followerCount: number
+  followingCount: number
+  followedByMe: boolean
+}
+
+export interface FollowToggle {
+  following: boolean
+  followerCount: number
+}
+
+/** 한 회원의 찜 항목(상품 요약 + 좋아요 상태). */
+export interface WishlistItem {
+  id: number
+  productId: number
+  productName: string
+  productImageUrl: string | null
+  productPrice: number
+  ownerId: number
+  ownerNickname: string
+  likeCount: number
+  likedByMe: boolean
+  createdAt: string
+}
+
+export interface WishlistStatus {
+  wishlisted: boolean
+  wishlistCount: number
+}
+
+export interface WishlistLikeResult {
+  liked: boolean
+  likeCount: number
 }
 
 export interface RecommendationItem {
@@ -90,7 +142,12 @@ export interface RecommendationItem {
   }
 }
 
-export type NotificationType = 'COMMENT' | 'LIKE' | 'DIAGNOSIS_COMPLETE'
+export type NotificationType =
+  | 'COMMENT'
+  | 'LIKE'
+  | 'DIAGNOSIS_COMPLETE'
+  | 'FOLLOW'
+  | 'WISHLIST_LIKE'
 
 export interface Notification {
   type: NotificationType
@@ -98,6 +155,7 @@ export interface Notification {
   actorNickname: string | null
   postId: number | null
   postTitlePreview: string | null
+  productId: number | null
   message: string
   createdAt: number
 }

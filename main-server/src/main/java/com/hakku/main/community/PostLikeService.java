@@ -56,6 +56,7 @@ public class PostLikeService {
                         actorNickname,
                         postId,
                         preview,
+                        null,
                         NotificationMessageFormatter.like(actorNickname, preview),
                         Instant.now().toEpochMilli()));
             }

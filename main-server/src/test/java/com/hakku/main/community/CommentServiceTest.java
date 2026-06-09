@@ -15,6 +15,7 @@ import com.hakku.main.community.domain.Post;
 import com.hakku.main.community.repository.CommentRepository;
 import com.hakku.main.community.repository.PostRepository;
 import com.hakku.main.notification.NotificationProducer;
+import com.hakku.main.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,11 +41,14 @@ class CommentServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private UserRepository userRepository;
+
     private CommentService commentService;
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentRepository, postRepository, notificationProducer);
+        commentService = new CommentService(commentRepository, postRepository, userRepository, notificationProducer);
     }
 
     @Test

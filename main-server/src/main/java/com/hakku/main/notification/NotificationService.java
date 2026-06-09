@@ -21,6 +21,7 @@ public class NotificationService {
                 event.actorNickname(),
                 event.postId(),
                 event.postTitlePreview(),
+                event.productId(),
                 event.message(),
                 event.createdAt());
         repository.save(event.recipientId(), dto);

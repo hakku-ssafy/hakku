@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hakku.main.follow.repository.FollowRepository;
 import com.hakku.main.notification.NotificationEvent;
 import com.hakku.main.notification.NotificationProducer;
 import com.hakku.main.personalcolor.domain.PersonalColorType;
@@ -31,11 +32,14 @@ class UserDiagnosisServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private FollowRepository followRepository;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, notificationProducer);
+        userService = new UserService(userRepository, followRepository, notificationProducer);
     }
 
     @Test
@@ -100,7 +104,7 @@ class UserDiagnosisServiceTest {
     }
 
     @Test
-    @DisplayName("assignDiagnosis: 진단 결과가 profileImageUrl에 반영된다")
+    @DisplayName("assignDiagnosis: 진단 결과가 diagnosisImageUrl에 반영된다")
     void assignDiagnosis_setsResultImageUrl() {
         User user = new User("u@hakku.dev", "유저", "hash", Role.NORMAL);
         user.startDiagnosis();
@@ -108,7 +112,7 @@ class UserDiagnosisServiceTest {
 
         userService.assignDiagnosis(1L, PersonalColorType.LIGHT_SUMMER, "https://img/result.png");
 
-        assertThat(user.getProfileImageUrl()).isEqualTo("https://img/result.png");
+        assertThat(user.getDiagnosisImageUrl()).isEqualTo("https://img/result.png");
     }
 
     @Test
