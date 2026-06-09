@@ -67,6 +67,14 @@ public class PostService {
                 .toList();
     }
 
+    /** 특정 작성자가 쓴 게시글을 최신순으로 조회한다(마이페이지/프로필용). */
+    @Transactional(readOnly = true)
+    public List<PostResponse> listByAuthor(Long viewerId, Long authorId) {
+        return postRepository.findAllByAuthorIdOrderByIdDesc(authorId).stream()
+                .map(post -> toResponse(post, viewerId))
+                .toList();
+    }
+
     @Transactional
     public PostResponse update(Long postId, Long requesterId, String title, String content) {
         Post post = findOrThrow(postId);

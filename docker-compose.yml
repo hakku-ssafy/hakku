@@ -143,6 +143,21 @@ services:
       retries: 5
     restart: unless-stopped
 
+  chatbot-server:
+    build:
+      context: .
+      dockerfile: chatbot-server/Dockerfile
+    container_name: hakku-chatbot-server
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${CHATBOT_MODEL:-gpt-4o}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -170,6 +185,8 @@ services:
       main-server:
         condition: service_healthy
       ai-server:
+        condition: service_healthy
+      chatbot-server:
         condition: service_healthy
       storage-server:
         condition: service_healthy

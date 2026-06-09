@@ -11,6 +11,7 @@ public record NotificationResponse(
         String actorNickname,
         Long postId,
         String postTitlePreview,
+        Long productId,
         String message,
         long createdAt) {
 }

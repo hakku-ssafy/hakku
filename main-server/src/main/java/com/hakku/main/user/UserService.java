@@ -1,5 +1,6 @@
 package com.hakku.main.user;
 
+import com.hakku.main.follow.repository.FollowRepository;
 import com.hakku.main.notification.NotificationEvent;
 import com.hakku.main.notification.NotificationMessageFormatter;
 import com.hakku.main.notification.NotificationProducer;
@@ -22,16 +23,39 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
     private final NotificationProducer notificationProducer;
 
-    public UserService(UserRepository userRepository, NotificationProducer notificationProducer) {
+    public UserService(UserRepository userRepository, FollowRepository followRepository,
+                       NotificationProducer notificationProducer) {
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
         this.notificationProducer = notificationProducer;
     }
 
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(Long userId) {
         return UserProfileResponse.from(findOrThrow(userId));
+    }
+
+    /** 다른 회원이 보는 공개 프로필 + 팔로우 통계 (요구사항 §1). */
+    @Transactional(readOnly = true)
+    public PublicProfileResponse getPublicProfile(Long targetId, Long viewerId) {
+        User user = findOrThrow(targetId);
+        long followerCount = followRepository.countByFollowingId(targetId);
+        long followingCount = followRepository.countByFollowerId(targetId);
+        boolean followedByMe = viewerId != null && !viewerId.equals(targetId)
+                && followRepository.existsByFollowerIdAndFollowingId(viewerId, targetId);
+        return PublicProfileResponse.from(user, followerCount, followingCount, followedByMe);
+    }
+
+    /** 선호 컬러만 변경한다 (요구사항 §3). 다른 프로필 필드는 유지한다. */
+    @Transactional
+    public UserProfileResponse updatePreferredColors(Long userId, Set<String> preferredColors) {
+        User user = findOrThrow(userId);
+        user.updateProfile(user.getNickname(), user.getProfileImageUrl(),
+                user.getPreferredStyles(), preferredColors);
+        return UserProfileResponse.from(user);
     }
 
     @Transactional
@@ -75,6 +99,7 @@ public class UserService {
         notificationProducer.publish(new NotificationEvent(
                 NotificationType.DIAGNOSIS_COMPLETE,
                 userId,
+                null,
                 null,
                 null,
                 null,

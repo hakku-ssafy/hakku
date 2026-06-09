@@ -47,3 +47,17 @@ export async function createReview(productId: number, request: { rating: number;
   const { data } = await apiClient.post<Review>(`/products/${productId}/reviews`, request)
   return data
 }
+
+export async function getUserReviews(userId: number): Promise<Review[]> {
+  const { data } = await apiClient.get<Review[]>(`/users/${userId}/reviews`)
+  return data
+}
+
+export async function updateReview(reviewId: number, request: { rating: number; content: string }): Promise<Review> {
+  const { data } = await apiClient.put<Review>(`/reviews/${reviewId}`, request)
+  return data
+}
+
+export async function deleteReview(reviewId: number): Promise<void> {
+  await apiClient.delete(`/reviews/${reviewId}`)
+}

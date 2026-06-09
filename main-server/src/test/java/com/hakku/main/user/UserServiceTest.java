@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
+import com.hakku.main.follow.repository.FollowRepository;
 import com.hakku.main.notification.NotificationProducer;
 import com.hakku.main.user.domain.Role;
 import com.hakku.main.user.domain.User;
@@ -27,11 +28,14 @@ class UserServiceTest {
     @Mock
     private NotificationProducer notificationProducer;
 
+    @Mock
+    private FollowRepository followRepository;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, notificationProducer);
+        userService = new UserService(userRepository, followRepository, notificationProducer);
     }
 
     @Test
@@ -64,7 +68,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         UserProfileResponse updated = userService.updateProfile(
-                1L, "지호2", "https://img/p.png", Set.of("캐주얼", "미니멀"), Set.of("blue"));
+                1L, "지호2", "https://img/p.png", Set.of("캐주얼", "미니멀"), Set.of("blue"), null);
 
         assertThat(updated.nickname()).isEqualTo("지호2");
         assertThat(updated.profileImageUrl()).isEqualTo("https://img/p.png");

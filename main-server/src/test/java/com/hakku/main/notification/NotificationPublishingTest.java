@@ -13,6 +13,7 @@ import com.hakku.main.community.repository.PostLikeRepository;
 import com.hakku.main.community.repository.PostRepository;
 import com.hakku.main.community.repository.CommentRepository;
 import com.hakku.main.notification.domain.NotificationType;
+import com.hakku.main.user.repository.UserRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ class NotificationPublishingTest {
 
     @Mock CommentRepository commentRepository;
     @Mock PostRepository postRepository;
+    @Mock UserRepository userRepository;
     @Mock NotificationProducer notificationProducer;
     @InjectMocks CommentService commentService;
 

@@ -12,4 +12,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     /** 특정 게시판의 게시글만 최신순(id 내림차순)으로 조회한다. */
     List<Post> findAllByBoardOrderByIdDesc(PostBoard board);
+
+    /** 특정 작성자의 게시글만 최신순(id 내림차순)으로 조회한다(마이페이지/프로필용). */
+    List<Post> findAllByAuthorIdOrderByIdDesc(Long authorId);
 }
