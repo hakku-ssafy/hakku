@@ -25,7 +25,9 @@ func main() {
 		log.Fatalf("storage init: %v", err)
 	}
 
-	var opts []api.Option
+	reg := metrics.NewRegistry()
+
+	opts := []api.Option{api.WithMetrics(reg)}
 	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
 		keyBytes, err := base64.StdEncoding.DecodeString(jwtSecret)
 		if err != nil {
@@ -38,8 +40,8 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/storage/", api.Handler(store, opts...))
-	mux.Handle("GET /metrics", metrics.Handler())
+	mux.Handle("/storage/", reg.InstrumentHandler("storage", api.Handler(store, opts...)))
+	mux.Handle("GET /metrics", reg.Handler())
 
 	log.Printf("storage-server listening on %s (base path %s)", addr, basePath)
 	if err := http.ListenAndServe(addr, mux); err != nil {

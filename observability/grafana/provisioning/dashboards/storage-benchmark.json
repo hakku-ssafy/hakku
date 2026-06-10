@@ -1,0 +1,117 @@
+{
+  "uid": "hakku-storage-bench",
+  "title": "Storage 벤치마크 — Go vs Spring",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "tags": ["hakku", "storage", "benchmark"],
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+        "query": "label_values(storage_uploads_total, job)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    { "id": 100, "type": "row", "title": "처리량 (Throughput)", "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 1, "title": "업로드 처리량 (uploads/s)", "type": "timeseries",
+      "gridPos": { "x": 0, "y": 1, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "last"] } },
+      "targets": [{ "expr": "sum by (job) (rate(storage_uploads_total{job=~\"$job\"}[1m]))", "legendFormat": "{{job}}" }]
+    },
+    {
+      "id": 2, "title": "HTTP 요청 처리량 (req/s)", "type": "timeseries",
+      "gridPos": { "x": 12, "y": 1, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        { "expr": "sum by (job) (rate(storage_http_requests_total{job=\"storage-server\"}[1m]))", "legendFormat": "Go HTTP" },
+        { "expr": "sum by (job) (rate(http_server_requests_seconds_count{job=\"storage-server-spring\",uri=~\"/storage/.*\"}[1m]))", "legendFormat": "Spring HTTP" }
+      ]
+    },
+    {
+      "id": 3, "title": "Go 업로드 속도", "type": "stat", "gridPos": { "x": 0, "y": 9, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "options": { "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "expr": "sum(rate(storage_uploads_total{job=\"storage-server\"}[1m]))", "legendFormat": "Go" }]
+    },
+    {
+      "id": 4, "title": "Spring 업로드 속도", "type": "stat", "gridPos": { "x": 6, "y": 9, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "options": { "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "expr": "sum(rate(storage_uploads_total{job=\"storage-server-spring\"}[1m]))", "legendFormat": "Spring" }]
+    },
+    {
+      "id": 5, "title": "누적 업로드 수", "type": "stat", "gridPos": { "x": 12, "y": 9, "w": 12, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "options": { "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [{ "expr": "sum(storage_uploads_total{job=~\"$job\"}) by (job)", "legendFormat": "{{job}}" }]
+    },
+    { "id": 200, "type": "row", "title": "응답 시간 (Latency)", "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 6, "title": "HTTP P95 지연 (초)", "type": "timeseries", "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(storage_http_request_duration_seconds_bucket{job=\"storage-server\"}[1m])))", "legendFormat": "Go P95" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"storage-server-spring\",uri=~\"/storage/.*\"}[1m])))", "legendFormat": "Spring P95" }
+      ]
+    },
+    {
+      "id": 7, "title": "HTTP P99 지연 (초)", "type": "timeseries", "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(storage_http_request_duration_seconds_bucket{job=\"storage-server\"}[1m])))", "legendFormat": "Go P99" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"storage-server-spring\",uri=~\"/storage/.*\"}[1m])))", "legendFormat": "Spring P99" }
+      ]
+    },
+    { "id": 300, "type": "row", "title": "리소스 (Resources)", "gridPos": { "x": 0, "y": 22, "w": 24, "h": 1 }, "collapsed": false },
+    {
+      "id": 8, "title": "메모리 사용량", "type": "timeseries", "gridPos": { "x": 0, "y": 23, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 20 } } },
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=\"storage-server\"}", "legendFormat": "Go RSS" },
+        { "expr": "sum(jvm_memory_used_bytes{job=\"storage-server-spring\", area=\"heap\"})", "legendFormat": "Spring JVM Heap" }
+      ]
+    },
+    {
+      "id": 9, "title": "CPU 사용률", "type": "timeseries", "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "custom": { "lineWidth": 2 } } },
+      "targets": [
+        { "expr": "rate(process_cpu_seconds_total{job=\"storage-server\"}[1m])", "legendFormat": "Go CPU" },
+        { "expr": "rate(process_cpu_seconds_total{job=\"storage-server-spring\"}[1m])", "legendFormat": "Spring CPU" }
+      ]
+    },
+    {
+      "id": 10, "title": "Go 고루틴 수", "type": "timeseries", "gridPos": { "x": 0, "y": 31, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "targets": [{ "expr": "go_goroutines{job=\"storage-server\"}", "legendFormat": "goroutines" }]
+    },
+    {
+      "id": 11, "title": "HTTP 5xx 오류율", "type": "timeseries", "gridPos": { "x": 12, "y": 31, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "hakku-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+      "targets": [
+        { "expr": "sum(rate(storage_http_requests_total{job=\"storage-server\",status=~\"5..\"}[1m])) / sum(rate(storage_http_requests_total{job=\"storage-server\"}[1m]))", "legendFormat": "Go 5xx" },
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=\"storage-server-spring\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"storage-server-spring\"}[1m]))", "legendFormat": "Spring 5xx" }
+      ]
+    }
+  ]
+}

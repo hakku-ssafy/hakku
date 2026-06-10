@@ -16,6 +16,8 @@ services:
   prometheus:
     image: prom/prometheus:v2.54.1
     container_name: hakku-prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -54,7 +56,7 @@ services:
       retries: 5
 
   jaeger:
-    image: jaegertracing/all-in-one:1.65
+    image: jaegertracing/all-in-one:1.60
     container_name: hakku-jaeger
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
