@@ -21,8 +21,21 @@
       </button>
     </div>
 
+    <!-- Login required -->
+    <div v-if="!isAuthenticated" class="chat-login">
+      <div class="chat-login__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+      </div>
+      <p class="chat-login__title">로그인이 필요해요</p>
+      <p class="chat-login__desc">학꾸 AI 도우미는 로그인한 회원만<br>이용할 수 있어요.</p>
+      <button class="chat-login__btn" @click="goLogin">로그인하러 가기</button>
+    </div>
+
     <!-- Messages -->
-    <div ref="messagesEl" class="chat-messages">
+    <div v-else ref="messagesEl" class="chat-messages">
       <div v-if="messages.length === 0" class="chat-empty">
         <p>학생증 사진을 첨부하거나 질문을 입력하면<br>꾸미기 방법을 추천해드려요 ✨</p>
       </div>
@@ -45,7 +58,7 @@
     </div>
 
     <!-- Image preview -->
-    <div v-if="imagePreview" class="chat-preview">
+    <div v-if="isAuthenticated && imagePreview" class="chat-preview">
       <img :src="imagePreview" alt="미리보기" class="chat-preview__img" />
       <button class="chat-preview__remove" @click="removeImage" aria-label="이미지 제거">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -55,7 +68,7 @@
     </div>
 
     <!-- Input -->
-    <form class="chat-input" @submit.prevent="send">
+    <form v-if="isAuthenticated" class="chat-input" @submit.prevent="send">
       <label class="chat-input__attach" aria-label="이미지 첨부">
         <input ref="fileInput" type="file" accept="image/*" class="sr-only" @change="onFileChange" />
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -85,7 +98,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 interface Message {
   id: number
@@ -95,6 +110,15 @@ interface Message {
 }
 
 defineEmits<{ close: [] }>()
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+
+function goLogin() {
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
+}
 
 const messages = ref<Message[]>([])
 const inputText = ref('')
@@ -153,23 +177,41 @@ async function send() {
     formData.append('message', text || '이 학생증 어떻게 꾸미면 좋을까요?')
     if (file) formData.append('image', file)
 
-    const response = await fetch('/chat/stream', { method: 'POST', body: formData })
-    if (!response.body) throw new Error('No response body')
+    const token = localStorage.getItem('accessToken')
+    const response = await fetch('/chat/stream', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      assistantMsg.content = '로그인이 만료되었어요. 다시 로그인한 뒤 이용해주세요.'
+      return
+    }
+    if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`)
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    // SSE 라인이 네트워크 청크 경계에서 잘릴 수 있으므로 버퍼에 누적 후 파싱
+    let buffer = ''
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      const chunk = decoder.decode(value, { stream: true })
-      for (const line of chunk.split('\n')) {
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
         if (!line.startsWith('data: ')) continue
         const data = line.slice(6)
-        if (data === '[DONE]') break
+        if (data === '[DONE]') continue
         try {
           const parsed = JSON.parse(data)
-          assistantMsg.content += parsed.text
+          if (parsed.error) {
+            assistantMsg.content = parsed.error
+          } else if (parsed.text) {
+            assistantMsg.content += parsed.text
+          }
           scrollToBottom()
         } catch {}
       }
@@ -265,6 +307,57 @@ async function send() {
 .chat-header__close svg {
   width: 1rem;
   height: 1rem;
+}
+
+/* Login required */
+.chat-login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.chat-login__icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--color-surface-soft);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+.chat-login__icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.chat-login__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.chat-login__desc {
+  font-size: 0.8125rem;
+  color: var(--color-ink-muted);
+  line-height: 1.6;
+}
+.chat-login__btn {
+  margin-top: 0.75rem;
+  padding: 0.625rem 1.5rem;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.chat-login__btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* Messages */

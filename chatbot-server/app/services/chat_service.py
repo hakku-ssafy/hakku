@@ -1,10 +1,13 @@
 import base64
 import json
+import logging
 from typing import AsyncIterator, Optional
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAIError
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 client = AsyncOpenAI(api_key=settings.openai_api_key)
 
@@ -32,18 +35,23 @@ async def stream_chat(
 
     content.append({"type": "text", "text": message})
 
-    stream = await client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": content},
-        ],
-        stream=True,
-    )
+    try:
+        stream = await client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": content},
+            ],
+            stream=True,
+        )
 
-    async for chunk in stream:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+    except OpenAIError:
+        logger.exception("OpenAI 스트리밍 호출 실패")
+        error_payload = {"error": "AI 응답 생성에 실패했어요. 잠시 후 다시 시도해주세요."}
+        yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"
