@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
+    jwt_secret: str = ""
 
 
 settings = Settings()

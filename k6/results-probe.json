@@ -1,0 +1,49 @@
+{
+  "label": "probe",
+  "storageUrl": "http://localhost:8082",
+  "vus": 5,
+  "durationSec": 20.004294241,
+  "httpReqs": 8379,
+  "rps": 418.8600656966311,
+  "iterations": 2793,
+  "iterPerSec": 139.62002189887704,
+  "errorRate": 0,
+  "httpReqFailedRate": 0,
+  "uploadAvg": 12.095607446831352,
+  "uploadP95": 66.11666140000003,
+  "uploadP99": 76.00575431999998,
+  "downloadAvg": 13.409762225921998,
+  "downloadP95": 68.69718180000001,
+  "downloadP99": 78.48163652,
+  "deleteAvg": 9.166049057286045,
+  "deleteP95": 62.1091122,
+  "dataSentMB": 742.863000869751,
+  "dataRecvMB": 743.009087562561,
+  "fixtures": [
+    {
+      "kind": "raw",
+      "kb": 72,
+      "weight": 0.3
+    },
+    {
+      "kind": "raw",
+      "kb": 147,
+      "weight": 0.3
+    },
+    {
+      "kind": "raw",
+      "kb": 307,
+      "weight": 0.2
+    },
+    {
+      "kind": "raw",
+      "kb": 628,
+      "weight": 0.12
+    },
+    {
+      "kind": "raw",
+      "kb": 865,
+      "weight": 0.08
+    }
+  ]
+}

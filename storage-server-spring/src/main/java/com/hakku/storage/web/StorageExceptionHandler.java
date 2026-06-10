@@ -7,8 +7,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.hakku.storage.auth.ForbiddenException;
+import com.hakku.storage.auth.UnauthorizedException;
+
 @RestControllerAdvice
 public class StorageExceptionHandler {
+
+	@ExceptionHandler(UnauthorizedException.class)
+	public ResponseEntity<Map<String, String>> unauthorized(UnauthorizedException ex) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getMessage()));
+	}
+
+	@ExceptionHandler(ForbiddenException.class)
+	public ResponseEntity<Map<String, String>> forbidden(ForbiddenException ex) {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<Map<String, String>> invalidKind(IllegalArgumentException ex) {

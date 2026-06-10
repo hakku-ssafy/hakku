@@ -30,9 +30,20 @@ func WithJWT(v Validator) Option {
 	return func(r *router) { r.validator = v }
 }
 
+// UploadRecorder receives a notification for each successful upload.
+type UploadRecorder interface {
+	RecordUpload(kind string)
+}
+
+// WithMetrics records successful uploads to the given recorder.
+func WithMetrics(rec UploadRecorder) Option {
+	return func(r *router) { r.recorder = rec }
+}
+
 type router struct {
 	store     storage.Store
-	validator Validator // nil = no auth required (dev mode)
+	validator Validator      // nil = no auth required (dev mode)
+	recorder  UploadRecorder // nil = no metrics
 }
 
 // Handler returns an HTTP handler for the storage routes.
@@ -87,6 +98,9 @@ func (r *router) upload(w http.ResponseWriter, req *http.Request) {
 		}
 		writeError(w, http.StatusInternalServerError, "failed to store image")
 		return
+	}
+	if r.recorder != nil {
+		r.recorder.RecordUpload(string(meta.Kind))
 	}
 	writeJSON(w, http.StatusCreated, meta)
 }

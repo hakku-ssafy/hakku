@@ -7,5 +7,6 @@ public record ImageMetadata(
 		ImageKind kind,
 		String contentType,
 		long size,
-		Instant createdAt) {
+		Instant createdAt,
+		String ownerId) {
 }

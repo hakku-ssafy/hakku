@@ -108,6 +108,9 @@ services:
       context: ./storage-server
       dockerfile: Dockerfile
     container_name: hakku-storage-server
+    ports:
+      # Prometheus 스크래이프(observability/prometheus.yml) 및 k6 벤치마크 직접 접근용
+      - "8081:8080"
     environment:
       STORAGE_BASE_PATH: /data/images
       STORAGE_ADDR: :8080
@@ -151,6 +154,7 @@ services:
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${CHATBOT_MODEL:-gpt-4o}
+      JWT_SECRET: ${JWT_SECRET}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
       interval: 10s

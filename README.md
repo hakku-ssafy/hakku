@@ -307,16 +307,79 @@ AI가 생성한 퍼스널컬러 진단 결과 이미지(`kind=result`)는 JWT �
 
 ### Storage Server Go vs Spring 비교
 
-Go 표준 라이브러리로 구현한 `storage-server`와 동일 API를 제공하는 Spring Boot 구현체를 병렬로 제공한다. k6 부하 테스트로 두 구현체의 처리량·응답 시간을 직접 비교할 수 있다.
+Go 표준 라이브러리로 구현한 `storage-server`와 동일 API·JWT 정책을 제공하는 Spring Boot 구현체(`storage-server-spring`)를 병렬로 제공한다. 두 구현체 모두 `kind=result` 이미지에 대해 JWT Bearer 검증 및 `ownerId` 기반 다운로드 접근 제어를 적용한다.
+
+#### 공정 벤치마크 환경
+
+이전 측정은 Go가 메인 compose 안에서 다른 서비스와 리소스를 공유하고 Spring은 거의 단독 환경이어서 결과가 왜곡되었다. 아래 조건으로 **격리된 공정 환경**을 구성해 재측정했다.
+
+| 항목 | 값 |
+|---|---|
+| Compose | `compose/storage-bench.yml` |
+| JWT | 동일 `JWT_SECRET` (양쪽 활성화) |
+| 리소스 한도 | CPU 2코어, 메모리 512MB (각각) |
+| 포트 | Go `8081`, Spring `8082` |
+| 워크로드 | k6 — 실제 이미지(72KB~865KB) 업로드 → 다운로드 → 삭제 (`kind=raw`) |
+| 스크립트 | `./scripts/benchmark-storage-fair.sh` |
 
 ```bash
+# 공정 벤치 (권장)
+VUS=20  DURATION=60s ./scripts/benchmark-storage-fair.sh
+VUS=100 DURATION=60s ./scripts/benchmark-storage-fair.sh
+
+# 전체 아키텍처 부하 (main-server 경유, 비교 참고용)
 ./scripts/benchmark-storage.sh
-# 결과: k6/results/go.json, k6/results/spring.json
 ```
+
+#### 벤치마크 결과 (2026-06-10, 오류율 0%)
+
+부하 시나리오: **20 VU = 평소**, **100 VU = 고부하**. Go 개선(%)은 Spring 대비 — 처리량은 높을수록, 업로드 지연은 낮을수록 유리하다.
+
+**Go vs Spring (평소 · 20 VU)**
+
+| 지표 | Spring | Go | Go 개선 |
+|---|---:|---:|---:|
+| 처리량 (req/s) | 939 | 3,610 | **+284%** |
+| 업로드 avg | 21ms | 5ms | **+76%** |
+| 업로드 p95 | 75ms | 15ms | **+80%** |
+| 업로드 p99 | 86ms | 28ms | **+67%** |
+
+**Go vs Spring (고부하 · 100 VU)**
+
+| 지표 | Spring | Go | Go 개선 |
+|---|---:|---:|---:|
+| 처리량 (req/s) | 926 | 2,340 | **+153%** |
+| 업로드 avg | 127ms | 43ms | **+66%** |
+| 업로드 p95 | 479ms | 132ms | **+72%** |
+| 업로드 p99 | 714ms | 225ms | **+68%** |
+
+**평소 → 고부하 변화 (20 VU → 100 VU)**
+
+| 지표 | Spring | Go |
+|---|---:|---:|
+| 처리량 | **−1%** (거의 정체) | **−35%** |
+| 업로드 p95 | **+539%** | **+780%** |
+
+평소에도 Go가 처리량 **약 3.8배**, 업로드 p95 **약 80% 빠름**. 고부하에서도 Go 우위는 유지되나(처리량 +153%, 업로드 p95 +72%) Spring은 업로드 p95가 평소 대비 **6배** 늘어나 병목이 업로드에 집중된다. 차이의 주요 원인은 JWT가 아니라 런타임·프레임워크 비용이다.
+
+> `kind=raw` 픽스처만 사용하므로 JWT 검증 경로는 벤치 부하에 포함되지 않는다. JWT 동작은 단위 테스트(`JwtValidatorTest`)로 검증한다.
+
+![관측성](src/dashboard.png)]
 
 ### 관측성
 
-세 백엔드 모두 `/metrics` 엔드포인트를 노출한다. Prometheus가 메트릭을 수집하고 Grafana 대시보드로 시각화하며, Jaeger로 서비스 간 분산 추적이 가능하다.
+세 백엔드 모두 `/metrics` 엔드포인트를 노출한다. Prometheus가 메트릭을 수집하고 Grafana 대시보드로 시각화한다.
+
+| 대시보드 | URL | 내용 |
+|---|---|---|
+| Service Overview | http://localhost:3000/d/hakku-overview | 전체 서비스 HTTP·JVM |
+| **Storage 벤치마크** | http://localhost:3000/d/hakku-storage-bench | Go vs Spring 처리량·P95·CPU·메모리 |
+
+```bash
+docker compose -f compose/obs.yml up -d   # Prometheus + Grafana + Jaeger
+```
+
+Jaeger(`http://localhost:16686`)는 기동 가능하나, Storage 서버에는 OpenTelemetry tracing이 아직 연동되지 않아 트레이스 데이터는 없다. Storage 성능 비교는 Grafana/Prometheus를 사용한다.
 
 ---
 
