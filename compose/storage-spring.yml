@@ -12,6 +12,7 @@ services:
     environment:
       STORAGE_PORT: 8082
       STORAGE_BASE_PATH: /data/images
+      JWT_SECRET: ${JWT_SECRET}
     volumes:
       - storage_spring_data:/data/images
     healthcheck:

@@ -7,7 +7,7 @@ import com.hakku.storage.domain.ImageMetadata;
 
 public interface ImageStore {
 
-	ImageMetadata put(ImageKind kind, String contentType, InputStream body) throws Exception;
+	ImageMetadata put(ImageKind kind, String contentType, String ownerId, InputStream body) throws Exception;
 
 	StoredImage get(String id) throws Exception;
 
