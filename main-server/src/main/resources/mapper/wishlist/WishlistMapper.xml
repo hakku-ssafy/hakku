@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.wishlist.repository.WishlistRepository">
+
+    <insert id="insert" parameterType="com.hakku.main.wishlist.domain.Wishlist"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wishlists (product_id, user_id, created_at)
+        VALUES (#{productId}, #{userId}, #{createdAt})
+    </insert>
+
+    <select id="existsByProductIdAndUserId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM wishlists
+            WHERE product_id = #{productId} AND user_id = #{userId}
+        )
+    </select>
+
+    <delete id="deleteByProductIdAndUserId">
+        DELETE FROM wishlists
+        WHERE product_id = #{productId} AND user_id = #{userId}
+    </delete>
+
+    <select id="countByProductId" resultType="long">
+        SELECT COUNT(*) FROM wishlists WHERE product_id = #{productId}
+    </select>
+
+    <select id="findByUserIdOrderByIdDesc"
+            resultType="com.hakku.main.wishlist.domain.Wishlist">
+        SELECT id, product_id, user_id, created_at
+        FROM wishlists
+        WHERE user_id = #{userId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectById" resultType="com.hakku.main.wishlist.domain.Wishlist">
+        SELECT id, product_id, user_id, created_at
+        FROM wishlists
+        WHERE id = #{id}
+    </select>
+</mapper>

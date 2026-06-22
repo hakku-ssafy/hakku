@@ -1,48 +1,27 @@
 package com.hakku.main.cart.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * 장바구니 항목 (PRD §3.3). 회원-상품 당 한 행(유니크), 수량으로 묶는다.
  */
-@Entity
-@Table(name = "cart_items",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CartItem {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Column(nullable = false)
     private int quantity;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     public CartItem(Long userId, Long productId, int quantity) {
@@ -59,6 +38,17 @@ public class CartItem {
     /** 수량을 지정 값으로 변경한다. */
     public void changeQuantity(int quantity) {
         this.quantity = requirePositive(quantity);
+    }
+
+    /** 영속 시각을 부여한다(MyBatis insert 직전 호출). JPA @CreationTimestamp 대체. createdAt/updatedAt 동시 설정. */
+    public void assignCreationTime(Instant now) {
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    /** 갱신 시각을 부여한다(MyBatis update 직전 호출). JPA @UpdateTimestamp 대체. */
+    public void assignUpdateTime(Instant now) {
+        this.updatedAt = now;
     }
 
     private static int requirePositive(int value) {

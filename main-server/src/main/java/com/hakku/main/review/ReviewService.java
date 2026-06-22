@@ -63,6 +63,7 @@ public class ReviewService {
         Review review = findOrThrow(reviewId);
         requireAuthor(review, requesterId);
         review.update(rating, content);
+        reviewRepository.save(review);
         return toResponse(review);
     }
 

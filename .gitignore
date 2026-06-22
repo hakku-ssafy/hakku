@@ -40,3 +40,4 @@ k6/results/
 data/
 *.log
 .gstack/
+docs/

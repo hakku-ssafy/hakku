@@ -50,6 +50,7 @@ public class ProductService {
         requireOwner(product, requesterId);
         product.update(cmd.name(), cmd.description(), cmd.price(), cmd.category(),
                 cmd.keyColor(), cmd.subColor(), cmd.colors(), cmd.styles(), cmd.imageUrl(), cmd.purchaseUrl());
+        productRepository.save(product);
         return ProductResponse.from(product);
     }
 
