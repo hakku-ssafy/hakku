@@ -55,6 +55,7 @@ public class UserService {
         User user = findOrThrow(userId);
         user.updateProfile(user.getNickname(), user.getProfileImageUrl(),
                 user.getPreferredStyles(), preferredColors);
+        userRepository.save(user);
         return UserProfileResponse.from(user);
     }
 
@@ -67,6 +68,7 @@ public class UserService {
         if (Boolean.TRUE.equals(onboardingCompleted)) {
             user.completeOnboarding();
         }
+        userRepository.save(user);
         return UserProfileResponse.from(user);
     }
 
@@ -78,6 +80,7 @@ public class UserService {
             throw new DiagnosisAlreadyRequestedException(userId);
         }
         user.startDiagnosis();
+        userRepository.save(user);
     }
 
     /** 진단 요청을 초기화한다 — AI 서버 오류 복구용. NONE으로 되돌린다. */
@@ -85,6 +88,7 @@ public class UserService {
     public void resetDiagnosis(Long userId) {
         User user = findOrThrow(userId);
         user.resetDiagnosis();
+        userRepository.save(user);
     }
 
     /** AI 진단 결과를 반영한다 — COMPLETED로 전환 + 알림 발행. */
@@ -96,6 +100,7 @@ public class UserService {
         user.assignPersonalColor(personalColor);
         user.completeDiagnosis();
         user.assignDiagnosisImage(resultImageUrl);
+        userRepository.save(user);
         notificationProducer.publish(new NotificationEvent(
                 NotificationType.DIAGNOSIS_COMPLETE,
                 userId,

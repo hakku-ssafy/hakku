@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.follow.repository.FollowRepository">
+
+    <insert id="insert" parameterType="com.hakku.main.follow.domain.Follow"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO follows (follower_id, following_id, created_at)
+        VALUES (#{followerId}, #{followingId}, #{createdAt})
+    </insert>
+
+    <select id="existsByFollowerIdAndFollowingId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM follows
+            WHERE follower_id = #{followerId} AND following_id = #{followingId}
+        )
+    </select>
+
+    <delete id="deleteByFollowerIdAndFollowingId">
+        DELETE FROM follows
+        WHERE follower_id = #{followerId} AND following_id = #{followingId}
+    </delete>
+
+    <select id="countByFollowingId" resultType="long">
+        SELECT COUNT(*) FROM follows WHERE following_id = #{followingId}
+    </select>
+
+    <select id="countByFollowerId" resultType="long">
+        SELECT COUNT(*) FROM follows WHERE follower_id = #{followerId}
+    </select>
+
+    <select id="findByFollowingIdOrderByIdDesc"
+            resultType="com.hakku.main.follow.domain.Follow">
+        SELECT id, follower_id, following_id, created_at
+        FROM follows
+        WHERE following_id = #{followingId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="findByFollowerIdOrderByIdDesc"
+            resultType="com.hakku.main.follow.domain.Follow">
+        SELECT id, follower_id, following_id, created_at
+        FROM follows
+        WHERE follower_id = #{followerId}
+        ORDER BY id DESC
+    </select>
+</mapper>

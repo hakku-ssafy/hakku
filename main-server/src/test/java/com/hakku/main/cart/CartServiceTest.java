@@ -68,11 +68,13 @@ class CartServiceTest {
         CartItem existing = new CartItem(USER, PRODUCT, 1);
         when(productRepository.findById(PRODUCT)).thenReturn(Optional.of(product()));
         when(cartItemRepository.findByUserIdAndProductId(USER, PRODUCT)).thenReturn(Optional.of(existing));
+        when(cartItemRepository.save(any(CartItem.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CartItemResponse response = cartService.addItem(USER, PRODUCT, 3);
 
         assertThat(response.quantity()).isEqualTo(4);
-        verify(cartItemRepository, never()).save(any(CartItem.class));
+        // MyBatis 전환: dirty-checking 이 없으므로 수량 증가 후 명시적으로 save 해야 한다.
+        verify(cartItemRepository).save(existing);
     }
 
     @Test

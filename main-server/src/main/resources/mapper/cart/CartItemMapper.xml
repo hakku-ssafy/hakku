@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.cart.repository.CartItemRepository">
+
+    <sql id="columns">
+        id, user_id, product_id, quantity, created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.hakku.main.cart.domain.CartItem"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_items (user_id, product_id, quantity, created_at, updated_at)
+        VALUES (#{userId}, #{productId}, #{quantity}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="update" parameterType="com.hakku.main.cart.domain.CartItem">
+        UPDATE cart_items
+        SET quantity = #{quantity},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM cart_items WHERE id = #{id}
+    </delete>
+
+    <select id="selectByUserIdAndProductId" resultType="com.hakku.main.cart.domain.CartItem">
+        SELECT <include refid="columns"/>
+        FROM cart_items
+        WHERE user_id = #{userId} AND product_id = #{productId}
+    </select>
+
+    <select id="selectByIdAndUserId" resultType="com.hakku.main.cart.domain.CartItem">
+        SELECT <include refid="columns"/>
+        FROM cart_items
+        WHERE id = #{id} AND user_id = #{userId}
+    </select>
+
+    <select id="findByUserId" resultType="com.hakku.main.cart.domain.CartItem">
+        SELECT <include refid="columns"/>
+        FROM cart_items
+        WHERE user_id = #{userId}
+    </select>
+</mapper>
