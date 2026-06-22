@@ -80,6 +80,7 @@ public class PostService {
         Post post = findOrThrow(postId);
         requireAuthor(post, requesterId);
         post.update(title, content);
+        postRepository.save(post);
         return toResponse(post, requesterId);
     }
 

@@ -31,7 +31,7 @@ public class CartService {
         CartItem item = cartItemRepository.findByUserIdAndProductId(userId, productId)
                 .map(existing -> {
                     existing.increaseQuantity(quantity);
-                    return existing;
+                    return cartItemRepository.save(existing);
                 })
                 .orElseGet(() -> cartItemRepository.save(new CartItem(userId, productId, quantity)));
         return CartItemResponse.from(item, product);
@@ -48,6 +48,7 @@ public class CartService {
     public CartItemResponse updateQuantity(Long userId, Long cartItemId, int quantity) {
         CartItem item = requireOwnItem(userId, cartItemId);
         item.changeQuantity(quantity);
+        cartItemRepository.save(item);
         return CartItemResponse.from(item, requireProduct(item.getProductId()));
     }
 
