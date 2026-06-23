@@ -6,9 +6,16 @@
   >
     <ul class="grid h-16" :style="{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }">
       <li v-for="tab in tabs" :key="tab.to">
-        <router-link :to="tab.to" class="tab" active-class="tab--active">
-          <span class="tab__icon" v-html="tab.icon" />
-          <span class="tab__label">{{ tab.label }}</span>
+        <router-link :to="tab.to" custom v-slot="{ href, navigate, isActive, isExactActive }">
+          <a
+            :href="href"
+            class="tab"
+            :class="{ 'tab--active': tab.to === '/' ? isExactActive : isActive }"
+            @click="navigate"
+          >
+            <span class="tab__icon" v-html="tab.icon" />
+            <span class="tab__label">{{ tab.label }}</span>
+          </a>
         </router-link>
       </li>
     </ul>
@@ -67,8 +74,9 @@ const tabs = computed<Tab[]>(() => {
 .tab:hover {
   color: var(--hk-text-muted);
 }
+/* 활성 탭 — accent(미진단 시 먹색 기본값, 진단 후 퍼스널컬러로 물듦) */
 .tab--active {
-  color: var(--hk-ink);
+  color: var(--accent, #16140f);
 }
 .tab__icon :deep(svg) {
   width: 1.5rem;
