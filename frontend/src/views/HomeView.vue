@@ -261,20 +261,22 @@ watch(diagnosisStatus, (status) => {
   color: var(--hk-ink);
 }
 
-/* 상품 그리드 — 4열(1024+) → 3열(768) → 2열(모바일) */
+/* 상품 그리드 — 4열(1024+) → 3열(768) → 2열(모바일).
+   minmax(0, 1fr): 큰 이미지의 min-content 가 트랙을 제각각 늘려 썸네일이 뒤죽박죽
+   커지는 것을 방지(min 을 0 으로 강제). */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 18px;
 }
 @media (min-width: 768px) {
   .product-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (min-width: 1024px) {
   .product-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

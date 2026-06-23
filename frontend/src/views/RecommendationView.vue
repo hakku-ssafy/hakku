@@ -130,20 +130,21 @@ onMounted(async () => {
   color: var(--accent-ink, #16140f);
 }
 
-/* 추천 그리드 — 4열(1024+) → 3열(768) → 2열(모바일), gap 22/18 */
+/* 추천 그리드 — 4열(1024+) → 3열(768) → 2열(모바일), gap 22/18.
+   minmax(0, 1fr): 큰 이미지의 min-content 가 트랙을 제각각 늘리는 것을 방지. */
 .rec-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px 18px;
 }
 @media (min-width: 768px) {
   .rec-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (min-width: 1024px) {
   .rec-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 </style>

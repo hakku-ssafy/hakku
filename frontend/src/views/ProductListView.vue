@@ -229,20 +229,22 @@ onMounted(async () => {
   margin-bottom: 28px;
 }
 
-/* 그리드 — 4열(1024+) → 3열(768) → 2열(모바일) */
+/* 그리드 — 4열(1024+) → 3열(768) → 2열(모바일).
+   minmax(0, 1fr): 트랙 최소를 0으로 강제해 큰 이미지의 min-content(naturalWidth)가
+   트랙을 제각각 늘리는 것을 막는다(= 썸네일 크기 뒤죽박죽 방지). */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
 @media (min-width: 768px) {
   .product-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (min-width: 1024px) {
   .product-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
