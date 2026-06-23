@@ -18,6 +18,14 @@ public final class NotificationMessageFormatter {
         return "퍼스널컬러 진단이 완료되었어요. 결과를 확인해보세요!";
     }
 
+    public static String follow(String actorNickname) {
+        return actorNickname + "님이 회원님을 팔로우하기 시작했어요.";
+    }
+
+    public static String wishlistLike(String actorNickname, String productName) {
+        return actorNickname + "님이 회원님의 찜 \"" + preview(productName) + "\"을(를) 좋아해요.";
+    }
+
     private static String preview(String title) {
         if (title == null || title.isBlank()) {
             return "게시글";

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.product.repository.ProductRepository">
+
+    <!--
+      상품 + @ElementCollection(색상/스타일) 매핑.
+      두 컬렉션을 한 쿼리에서 조인하면 카테시안 곱이 발생하므로, 보조 select 로 각각 따로 읽는다.
+    -->
+    <resultMap id="productResultMap" type="com.hakku.main.product.domain.Product">
+        <id property="id" column="id"/>
+        <result property="sellerId" column="seller_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="price" column="price"/>
+        <result property="keyColor" column="key_color"/>
+        <result property="subColor" column="sub_color"/>
+        <result property="category" column="category"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="purchaseUrl" column="purchase_url"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <collection property="colors" ofType="string"
+                    column="id" select="selectColors"/>
+        <collection property="styles" ofType="string"
+                    column="id" select="selectStyles"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, seller_id, name, description, price, key_color, sub_color, category,
+        image_url, purchase_url, created_at, updated_at
+    </sql>
+
+    <select id="selectColors" resultType="string">
+        SELECT color FROM product_colors WHERE product_id = #{productId}
+    </select>
+
+    <select id="selectStyles" resultType="string">
+        SELECT style FROM product_styles WHERE product_id = #{productId}
+    </select>
+
+    <select id="selectById" resultMap="productResultMap">
+        SELECT <include refid="columns"/>
+        FROM products
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAllByOrderByIdDesc" resultMap="productResultMap">
+        SELECT <include refid="columns"/>
+        FROM products
+        ORDER BY id DESC
+    </select>
+
+    <select id="existsById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM products WHERE id = #{id})
+    </select>
+
+    <insert id="insertProduct" parameterType="com.hakku.main.product.domain.Product"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO products (seller_id, name, description, price, key_color, sub_color,
+                             category, image_url, purchase_url, created_at, updated_at)
+        VALUES (#{sellerId}, #{name}, #{description}, #{price}, #{keyColor}, #{subColor},
+                #{category}, #{imageUrl}, #{purchaseUrl}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="updateProduct" parameterType="com.hakku.main.product.domain.Product">
+        UPDATE products
+        SET name = #{name},
+            description = #{description},
+            price = #{price},
+            key_color = #{keyColor},
+            sub_color = #{subColor},
+            category = #{category},
+            image_url = #{imageUrl},
+            purchase_url = #{purchaseUrl},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM products WHERE id = #{id}
+    </delete>
+
+    <insert id="insertColors">
+        INSERT INTO product_colors (product_id, color)
+        VALUES
+        <foreach item="color" collection="colors" separator=",">
+            (#{productId}, #{color})
+        </foreach>
+    </insert>
+
+    <insert id="insertStyles">
+        INSERT INTO product_styles (product_id, style)
+        VALUES
+        <foreach item="style" collection="styles" separator=",">
+            (#{productId}, #{style})
+        </foreach>
+    </insert>
+
+    <delete id="deleteColors">
+        DELETE FROM product_colors WHERE product_id = #{productId}
+    </delete>
+
+    <delete id="deleteStyles">
+        DELETE FROM product_styles WHERE product_id = #{productId}
+    </delete>
+</mapper>

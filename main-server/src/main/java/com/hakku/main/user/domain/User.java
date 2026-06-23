@@ -1,85 +1,46 @@
 package com.hakku.main.user.domain;
 
 import com.hakku.main.personalcolor.domain.PersonalColorType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
 
 /**
  * 회원 (PRD §3.1). 이메일은 유니크. 퍼스널컬러는 AI 진단 전까지 null.
  */
-@Entity
-@Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String nickname;
 
     /** BCrypt 해시. JWT 로그인용. (소셜/패스워드리스 확장 대비 nullable) */
-    @Column(name = "password_hash")
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Role role;
 
     /** AI 진단 결과. 미진단 시 null. */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "personal_color")
     private PersonalColorType personalColor;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "diagnosis_status", nullable = false)
-    @ColumnDefault("'NONE'")
     private DiagnosisStatus diagnosisStatus = DiagnosisStatus.NONE;
 
-    @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    @Column(name = "diagnosis_image_url")
     private String diagnosisImageUrl;
 
-    @ElementCollection
-    @CollectionTable(name = "user_preferred_styles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "style")
     private Set<String> preferredStyles = new HashSet<>();
 
-    @ElementCollection
-    @CollectionTable(name = "user_preferred_colors", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "color")
     private Set<String> preferredColors = new HashSet<>();
 
-    @Column(name = "onboarding_completed", nullable = false)
-    @ColumnDefault("false")
     private boolean onboardingCompleted = false;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     public User(String email, String nickname, Role role) {
@@ -132,5 +93,10 @@ public class User {
     /** 온보딩(컬러 취향 설정)을 완료 처리한다. */
     public void completeOnboarding() {
         this.onboardingCompleted = true;
+    }
+
+    /** 영속 시각을 부여한다(MyBatis insert 직전 호출). JPA @CreationTimestamp 대체. createdAt 만 존재. */
+    public void assignCreationTime(Instant now) {
+        this.createdAt = now;
     }
 }

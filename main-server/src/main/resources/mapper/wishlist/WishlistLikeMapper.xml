@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.wishlist.repository.WishlistLikeRepository">
+
+    <insert id="insert" parameterType="com.hakku.main.wishlist.domain.WishlistLike"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wishlist_likes (wishlist_id, user_id, created_at)
+        VALUES (#{wishlistId}, #{userId}, #{createdAt})
+    </insert>
+
+    <select id="existsByWishlistIdAndUserId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM wishlist_likes
+            WHERE wishlist_id = #{wishlistId} AND user_id = #{userId}
+        )
+    </select>
+
+    <delete id="deleteByWishlistIdAndUserId">
+        DELETE FROM wishlist_likes
+        WHERE wishlist_id = #{wishlistId} AND user_id = #{userId}
+    </delete>
+
+    <select id="countByWishlistId" resultType="long">
+        SELECT COUNT(*) FROM wishlist_likes WHERE wishlist_id = #{wishlistId}
+    </select>
+</mapper>

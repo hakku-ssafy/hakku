@@ -1,14 +1,21 @@
 <template>
   <!-- 모바일 전용 하단 고정 탭바 -->
   <nav
-    class="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-line bg-canvas/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
+    class="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-line bg-surface-warm/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
     aria-label="모바일 주 메뉴"
   >
     <ul class="grid h-16" :style="{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }">
       <li v-for="tab in tabs" :key="tab.to">
-        <router-link :to="tab.to" class="tab" active-class="tab--active">
-          <span class="tab__icon" v-html="tab.icon" />
-          <span class="tab__label">{{ tab.label }}</span>
+        <router-link :to="tab.to" custom v-slot="{ href, navigate, isActive, isExactActive }">
+          <a
+            :href="href"
+            class="tab"
+            :class="{ 'tab--active': tab.to === '/' ? isExactActive : isActive }"
+            @click="navigate"
+          >
+            <span class="tab__icon" v-html="tab.icon" />
+            <span class="tab__label">{{ tab.label }}</span>
+          </a>
         </router-link>
       </li>
     </ul>
@@ -61,14 +68,15 @@ const tabs = computed<Tab[]>(() => {
   justify-content: center;
   gap: 0.2rem;
   height: 100%;
-  color: var(--color-ink-muted);
+  color: var(--hk-text-muted-2);
   transition: color 0.18s ease;
 }
 .tab:hover {
-  color: var(--color-ink-soft);
+  color: var(--hk-text-muted);
 }
+/* 활성 탭 — accent(미진단 시 먹색 기본값, 진단 후 퍼스널컬러로 물듦) */
 .tab--active {
-  color: var(--color-accent);
+  color: var(--accent, #16140f);
 }
 .tab__icon :deep(svg) {
   width: 1.5rem;

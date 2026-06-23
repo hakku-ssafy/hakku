@@ -34,6 +34,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
+                // 익명 인증 비활성화 — 비로그인 요청의 principal 은 "anonymousUser" 문자열이 아니라
+                // null 이어야 한다(컨트롤러들이 @AuthenticationPrincipal String userId 를 null 로 가정).
+                .anonymous(anonymous -> anonymous.disable())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         (request, response, authException) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))

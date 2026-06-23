@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "fixtures/xs.jpg",
+      "contentType": "image/jpeg",
+      "sizeBytes": 73943
+    },
+    {
+      "path": "fixtures/sm.jpg",
+      "contentType": "image/jpeg",
+      "sizeBytes": 150877
+    },
+    {
+      "path": "fixtures/md.png",
+      "contentType": "image/png",
+      "sizeBytes": 314395
+    },
+    {
+      "path": "fixtures/lg.png",
+      "contentType": "image/png",
+      "sizeBytes": 643575
+    },
+    {
+      "path": "fixtures/xl.png",
+      "contentType": "image/png",
+      "sizeBytes": 885401
+    }
+  ],
+  "weights": [
+    {
+      "path": "fixtures/xs.jpg",
+      "kind": "raw",
+      "weight": 0.3
+    },
+    {
+      "path": "fixtures/sm.jpg",
+      "kind": "raw",
+      "weight": 0.3
+    },
+    {
+      "path": "fixtures/md.png",
+      "kind": "raw",
+      "weight": 0.2
+    },
+    {
+      "path": "fixtures/lg.png",
+      "kind": "raw",
+      "weight": 0.12
+    },
+    {
+      "path": "fixtures/xl.png",
+      "kind": "raw",
+      "weight": 0.08
+    }
+  ]
+}

@@ -36,6 +36,15 @@ scrape_configs:
         target_label: instance
         replacement: storage-server
 
+  - job_name: storage-server-spring
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8082"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: storage-server-spring
+
   - job_name: ai-server
     metrics_path: /metrics
     static_configs:

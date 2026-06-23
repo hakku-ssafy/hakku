@@ -41,8 +41,12 @@ public class PostController {
 
     @GetMapping
     public List<PostResponse> list(@AuthenticationPrincipal String userId,
-                                   @RequestParam(required = false) String board) {
+                                   @RequestParam(required = false) String board,
+                                   @RequestParam(required = false) Long authorId) {
         Long viewerId = userId != null ? Long.valueOf(userId) : null;
+        if (authorId != null) {
+            return postService.listByAuthor(viewerId, authorId);
+        }
         PostBoard boardFilter = board != null ? PostBoard.fromNullable(board) : null;
         return postService.list(viewerId, boardFilter);
     }

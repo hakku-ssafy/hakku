@@ -1,5 +1,6 @@
 <template>
   <div id="app-root" class="flex min-h-screen flex-col bg-canvas pb-16 md:pb-0">
+    <MarqueeStrip />
     <AppHeader />
     <main class="flex-1">
       <router-view v-slot="{ Component }">
@@ -10,6 +11,7 @@
     </main>
     <AppFooter />
     <AppBottomNav />
+    <ChatFab />
   </div>
 </template>
 
@@ -18,9 +20,11 @@ import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notifications'
+import MarqueeStrip from '@/components/layout/MarqueeStrip.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppBottomNav from '@/components/layout/AppBottomNav.vue'
+import ChatFab from '@/components/chat/ChatFab.vue'
 import { applyPersonalColorTheme } from '@/composables/usePersonalColorTheme'
 
 const authStore = useAuthStore()

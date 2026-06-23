@@ -1,211 +1,98 @@
 <template>
   <div>
-    <!-- ===== 꾸미기 키워드 마퀴 ===== -->
-    <div class="flex overflow-hidden border-b border-line bg-surface-soft py-2.5" aria-hidden="true">
-      <div
-        v-for="n in 2"
-        :key="n"
-        class="u-marquee text-xs font-semibold uppercase tracking-[0.15em] text-ink-muted"
-      >
-        <span class="px-4">핀뱃지 <span class="text-accent">✦</span></span>
-        <span class="px-4">키링 <span class="text-accent">✦</span></span>
-        <span class="px-4">꾸미기 스티커 <span class="text-accent">✦</span></span>
-        <span class="px-4">퍼스널컬러 <span class="text-accent">✦</span></span>
-        <span class="px-4">그립톡 <span class="text-accent">✦</span></span>
-        <span class="px-4">키캡 <span class="text-accent">✦</span></span>
-        <span class="px-4">다꾸 <span class="text-accent">✦</span></span>
-        <span class="px-4">마스킹테이프 <span class="text-accent">✦</span></span>
-      </div>
-    </div>
-
-    <!-- ===== Hero / 컨텍스트 배너 ===== -->
-    <section class="u-container pt-10 sm:pt-16 pb-12 sm:pb-16">
-      <!-- 로딩 스켈레톤 -->
-      <div v-if="profileLoading" class="space-y-4">
-        <SkeletonBlock height="2.75rem" width="60%" />
-        <SkeletonBlock height="1rem" width="40%" />
-        <SkeletonBlock height="2.75rem" width="11rem" />
+    <main class="home">
+      <!-- ===== 히어로 캐러셀 (풀블리드) ===== -->
+      <div class="home__hero">
+        <HeroCarousel
+          :diagnosis-state="heroState"
+          :personal-color-label="formatPersonalColor(personalColor)"
+          :has-diagnosis-image="!!diagnosisImageSrc"
+          :recommended-products="heroRecommendedProducts"
+          @view-image="showDiagnosisModal = true"
+        />
       </div>
 
-      <!-- 비로그인: 웰컴 -->
-      <template v-else-if="!authStore.isAuthenticated">
-        <div class="relative">
-          <!-- 배경 블롭 장식 -->
-          <div class="pointer-events-none absolute -top-12 -right-8 w-64 h-64 u-blob u-gradient-accent opacity-20 blur-2xl u-float" aria-hidden="true" />
-          <div
-            class="pointer-events-none absolute top-28 -left-12 w-44 h-44 u-blob opacity-20 blur-2xl u-float"
-            style="background: var(--color-accent-2); animation-delay: -3s"
-            aria-hidden="true"
-          />
-
-          <div class="relative grid md:grid-cols-[1.2fr_0.8fr] gap-12 items-center">
-            <div class="u-rise">
-              <span class="u-eyebrow">AI Personal Color</span>
-              <h1 class="u-serif text-display text-ink mt-5">
-                <span class="u-gradient-text">AI 퍼스널컬러</span>로<br /><span class="u-gradient-text">학생증</span>을 꾸며보자!
-              </h1>
-              <p class="text-ink-soft mt-6 text-base sm:text-lg leading-relaxed max-w-md">
-                얼굴 사진 한 장이면 충분합니다. AI가 16종 퍼스널컬러를 진단하고,
-                당신에게 꼭 맞는 학생증 꾸미기 아이템을 골라드려요.
-              </p>
-              <div class="flex flex-col sm:flex-row gap-3 mt-9">
-                <AppButton to="/diagnosis" size="lg">퍼스널컬러 진단 받기</AppButton>
-                <AppButton to="/products" variant="secondary" size="lg">상품 둘러보기</AppButton>
-              </div>
-            </div>
-            <!-- 비비드 컬러 스와치 — "당신의 색을 깨우다" -->
-            <div class="hidden md:grid grid-cols-2 gap-3" aria-hidden="true">
-              <div class="aspect-square rounded-2xl u-gradient-accent shadow-pop u-float" />
-              <div class="aspect-square rounded-2xl translate-y-6 u-float" style="background: #ffd166; animation-delay: -1.5s" />
-              <div class="aspect-square rounded-2xl -translate-y-6 u-float" style="background: #06d6a0; animation-delay: -2.4s" />
-              <div class="aspect-square rounded-2xl u-float" style="background: linear-gradient(135deg, #4d9bff, #7c5cff); animation-delay: -3.2s" />
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- NONE: 진단 필요 — 다크 에디토리얼 패널 -->
-      <template v-else-if="diagnosisStatus === 'NONE'">
-        <div class="relative overflow-hidden rounded-2xl bg-ink text-canvas px-8 py-12 sm:px-14 sm:py-16 u-rise">
-          <div class="pointer-events-none absolute -top-16 -right-10 w-72 h-72 u-blob u-gradient-accent opacity-30 blur-2xl u-float" aria-hidden="true" />
-          <span class="u-eyebrow relative" style="color: rgba(255, 255, 255, 0.55)">Personal Color Diagnosis</span>
-          <h2 class="u-serif text-headline mt-4 max-w-xl relative">
-            퍼스널컬러 진단받고<br />맞춤 상품을 만나보세요
-          </h2>
-          <p class="mt-5 text-base leading-relaxed relative" style="color: rgba(255, 255, 255, 0.7)">
-            얼굴 사진 한 장으로 AI가 당신의 계절 타입을 분석해드려요.
-          </p>
-          <router-link
-            to="/diagnosis"
-            class="relative inline-flex items-center gap-2 mt-9 h-12 px-7 rounded-full bg-canvas text-ink font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
-            지금 진단받기
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      <div class="u-container home__body">
+        <!-- ===== 키워드 퀵링크 칩 ===== -->
+        <section class="chips" aria-label="키워드 바로가기">
+          <router-link v-for="chip in KEYWORD_CHIPS" :key="chip.label" :to="chip.to" class="chip">
+            <span class="chip__glyph" aria-hidden="true">✦</span>{{ chip.label }}
           </router-link>
-        </div>
-      </template>
+        </section>
 
-      <!-- PENDING: 분석 중 -->
-      <template v-else-if="diagnosisStatus === 'PENDING'">
-        <div class="rounded-2xl border border-line bg-surface-soft px-8 py-10 flex flex-col sm:flex-row items-center gap-6 u-rise">
-          <span class="shrink-0 grid place-items-center w-14 h-14 rounded-full border border-accent-line">
-            <svg class="w-6 h-6 text-accent animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
-              <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
-            </svg>
-          </span>
-          <div class="text-center sm:text-left">
-            <h2 class="u-serif text-xl text-ink">AI가 퍼스널컬러를 분석하고 있어요</h2>
-            <p class="text-ink-soft text-sm mt-2">완료되면 알림으로 알려드릴게요. 어떻게 학생증을 꾸밀지 고민해보세요.</p>
-          </div>
-        </div>
-      </template>
+        <!-- ===== 상품 / For You ===== -->
+        <section class="home-section">
+          <SectionHeader :eyebrow="productKicker" :title="productTitle">
+            <template #action>
+              <router-link to="/products" class="see-all">전체보기 →</router-link>
+            </template>
+          </SectionHeader>
 
-      <!-- COMPLETED: 결과 — 액센트(퍼스널컬러)로 물든 패널 -->
-      <template v-else-if="diagnosisStatus === 'COMPLETED'">
-        <div class="relative overflow-hidden rounded-2xl border border-accent-line bg-accent-soft px-8 py-10 sm:px-12 sm:py-12 u-rise">
-          <div class="pointer-events-none absolute -top-16 -right-12 w-60 h-60 u-blob u-gradient-accent opacity-25 blur-2xl" aria-hidden="true" />
-          <span class="pointer-events-none absolute top-6 right-8 text-2xl text-accent/40 u-float" aria-hidden="true">✦</span>
-          <span class="pointer-events-none absolute bottom-8 right-1/3 text-base text-accent-2/40 u-float" style="animation-delay: -2s" aria-hidden="true">✧</span>
-          <div class="relative flex flex-col sm:flex-row sm:items-center gap-8">
-            <div class="shrink-0 grid place-items-center w-20 h-20 rounded-2xl u-gradient-accent text-accent-ink text-3xl shadow-pop u-float">
-              ✦
+          <div v-if="productStore.loading" class="product-grid">
+            <div v-for="i in 8" :key="i">
+              <SkeletonBlock height="auto" width="100%" class="aspect-square mb-2.5 rounded-img" />
+              <SkeletonBlock height="0.875rem" width="80%" class="mb-1.5" />
+              <SkeletonBlock height="0.875rem" width="50%" />
             </div>
-            <div class="min-w-0">
-              <span class="u-eyebrow">My Personal Color</span>
-              <h2 class="u-serif text-headline text-ink mt-2.5">{{ formatPersonalColor(personalColor) }}</h2>
-              <p class="text-ink-soft text-sm mt-3 mb-7">당신의 계절 타입에 어울리는 상품을 골라드릴게요.</p>
-              <div class="flex flex-wrap gap-3">
-                <AppButton v-if="diagnosisImageSrc" variant="secondary" size="sm" @click="showDiagnosisModal = true">
-                  진단 이미지 보기
-                </AppButton>
-                <AppButton to="/recommendations" size="sm">
-                  맞춤 상품 보기
-                </AppButton>
+          </div>
+
+          <div v-else-if="displayProducts.length > 0" class="product-grid">
+            <ProductCard v-for="product in displayProducts" :key="product.id" :product="product">
+              <template v-if="isRecommended" #meta>
+                <AppBadge variant="accent" class="mt-2">추천 ✦</AppBadge>
+              </template>
+            </ProductCard>
+          </div>
+
+          <EmptyState v-else icon="◍" title="등록된 상품이 없어요" />
+        </section>
+
+        <!-- ===== 커뮤니티 프리뷰 ===== -->
+        <section class="home-section">
+          <SectionHeader eyebrow="Community" title="지금 학꾸 라운지">
+            <template #action>
+              <router-link to="/community" class="see-all">더보기 →</router-link>
+            </template>
+          </SectionHeader>
+
+          <div v-if="postsLoading" class="post-list">
+            <div v-for="i in 4" :key="i" class="post-row">
+              <div class="post-row__main">
+                <SkeletonBlock height="1.05rem" width="45%" class="mb-2" />
+                <SkeletonBlock height="0.8rem" width="70%" />
               </div>
             </div>
           </div>
-        </div>
-      </template>
-    </section>
 
-    <!-- ===== 상품 ===== -->
-    <section class="u-container pb-16">
-      <SectionHeader
-        eyebrow="Shop"
-        :title="diagnosisStatus === 'COMPLETED' && recommendations.length > 0 ? '맞춤 추천 상품' : '상품'"
-      >
-        <template #action>
-          <router-link to="/products" class="text-sm text-ink-soft hover:text-accent transition-colors">전체보기 →</router-link>
-        </template>
-      </SectionHeader>
-
-      <div v-if="productStore.loading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-        <div v-for="i in 8" :key="i">
-          <SkeletonBlock height="auto" width="100%" class="aspect-square mb-2.5" />
-          <SkeletonBlock height="0.875rem" width="80%" class="mb-1.5" />
-          <SkeletonBlock height="0.875rem" width="50%" />
-        </div>
-      </div>
-
-      <div v-else-if="displayProducts.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-        <ProductCard v-for="product in displayProducts" :key="product.id" :product="product" />
-      </div>
-
-      <EmptyState v-else icon="◍" title="등록된 상품이 없어요" />
-    </section>
-
-    <!-- ===== 커뮤니티 ===== -->
-    <section class="u-container pb-8">
-      <SectionHeader eyebrow="Community" title="커뮤니티">
-        <template #action>
-          <router-link to="/community" class="text-sm text-ink-soft hover:text-accent transition-colors">더보기 →</router-link>
-        </template>
-      </SectionHeader>
-
-      <div v-if="postsLoading" class="divide-y divide-line border-y border-line">
-        <div v-for="i in 4" :key="i" class="py-5 space-y-2">
-          <SkeletonBlock height="1.125rem" width="50%" />
-          <SkeletonBlock height="0.75rem" width="30%" />
-        </div>
-      </div>
-
-      <ul v-else-if="recentPosts.length > 0" class="divide-y divide-line border-y border-line">
-        <li v-for="post in recentPosts" :key="post.id">
-          <router-link
-            :to="`/community/${post.id}`"
-            class="group flex items-start justify-between gap-4 py-5 transition-colors hover:bg-surface-soft -mx-3 px-3 rounded-lg"
-          >
-            <div class="flex-1 min-w-0">
-              <h3 class="font-medium text-ink truncate group-hover:underline underline-offset-4 decoration-accent-line">{{ post.title }}</h3>
-              <p class="text-sm text-ink-muted mt-1 truncate">{{ post.content }}</p>
-              <div class="flex items-center gap-2 mt-2.5 text-xs text-ink-muted">
-                <span>{{ post.authorNickname }}</span>
-                <span aria-hidden="true">·</span>
-                <span>{{ formatDate(post.createdAt) }}</span>
+          <div v-else-if="recentPosts.length > 0" class="post-list">
+            <router-link
+              v-for="post in recentPosts"
+              :key="post.id"
+              :to="`/community/${post.id}`"
+              class="post-row"
+            >
+              <div class="post-row__main">
+                <div class="post-row__title">{{ post.title }}</div>
+                <div class="post-row__excerpt">{{ post.content }}</div>
               </div>
-            </div>
-            <div class="flex items-center gap-3.5 text-xs text-ink-muted shrink-0 mt-1 tabular-nums">
-              <span class="flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>
-                {{ post.likeCount }}
-              </span>
-              <span class="flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>
-                {{ post.commentCount }}
-              </span>
-            </div>
-          </router-link>
-        </li>
-      </ul>
+              <div class="post-row__meta">
+                <span class="post-row__author">{{ post.authorNickname }}</span>
+                <span class="post-row__time">{{ formatDate(post.createdAt) }}</span>
+                <span class="post-row__stat">♥ {{ post.likeCount }}</span>
+                <span class="post-row__stat">💬 {{ post.commentCount }}</span>
+              </div>
+            </router-link>
+          </div>
 
-      <EmptyState v-else icon="✎" title="아직 게시글이 없어요" />
-    </section>
+          <EmptyState v-else icon="✎" title="아직 게시글이 없어요" />
+        </section>
+      </div>
+    </main>
 
     <!-- 진단 이미지 모달 -->
     <AppModal v-model:open="showDiagnosisModal" title="퍼스널컬러 진단 결과" max-width="md">
-      <img v-if="diagnosisImageSrc" :src="diagnosisImageSrc" alt="진단 이미지" class="w-full rounded-lg" />
-      <p v-if="personalColor" class="text-center text-sm font-semibold mt-4 u-gradient-text">
+      <img v-if="diagnosisImageSrc" :src="diagnosisImageSrc" alt="진단 이미지" class="w-full rounded-md" />
+      <p v-if="personalColor" class="text-center text-sm font-bold mt-4 text-accent">
         {{ formatPersonalColor(personalColor) }}
       </p>
     </AppModal>
@@ -220,7 +107,8 @@ import { useProductStore } from '@/stores/products'
 import apiClient from '@/api/client'
 import { formatPersonalColor, type DiagnosisStatus, type RecommendationItem } from '@/types'
 import { useAuthedImage } from '@/composables/useAuthedImage'
-import AppButton from '@/components/ui/AppButton.vue'
+import HeroCarousel from '@/components/home/HeroCarousel.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import ProductCard from '@/components/ui/ProductCard.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
@@ -237,7 +125,6 @@ const recommendations = ref<RecommendationItem[]>([])
 
 // 진단 상태/퍼스널컬러는 인증 스토어를 단일 소스로 삼는다 → App.vue 폴링이
 // PENDING → COMPLETED 로 갱신하면 새로고침 없이 이 화면에 즉시 반영된다.
-const profileLoading = computed(() => authStore.isAuthenticated && !authStore.user)
 const diagnosisStatus = computed<DiagnosisStatus>(() => authStore.user?.diagnosisStatus ?? 'NONE')
 const personalColor = computed(() => authStore.user?.personalColor ?? null)
 const diagnosisImageUrl = computed(
@@ -247,14 +134,42 @@ const diagnosisImageUrl = computed(
 // 진단 사진은 인증이 필요한 storage 리소스 → 토큰 붙여 fetch 후 object URL 로 표시
 const { objectUrl: diagnosisImageSrc } = useAuthedImage(() => diagnosisImageUrl.value)
 
+// 히어로 진단 카드 상태(비로그인/미진단/분석중/완료).
+const heroState = computed<'guest' | 'none' | 'pending' | 'done'>(() => {
+  if (!authStore.isAuthenticated) return 'guest'
+  if (diagnosisStatus.value === 'PENDING') return 'pending'
+  if (diagnosisStatus.value === 'COMPLETED') return 'done'
+  return 'none'
+})
+
+const KEYWORD_CHIPS = [
+  { label: '핀뱃지', to: '/products' },
+  { label: '키링', to: '/products' },
+  { label: '꾸미기 스티커', to: '/products' },
+  { label: '그립톡', to: '/products' },
+  { label: '다꾸', to: '/products' },
+  { label: '키캡', to: '/products' },
+  { label: '마스킹테이프', to: '/products' },
+  { label: '퍼스널컬러', to: '/diagnosis' },
+]
+
 const recentPosts = computed(() => postStore.posts.slice(0, 5))
 
+const isRecommended = computed(
+  () => diagnosisStatus.value === 'COMPLETED' && recommendations.value.length > 0,
+)
+const productKicker = computed(() => (isRecommended.value ? 'For You' : 'Shop'))
+const productTitle = computed(() => (isRecommended.value ? '맞춤 추천 상품' : '상품'))
+
 const displayProducts = computed(() => {
-  if (diagnosisStatus.value === 'COMPLETED' && recommendations.value.length > 0) {
-    return recommendations.value.slice(0, 8).map(r => r.product)
+  if (isRecommended.value) {
+    return recommendations.value.slice(0, 8).map((r) => r.product)
   }
   return productStore.products.slice(0, 8)
 })
+
+// 히어로 리드 카드(진단 완료 시)용 추천 상품 — 상위 4개.
+const heroRecommendedProducts = computed(() => recommendations.value.slice(0, 4).map((r) => r.product))
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
@@ -278,8 +193,10 @@ async function loadRecommendations() {
 onMounted(async () => {
   postsLoading.value = true
   await Promise.all([
-    postStore.fetchPosts().finally(() => { postsLoading.value = false }),
-    productStore.fetchProducts()
+    postStore.fetchPosts().finally(() => {
+      postsLoading.value = false
+    }),
+    productStore.fetchProducts(),
   ])
 
   if (diagnosisStatus.value === 'COMPLETED') loadRecommendations()
@@ -290,3 +207,131 @@ watch(diagnosisStatus, (status) => {
   if (status === 'COMPLETED' && recommendations.value.length === 0) loadRecommendations()
 })
 </script>
+
+<style scoped>
+.home {
+  padding-bottom: 90px;
+}
+.home__hero {
+  padding-top: 30px;
+}
+.home__body {
+  padding-top: 26px;
+}
+
+/* 키워드 칩 */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 17px;
+  border-radius: var(--hk-radius-pill);
+  background: var(--hk-surface);
+  border: 1px solid var(--hk-border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hk-ink);
+  transition: border-color 0.18s ease, transform 0.18s var(--ease-out-expo);
+}
+.chip:hover {
+  border-color: var(--hk-border-control);
+  transform: translateY(-1px);
+}
+.chip__glyph {
+  color: var(--accent, #16140f);
+}
+
+/* 섹션 리듬 */
+.home-section {
+  margin-top: 60px;
+}
+.see-all {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hk-text-muted);
+  transition: color 0.18s ease;
+}
+.see-all:hover {
+  color: var(--hk-ink);
+}
+
+/* 상품 그리드 — 4열(1024+) → 3열(768) → 2열(모바일).
+   minmax(0, 1fr): 큰 이미지의 min-content 가 트랙을 제각각 늘려 썸네일이 뒤죽박죽
+   커지는 것을 방지(min 을 0 으로 강제). */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+}
+@media (min-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 커뮤니티 프리뷰 — border-top 리스트 행 */
+.post-list {
+  border-top: 1px solid var(--hk-border);
+}
+.post-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 4px;
+  border-bottom: 1px solid var(--hk-border);
+  transition: background 0.18s ease;
+}
+.post-row:hover {
+  background: var(--hk-surface-soft);
+}
+.post-row__main {
+  flex: 1;
+  min-width: 0;
+}
+.post-row__title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.post-row__excerpt {
+  font-size: 13px;
+  color: var(--hk-text-muted-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.post-row__meta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--hk-text-quiet);
+}
+
+/* 모바일 — 작성자/시간 숨기고 좋아요·댓글만 */
+@media (max-width: 639.98px) {
+  .post-row__meta {
+    gap: 12px;
+  }
+  .post-row__author,
+  .post-row__time {
+    display: none;
+  }
+}
+</style>

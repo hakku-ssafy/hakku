@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.review.repository.ReviewRepository">
+
+    <sql id="columns">
+        id, product_id, author_id, rating, content, created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.hakku.main.review.domain.Review"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reviews (product_id, author_id, rating, content, created_at, updated_at)
+        VALUES (#{productId}, #{authorId}, #{rating}, #{content}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="update" parameterType="com.hakku.main.review.domain.Review">
+        UPDATE reviews
+        SET rating = #{rating},
+            content = #{content},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM reviews WHERE id = #{id}
+    </delete>
+
+    <select id="selectById" resultType="com.hakku.main.review.domain.Review">
+        SELECT <include refid="columns"/>
+        FROM reviews
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByProductIdOrderByIdDesc" resultType="com.hakku.main.review.domain.Review">
+        SELECT <include refid="columns"/>
+        FROM reviews
+        WHERE product_id = #{productId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="findByAuthorIdOrderByIdDesc" resultType="com.hakku.main.review.domain.Review">
+        SELECT <include refid="columns"/>
+        FROM reviews
+        WHERE author_id = #{authorId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="existsByProductIdAndAuthorId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM reviews
+            WHERE product_id = #{productId} AND author_id = #{authorId}
+        )
+    </select>
+
+    <select id="findAverageRatingByProduct"
+            resultType="com.hakku.main.review.repository.ProductRatingAverageRow">
+        SELECT product_id AS product_id, AVG(rating) AS average
+        FROM reviews
+        GROUP BY product_id
+    </select>
+</mapper>

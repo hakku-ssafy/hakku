@@ -28,14 +28,14 @@ public class FileSystemImageStore implements ImageStore {
 	}
 
 	@Override
-	public ImageMetadata put(ImageKind kind, String contentType, InputStream body) throws Exception {
+	public ImageMetadata put(ImageKind kind, String contentType, String ownerId, InputStream body) throws Exception {
 		String id = newId();
 		Path blob = blobPath(id);
 		long size;
 		try (body) {
 			size = Files.copy(body, blob);
 		}
-		ImageMetadata meta = new ImageMetadata(id, kind, contentType, size, Instant.now());
+		ImageMetadata meta = new ImageMetadata(id, kind, contentType, size, Instant.now(), ownerId);
 		writeMeta(meta);
 		return meta;
 	}

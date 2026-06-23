@@ -39,8 +39,8 @@ class ProductServiceTest {
     }
 
     private ProductCommand command() {
-        return new ProductCommand("코트", "겨울 코트", 89000L, "WINTER", null,
-                Set.of("미니멀", "클래식"), "https://img/coat.png", null);
+        return new ProductCommand("코트", "겨울 코트", 89000L, "기타", "WINTER", null,
+                Set.of(), Set.of("미니멀", "클래식"), "https://img/coat.png", null);
     }
 
     @Test
@@ -79,8 +79,8 @@ class ProductServiceTest {
     void update_byOwner_updates() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product()));
 
-        ProductCommand changed = new ProductCommand("니트", "봄 니트", 49000L, "SPRING", null,
-                Set.of("캐주얼"), "https://img/knit.png");
+        ProductCommand changed = new ProductCommand("니트", "봄 니트", 49000L, "기타", "SPRING", null,
+                Set.of(), Set.of("캐주얼"), "https://img/knit.png", null);
         ProductResponse response = productService.update(1L, SELLER, changed);
 
         assertThat(response.name()).isEqualTo("니트");

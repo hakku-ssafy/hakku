@@ -5,16 +5,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-type Variant = 'default' | 'accent' | 'outline' | 'solid'
+/** 알약 배지/칩 — 선택=먹색 채움, accent=퍼스널컬러 틴트(components.md B2). */
+type Variant = 'default' | 'accent' | 'outline' | 'solid' | 'ink'
 const props = withDefaults(defineProps<{ variant?: Variant }>(), {
   variant: 'default',
 })
 
 const map: Record<Variant, string> = {
-  default: 'bg-surface-sunken text-ink-soft',
-  accent: 'bg-accent-soft text-accent ring-1 ring-accent-line/60',
-  outline: 'border border-line-strong text-ink-soft',
-  solid: 'u-gradient-accent text-accent-ink',
+  default: 'bg-cream text-ink-soft',
+  accent: 'bg-accent-soft text-accent-ink border border-accent',
+  outline: 'bg-surface border border-line text-ink-soft',
+  solid: 'bg-accent text-white',
+  ink: 'bg-ink text-white',
 }
 
 const classes = computed(() => [

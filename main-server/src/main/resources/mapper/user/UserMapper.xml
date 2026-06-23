@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.user.repository.UserRepository">
+
+    <!--
+      회원 + @ElementCollection(선호 스타일/컬러) 매핑.
+      두 컬렉션을 한 쿼리에서 조인하면 카테시안 곱이 발생하므로, 보조 select 로 각각 따로 읽는다.
+    -->
+    <resultMap id="userResultMap" type="com.hakku.main.user.domain.User">
+        <id property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="nickname" column="nickname"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="role" column="role"/>
+        <result property="personalColor" column="personal_color"/>
+        <result property="diagnosisStatus" column="diagnosis_status"/>
+        <result property="profileImageUrl" column="profile_image_url"/>
+        <result property="diagnosisImageUrl" column="diagnosis_image_url"/>
+        <result property="onboardingCompleted" column="onboarding_completed"/>
+        <result property="createdAt" column="created_at"/>
+        <collection property="preferredStyles" ofType="string"
+                    column="id" select="selectPreferredStyles"/>
+        <collection property="preferredColors" ofType="string"
+                    column="id" select="selectPreferredColors"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, email, nickname, password_hash, role, personal_color, diagnosis_status,
+        profile_image_url, diagnosis_image_url, onboarding_completed, created_at
+    </sql>
+
+    <select id="selectPreferredStyles" resultType="string">
+        SELECT style FROM user_preferred_styles WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectPreferredColors" resultType="string">
+        SELECT color FROM user_preferred_colors WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectById" resultMap="userResultMap">
+        SELECT <include refid="columns"/>
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByEmail" resultMap="userResultMap">
+        SELECT <include refid="columns"/>
+        FROM users
+        WHERE email = #{email}
+    </select>
+
+    <select id="selectByIds" resultMap="userResultMap">
+        SELECT <include refid="columns"/>
+        FROM users
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM users WHERE email = #{email})
+    </select>
+
+    <select id="existsById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM users WHERE id = #{id})
+    </select>
+
+    <insert id="insertUser" parameterType="com.hakku.main.user.domain.User"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (email, nickname, password_hash, role, personal_color,
+                           diagnosis_status, profile_image_url, diagnosis_image_url,
+                           onboarding_completed, created_at)
+        VALUES (#{email}, #{nickname}, #{passwordHash}, #{role}, #{personalColor},
+                #{diagnosisStatus}, #{profileImageUrl}, #{diagnosisImageUrl},
+                #{onboardingCompleted}, #{createdAt})
+    </insert>
+
+    <update id="updateUser" parameterType="com.hakku.main.user.domain.User">
+        UPDATE users
+        SET nickname = #{nickname},
+            password_hash = #{passwordHash},
+            role = #{role},
+            personal_color = #{personalColor},
+            diagnosis_status = #{diagnosisStatus},
+            profile_image_url = #{profileImageUrl},
+            diagnosis_image_url = #{diagnosisImageUrl},
+            onboarding_completed = #{onboardingCompleted}
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insertPreferredStyles">
+        INSERT INTO user_preferred_styles (user_id, style)
+        VALUES
+        <foreach item="style" collection="styles" separator=",">
+            (#{userId}, #{style})
+        </foreach>
+    </insert>
+
+    <insert id="insertPreferredColors">
+        INSERT INTO user_preferred_colors (user_id, color)
+        VALUES
+        <foreach item="color" collection="colors" separator=",">
+            (#{userId}, #{color})
+        </foreach>
+    </insert>
+
+    <delete id="deletePreferredStyles">
+        DELETE FROM user_preferred_styles WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deletePreferredColors">
+        DELETE FROM user_preferred_colors WHERE user_id = #{userId}
+    </delete>
+</mapper>

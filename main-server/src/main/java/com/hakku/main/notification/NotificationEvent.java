@@ -12,6 +12,7 @@ public record NotificationEvent(
         String actorNickname,
         Long postId,
         String postTitlePreview,
+        Long productId,
         String message,
         long createdAt) {
 }

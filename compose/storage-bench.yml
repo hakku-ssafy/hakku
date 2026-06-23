@@ -1,0 +1,60 @@
+# Go vs Spring Storage 공정 벤치마크 환경
+# - 동일 JWT_SECRET, 동일 CPU/메모리 한도, 격리된 볼륨
+# - 다른 서비스 없이 스토리지 2개만 기동
+#
+# Usage:
+#   docker compose -f compose/storage-bench.yml --env-file .env up -d --build
+name: hakku-storage-bench
+
+services:
+  storage-go:
+    build:
+      context: ../storage-server
+    image: hakku-storage-bench-go:latest
+    container_name: hakku-bench-storage-go
+    ports:
+      - "8081:8080"
+    environment:
+      STORAGE_BASE_PATH: /data/images
+      STORAGE_ADDR: :8080
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - bench_go_data:/data/images
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/metrics >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  storage-spring:
+    build:
+      context: ../storage-server-spring
+    image: hakku-storage-bench-spring:latest
+    container_name: hakku-bench-storage-spring
+    ports:
+      - "8082:8082"
+    environment:
+      STORAGE_PORT: 8082
+      STORAGE_BASE_PATH: /data/images
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - bench_spring_data:/data/images
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8082/actuator/health | grep -q UP || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  bench_go_data:
+  bench_spring_data:

@@ -8,8 +8,8 @@
         aria-modal="true"
         :aria-label="title || undefined"
       >
-        <div class="modal__scrim absolute inset-0 bg-ink/50 backdrop-blur-sm" @click="close" />
-        <div class="modal__panel relative w-full bg-surface rounded-2xl shadow-lg overflow-hidden" :class="widthClass">
+        <div class="modal__scrim absolute inset-0 backdrop-blur-sm" @click="close" />
+        <div class="modal__panel relative w-full bg-surface rounded-modal shadow-window overflow-hidden" :class="widthClass">
           <header
             v-if="title || $slots.header"
             class="flex items-center justify-between gap-4 px-5 py-4 border-b border-line"
@@ -19,7 +19,7 @@
             </slot>
             <button
               type="button"
-              class="grid place-items-center w-8 h-8 -mr-1 rounded-full text-ink-muted hover:text-accent hover:bg-accent-soft transition-colors"
+              class="grid place-items-center w-8 h-8 -mr-1 rounded-full text-ink-faint hover:text-ink hover:bg-surface-sunken transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
               aria-label="닫기"
               @click="close"
             >
@@ -70,6 +70,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.modal__scrim {
+  background: var(--hk-scrim, rgba(22, 20, 15, 0.5));
+}
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.2s ease;
@@ -86,5 +89,15 @@ onUnmounted(() => {
 .modal-leave-to .modal__panel {
   transform: translateY(12px) scale(0.98);
   opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-enter-active .modal__panel,
+  .modal-leave-active .modal__panel {
+    transition: opacity 0.2s ease;
+  }
+  .modal-enter-from .modal__panel,
+  .modal-leave-to .modal__panel {
+    transform: none;
+  }
 }
 </style>

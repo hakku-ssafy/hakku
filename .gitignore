@@ -32,7 +32,12 @@ npm-debug.log*
 **/storage-server/bin/
 **/*.test
 
+# ── k6 벤치마크 결과 (재생성 가능) ─────────────
+k6/results/
+
 # ── Data / Volumes ─────────────────────────────
 .data/
 data/
 *.log
+.gstack/
+docs/

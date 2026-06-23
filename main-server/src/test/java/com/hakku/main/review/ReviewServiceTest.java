@@ -14,6 +14,7 @@ import com.hakku.main.review.exception.DuplicateReviewException;
 import com.hakku.main.review.exception.ReviewAccessDeniedException;
 import com.hakku.main.review.exception.ReviewNotFoundException;
 import com.hakku.main.review.repository.ReviewRepository;
+import com.hakku.main.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,11 +37,14 @@ class ReviewServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private ReviewService reviewService;
 
     @BeforeEach
     void setUp() {
-        reviewService = new ReviewService(reviewRepository, productRepository);
+        reviewService = new ReviewService(reviewRepository, productRepository, userRepository);
     }
 
     @Test

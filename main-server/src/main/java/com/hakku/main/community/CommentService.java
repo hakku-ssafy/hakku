@@ -53,6 +53,7 @@ public class CommentService {
                     actorNickname,
                     postId,
                     preview,
+                    null,
                     NotificationMessageFormatter.comment(actorNickname, preview),
                     Instant.now().toEpochMilli()));
         }
@@ -71,6 +72,7 @@ public class CommentService {
         Comment comment = findOrThrow(commentId);
         requireAuthor(comment, requesterId);
         comment.update(content);
+        commentRepository.save(comment);
         return toResponse(comment);
     }
 

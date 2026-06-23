@@ -51,7 +51,7 @@ class NotificationApiTest {
     void getNotifications_returns200() throws Exception {
         String token = tokenFor("notif1@hakku.dev");
         given(notificationService.getNotifications(anyLong())).willReturn(List.of(
-                new NotificationResponse(NotificationType.COMMENT, 99L, "테스터", 1L, "제목", "댓글을 달았습니다.",
+                new NotificationResponse(NotificationType.COMMENT, 99L, "테스터", 1L, "제목", null, "댓글을 달았습니다.",
                         Instant.now().toEpochMilli())
         ));
 
