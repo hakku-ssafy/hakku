@@ -2,8 +2,8 @@
   <div class="u-container u-container--auth flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
     <div class="w-full u-rise">
       <div class="text-center mb-8">
-        <router-link to="/" class="u-serif text-[1.75rem] text-ink">학꾸</router-link>
-        <p class="u-eyebrow mt-3 text-ink-muted">AI Personal Color</p>
+        <router-link to="/" class="auth-logo">hakku<span class="text-accent">.</span></router-link>
+        <p class="auth-subtitle">학꾸와 함께 시작해요</p>
       </div>
 
       <AppCard>
@@ -145,6 +145,18 @@ async function handleSignup() {
 </script>
 
 <style scoped>
+.auth-logo {
+  font-weight: 800;
+  font-size: 1.875rem;
+  letter-spacing: -0.04em;
+  color: var(--hk-ink);
+}
+.auth-subtitle {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--hk-text-muted);
+}
+
 /* B5. 세그먼트 토글 */
 .hk-seg {
   display: grid;
