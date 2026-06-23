@@ -16,30 +16,35 @@
 
     <template v-else-if="post">
       <article class="u-rise">
-        <h1 class="u-serif text-title text-ink mb-4">{{ post.title }}</h1>
-        <div class="flex items-center gap-3 text-sm text-ink-muted mb-7 flex-wrap pb-6 border-b border-line">
-          <router-link :to="`/users/${post.authorId}`" class="font-medium text-ink-soft hover:text-accent transition-colors">
+        <h1 class="post-title">{{ post.title }}</h1>
+        <div class="post-meta">
+          <span class="post-meta__avatar" aria-hidden="true">{{ authorInitial }}</span>
+          <router-link :to="`/users/${post.authorId}`" class="post-meta__author">
             {{ post.authorNickname }}
           </router-link>
-          <span class="text-ink-faint">{{ formatDate(post.createdAt) }}</span>
-          <button
-            v-if="authStore.isAuthenticated"
-            type="button"
-            class="like-pill ml-auto"
-            :class="post.liked ? 'like-pill--active' : ''"
-            :aria-pressed="post.liked"
-            :disabled="likeLoading"
-            @click="handleLike"
-          >
-            <HeartIcon :filled="post.liked" /> <span class="tabular-nums">{{ post.likeCount }}</span>
-          </button>
-          <span v-else class="like-pill like-pill--static ml-auto"><HeartIcon :filled="false" /> <span class="tabular-nums">{{ post.likeCount }}</span></span>
+          <span class="post-meta__time">{{ formatDate(post.createdAt) }}</span>
         </div>
+
+        <button
+          v-if="authStore.isAuthenticated"
+          type="button"
+          class="like-pill"
+          :class="post.liked ? 'like-pill--active' : ''"
+          :aria-pressed="post.liked"
+          :disabled="likeLoading"
+          @click="handleLike"
+        >
+          <HeartIcon :filled="post.liked" /> 좋아요 <span class="tabular-nums">{{ post.likeCount }}</span>
+        </button>
+        <span v-else class="like-pill like-pill--static">
+          <HeartIcon :filled="false" /> 좋아요 <span class="tabular-nums">{{ post.likeCount }}</span>
+        </span>
+
         <img
           v-if="post.imageUrl"
           :src="post.imageUrl"
           :alt="post.title"
-          class="w-full max-w-md mx-auto rounded-md border border-line mb-7 object-contain"
+          class="post-image"
         />
         <p class="post-body whitespace-pre-wrap">{{ post.content }}</p>
       </article>
@@ -99,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePostStore } from '@/stores/posts'
@@ -125,6 +130,8 @@ const newComment = ref('')
 const commentError = ref('')
 const commentSubmitting = ref(false)
 const likeLoading = ref(false)
+
+const authorInitial = computed(() => post.value?.authorNickname?.charAt(0).toUpperCase() ?? '?')
 
 function normalizePost(raw: Post): Post {
   return {
@@ -199,10 +206,62 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.post-title {
+  margin: 0 0 14px;
+  font-size: clamp(1.5rem, 1.25rem + 1.2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: var(--hk-ink);
+}
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--hk-border);
+  margin-bottom: 26px;
+}
+.post-meta__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--hk-radius-pill);
+  background: var(--hk-cream);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hk-ink-3);
+  flex: none;
+  user-select: none;
+}
+.post-meta__author {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hk-ink);
+  transition: color 0.18s ease;
+}
+.post-meta__author:hover {
+  color: var(--accent, #16140f);
+}
+.post-meta__time {
+  font-size: 13px;
+  color: var(--hk-text-quiet);
+}
+.post-image {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto 30px;
+  border-radius: var(--hk-radius-md);
+  border: 1px solid var(--hk-border);
+  object-fit: contain;
+}
+
 /* 본문 — 에디토리얼 가독성 (reading 폭) */
 .post-body {
   color: var(--hk-ink-2, #4f483f);
-  font-size: 0.9375rem;
+  font-size: 0.96875rem;
   line-height: 1.8;
 }
 
@@ -210,10 +269,11 @@ onMounted(async () => {
 .like-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  height: 2rem;
-  padding: 0 0.85rem;
-  font-size: 0.8125rem;
+  gap: 0.4rem;
+  height: 2.75rem;
+  margin-bottom: 30px;
+  padding: 0 1.375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-ink-soft);
   background: var(--color-surface);
