@@ -3,12 +3,9 @@
     <SectionHeader eyebrow="For You" title="맞춤 추천 상품" description="퍼스널컬러와 취향, 활동을 바탕으로 골랐어요." />
 
     <!-- 퍼스널컬러 컨텍스트 -->
-    <div v-if="personalColorLabel" class="-mt-3 mb-7 flex flex-wrap items-center gap-2.5">
-      <AppBadge variant="accent">
-        <span class="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
-        {{ personalColorLabel }}
-      </AppBadge>
-      <span class="text-xs text-ink-muted">내 퍼스널컬러를 기준으로 정렬했어요</span>
+    <div v-if="personalColorLabel" class="rec-pc">
+      <span class="rec-pc__dot" aria-hidden="true" />
+      <span class="rec-pc__text">{{ personalColorLabel }} 기준으로 정렬했어요</span>
     </div>
 
     <div v-if="loading" role="status" class="flex justify-center py-20">
@@ -21,7 +18,7 @@
     <div v-else-if="error" class="text-center py-20 text-red-600 text-sm">{{ error }}</div>
 
 
-    <div v-else-if="recommendations.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
+    <div v-else-if="recommendations.length > 0" class="rec-grid">
       <ProductCard v-for="item in recommendations" :key="item.product.id" :product="item.product">
         <template #meta>
           <div class="mt-2.5 pt-2.5 border-t border-line">
@@ -107,3 +104,46 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* 퍼스널컬러 컨텍스트 알약 */
+.rec-pc {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--hk-radius-pill);
+  background: var(--accent-soft, #f1efec);
+  border: 1px solid var(--accent, #16140f);
+  margin: -4px 0 34px;
+}
+.rec-pc__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--hk-radius-pill);
+  background: var(--accent, #16140f);
+}
+.rec-pc__text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-ink, #16140f);
+}
+
+/* 추천 그리드 — 4열(1024+) → 3열(768) → 2열(모바일), gap 22/18 */
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px 18px;
+}
+@media (min-width: 768px) {
+  .rec-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .rec-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+</style>
