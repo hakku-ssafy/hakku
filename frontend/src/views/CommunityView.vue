@@ -2,7 +2,7 @@
   <div class="u-container u-container--community py-10 sm:py-12">
     <div class="flex items-end justify-between gap-4 mb-6">
       <div>
-        <span class="u-eyebrow">Community</span>
+        <span class="u-eyebrow">Lounge</span>
         <h1 class="u-serif text-title text-ink mt-2.5">커뮤니티</h1>
       </div>
       <div class="flex gap-2 shrink-0 pb-1">
@@ -89,7 +89,7 @@
     </AppCard>
 
     <!-- 로딩 -->
-    <div v-if="store.loading" :class="isShowcase ? 'grid grid-cols-2 sm:grid-cols-3 gap-5' : 'divide-y divide-line border-y border-line'">
+    <div v-if="store.loading" :class="isShowcase ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'divide-y divide-line border-y border-line'">
       <template v-if="isShowcase">
         <SkeletonBlock v-for="i in 6" :key="i" height="auto" width="100%" class="aspect-[3/4] !rounded-md" />
       </template>
@@ -106,7 +106,7 @@
     </div>
 
     <!-- 학생증 자랑: 쇼케이스 그리드 -->
-    <div v-else-if="isShowcase && store.posts.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-5">
+    <div v-else-if="isShowcase && store.posts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       <router-link
         v-for="(post, idx) in store.posts"
         :key="post.id"

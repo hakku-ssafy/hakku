@@ -41,6 +41,9 @@ test.describe('공개 라우트', () => {
   test('community list', async ({ page }) => {
     await snap(page, '/community', 'community')
   })
+  test('community — showcase board', async ({ page }) => {
+    await snap(page, '/community?board=showcase', 'community-showcase')
+  })
   test('post detail', async ({ page }) => {
     await snap(page, '/community/1', 'post-detail')
   })
