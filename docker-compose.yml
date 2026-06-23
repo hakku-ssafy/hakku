@@ -103,6 +103,44 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  payment-server:
+    build:
+      context: ./payment-server
+      dockerfile: Dockerfile
+    container_name: hakku-payment-server
+    environment:
+      SERVER_PORT: 8083
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-hakku}
+      POSTGRES_USER: ${POSTGRES_USER:-hakku}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hakku}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL_SECONDS: ${JWT_ACCESS_TTL_SECONDS:-3600}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      # 공유 hakku DB 의 Flyway 순서 보장: main 이 베이스 스키마를 먼저 만든 뒤
+      # payment 가 별도 이력 테이블 + baseline(v0) + V1 로 얹는다. main 은 payment 에
+      # 의존하지 않아 사이클 없음(런타임 결합이 아니라 마이그레이션 부팅 순서만 강제).
+      main-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8083/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
   storage-server:
     build:
       context: ./storage-server
@@ -168,6 +206,8 @@ services:
       - ./data/coupang_images:/usr/share/nginx/product-images:ro
     depends_on:
       main-server:
+        condition: service_healthy
+      payment-server:
         condition: service_healthy
       ai-server:
         condition: service_healthy
