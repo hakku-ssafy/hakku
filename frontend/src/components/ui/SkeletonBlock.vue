@@ -11,13 +11,21 @@ withDefaults(defineProps<{ height?: string; width?: string }>(), {
 
 <style scoped>
 .skeleton {
-  background: linear-gradient(
+  background-color: var(--color-track, #f0ebe2);
+  background-image: linear-gradient(
     100deg,
-    var(--color-surface-sunken) 30%,
-    color-mix(in srgb, var(--color-accent) 7%, var(--color-surface-soft)) 50%,
-    var(--color-surface-sunken) 70%
+    #f0ebe2 30%,
+    #f6f3ee 50%,
+    #f0ebe2 70%
   );
   background-size: 200% 100%;
+  background-repeat: no-repeat;
   animation: u-shimmer 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    background-image: none;
+    animation: none;
+  }
 }
 </style>

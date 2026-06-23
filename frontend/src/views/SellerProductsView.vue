@@ -1,34 +1,35 @@
 <template>
-  <div class="u-container max-w-2xl py-10 sm:py-12">
-    <div class="border-b border-line pb-4 mb-7">
+  <div class="u-container u-container--mypage py-10 sm:py-12">
+    <header class="border-b border-line pb-5 mb-7">
       <span class="u-eyebrow">Seller</span>
       <h1 class="u-serif text-title text-ink mt-2.5">상품 등록</h1>
-    </div>
+    </header>
 
-    <div v-if="!isSeller" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+    <div v-if="!isSeller" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
       판매자만 접근할 수 있습니다.
     </div>
 
     <template v-else>
-      <div v-if="successMessage" role="status" class="mb-4 px-3.5 py-3 bg-surface-sunken border border-line rounded-lg text-ink text-sm">
+      <div v-if="successMessage" role="status" class="mb-4 px-4 py-3 bg-accent-soft border border-accent rounded-md text-accent-ink text-sm font-medium">
         {{ successMessage }}
       </div>
-      <div v-if="errorMessage" role="alert" class="mb-4 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+      <div v-if="errorMessage" role="alert" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
         {{ errorMessage }}
       </div>
 
-      <form class="rounded-xl border border-line bg-surface p-6 space-y-5" @submit.prevent="handleSubmit">
+      <form class="rounded-lg border border-line bg-surface p-6 sm:p-8 space-y-6" @submit.prevent="handleSubmit">
         <AppInput v-model="name" label="상품명" type="text" required />
         <AppTextarea v-model="description" label="설명" :rows="4" required />
 
         <label class="block">
-          <span class="block text-sm font-medium text-ink mb-1.5">가격 (원)</span>
+          <span class="block text-sm font-medium text-ink mb-1.5">가격 (원)<span class="text-accent"> *</span></span>
           <input
             v-model.number="price"
             type="number"
             min="0"
             required
-            class="w-full h-11 px-3.5 bg-surface text-ink rounded-lg border border-line-strong placeholder:text-ink-muted transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 tabular-nums"
+            inputmode="numeric"
+            class="w-full h-[50px] px-4 bg-surface text-ink rounded-md border border-line-control placeholder:text-ink-faint transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 tabular-nums u-mono"
           />
         </label>
 
@@ -38,41 +39,41 @@
         </AppSelect>
 
         <div>
-          <span class="block text-sm font-medium text-ink mb-2">컬러</span>
+          <span class="block text-[13px] font-semibold text-ink-soft mb-2.5">컬러<span class="text-accent"> *</span></span>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="color in selectableColors"
               :key="color.value"
               type="button"
-              class="px-3 py-1.5 rounded-full text-sm font-medium border transition-colors"
+              class="px-3.5 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-colors"
               :class="selectedColors.includes(color.value)
-                ? 'border-ink bg-ink text-canvas'
-                : 'border-line-strong text-ink-soft hover:border-ink-muted hover:text-ink'"
+                ? 'border-ink bg-paper-selected text-ink'
+                : 'border-line text-ink-soft hover:border-line-strong hover:text-ink'"
               @click="toggleColor(color.value)"
             >{{ color.label }}</button>
           </div>
         </div>
 
         <div>
-          <span class="block text-sm font-medium text-ink mb-2">상품 이미지</span>
+          <span class="block text-[13px] font-semibold text-ink-soft mb-2.5">상품 이미지<span class="text-accent"> *</span></span>
           <div
-            class="border-2 border-dashed rounded-xl p-6 text-center transition-colors"
-            :class="isDragging ? 'border-accent bg-accent-soft' : 'border-line-strong hover:border-ink-muted'"
+            class="border border-dashed rounded-lg p-8 text-center transition-colors"
+            :class="isDragging ? 'border-accent bg-accent-soft' : 'border-line-dashed hover:border-line-strong'"
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="handleDrop"
           >
             <div v-if="!previewUrl">
-              <p class="text-sm text-ink-soft mb-2">이미지를 드래그하거나 선택하세요</p>
-              <p class="text-xs text-ink-muted mb-3">JPG, PNG, WEBP (최대 10MB)</p>
-              <label class="inline-flex items-center cursor-pointer h-10 px-4 bg-accent text-accent-ink rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+              <p class="text-sm text-ink-soft mb-1.5">이미지를 드래그하거나 선택하세요</p>
+              <p class="text-xs text-ink-faint mb-4">JPG, PNG, WEBP (최대 10MB)</p>
+              <label class="inline-flex items-center cursor-pointer h-10 px-5 bg-ink text-white rounded-cta text-sm font-semibold hover:bg-ink/90 transition-colors">
                 파일 선택
                 <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileChange" />
               </label>
             </div>
             <div v-else class="relative inline-block">
-              <img :src="previewUrl" alt="미리보기" class="max-h-48 rounded-lg object-contain" />
-              <button type="button" aria-label="이미지 제거" class="absolute top-2 right-2 w-7 h-7 bg-canvas rounded-full shadow grid place-items-center text-ink-muted hover:text-ink" @click="clearImage">×</button>
+              <img :src="previewUrl" alt="미리보기" class="max-h-48 rounded-img object-contain" />
+              <button type="button" aria-label="이미지 제거" class="absolute top-2 right-2 w-7 h-7 bg-surface border border-line rounded-full grid place-items-center text-ink-muted hover:text-ink transition-colors" @click="clearImage">×</button>
             </div>
           </div>
         </div>
