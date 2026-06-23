@@ -1,5 +1,6 @@
 import { ref, watch, onUnmounted, toValue, type MaybeRefOrGetter } from 'vue'
 import axios from 'axios'
+import { toSameOriginStorageUrl } from '@/lib/storageUrl'
 
 /**
  * 인증이 필요한 이미지(예: 퍼스널컬러 진단 사진)를 Bearer 토큰과 함께
@@ -31,7 +32,9 @@ export function useAuthedImage(source: MaybeRefOrGetter<string | null>) {
     loading.value = true
     try {
       const token = localStorage.getItem('accessToken')
-      const { data } = await axios.get<Blob>(url, {
+      // 절대 도메인으로 저장된 스토리지 URL을 same-origin 으로 정규화한다.
+      // (cross-origin + Authorization 헤더는 CORS preflight 를 유발해 차단된다)
+      const { data } = await axios.get<Blob>(toSameOriginStorageUrl(url), {
         responseType: 'blob',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       })
