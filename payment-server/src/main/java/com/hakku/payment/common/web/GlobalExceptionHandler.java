@@ -1,5 +1,6 @@
 package com.hakku.payment.common.web;
 
+import com.hakku.payment.gateway.toss.TossApiUnavailableException;
 import com.hakku.payment.payment.exception.IdempotencyConflictException;
 import com.hakku.payment.payment.exception.PaymentNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,6 +56,17 @@ public class GlobalExceptionHandler {
         log.error("회복 불가한 무결성 위반: {} {}", request.getMethod(), request.getRequestURI(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."));
+    }
+
+    /**
+     * 토스 결제 승인 API 통신 실패(5xx/네트워크) → 502. 결제 성공 여부가 미정이므로 임의 정산하지 않고
+     * 게이트웨이 오류로 알린다. 세부는 서버 로그에만 남기고 클라이언트엔 일반화 메시지를 준다.
+     */
+    @ExceptionHandler(TossApiUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleTossUnavailable(TossApiUnavailableException ex) {
+        log.error("토스 결제 승인 통신 실패", ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ErrorResponse("결제 승인 처리가 지연되고 있습니다. 잠시 후 다시 시도해 주세요."));
     }
 
     /** 요청 바디 Bean Validation 실패 → 400. */
