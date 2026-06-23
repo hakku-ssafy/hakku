@@ -1,9 +1,9 @@
 <template>
   <div class="u-container u-container--reading py-10 sm:py-12">
-    <div class="mb-9">
+    <div class="diag-head">
       <span class="u-eyebrow">AI Personal Color</span>
-      <h1 class="u-serif text-headline text-ink mt-3">퍼스널컬러 진단</h1>
-      <p class="text-ink-soft mt-3">얼굴 사진을 올리면 AI가 당신의 계절 타입을 분석해드려요.</p>
+      <h1 class="diag-title">퍼스널컬러 진단</h1>
+      <p class="diag-sub">얼굴이 잘 보이는 사진을 올리면 16가지 퍼스널컬러를 분석해드려요.</p>
     </div>
 
     <!-- 프로필 로딩 중 -->
@@ -21,26 +21,17 @@
       </p>
     </AppCard>
 
-    <!-- 진단 완료 (COMPLETED) — 결과 블록(hk-pop, shadow-result, accent 강조) -->
-    <div v-else-if="diagnosisStatus === 'COMPLETED'" class="hk-result rounded-block border border-line overflow-hidden">
-      <div class="hk-result__head bg-accent-soft px-8 py-10 text-center">
-        <img
-          v-if="resultImageSrc"
-          :src="resultImageSrc"
-          alt="진단 결과 이미지"
-          class="relative w-32 h-32 rounded-full object-cover mx-auto mb-5 border-4 border-surface shadow-result"
-        />
-        <span class="u-eyebrow" style="color: var(--accent-ink)">My Personal Color</span>
-      </div>
-      <div class="p-6 text-center">
-        <h2 class="u-serif text-headline text-accent">{{ formatPersonalColor(personalColor) }}</h2>
-        <p class="text-ink-soft text-sm mt-3 mb-5">진단 결과를 바탕으로 어울리는 상품을 추천해드려요.</p>
-        <div class="space-y-3">
-          <AppButton v-if="resultImageSrc" variant="soft" block @click="showResultImage = true">
-            진단 이미지 보기
-          </AppButton>
-          <AppButton variant="accent" to="/recommendations" block>추천 상품 보기</AppButton>
-        </div>
+    <!-- 진단 완료 (COMPLETED) — accent-soft 결과 카드(accent 블록 + PC 라벨 + 버튼) -->
+    <div v-else-if="diagnosisStatus === 'COMPLETED'" class="diag-result">
+      <div class="diag-result__block" aria-hidden="true" />
+      <span class="u-eyebrow" style="color: var(--accent-ink)">진단 완료</span>
+      <h2 class="diag-result__label">{{ formatPersonalColor(personalColor) }}</h2>
+      <p class="diag-result__desc">이제 사이트 전체가 내 컬러로 물들었어요.</p>
+      <div class="diag-result__actions">
+        <button v-if="resultImageSrc" type="button" class="diag-btn diag-btn--outline" @click="showResultImage = true">
+          진단 이미지 보기
+        </button>
+        <router-link to="/recommendations" class="diag-btn diag-btn--accent">추천 상품 보기 →</router-link>
       </div>
     </div>
 
@@ -289,9 +280,80 @@ async function runDiagnosis() {
   background: var(--accent-soft);
 }
 
-/* 결과 블록 — 떠 있는 강조 레이어: hk-pop 진입 + shadow-result */
-.hk-result {
-  animation: hk-pop 0.3s var(--ease-out-soft, ease) both;
+/* 헤더 — 중앙 정렬 */
+.diag-head {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.diag-title {
+  margin: 14px 0 10px;
+  font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.diag-sub {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--hk-text-muted);
+}
+
+/* COMPLETED 결과 카드 — accent 그라데이션 + accent 블록 + hk-pop */
+.diag-result {
+  border-radius: var(--hk-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--accent, #16140f);
+  background: linear-gradient(160deg, var(--accent-soft, #f1efec), var(--hk-surface-warm));
+  padding: 44px 36px;
+  text-align: center;
+  animation: hk-pop 0.5s var(--ease-out-soft, ease) both;
+}
+.diag-result__block {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 22px;
+  border-radius: var(--hk-radius-block);
+  background: var(--accent, #16140f);
   box-shadow: var(--hk-shadow-result);
+}
+.diag-result__label {
+  margin: 12px 0 6px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink, #16140f);
+}
+.diag-result__desc {
+  margin: 0 0 26px;
+  font-size: 14px;
+  color: var(--hk-text-muted);
+}
+.diag-result__actions {
+  display: flex;
+  gap: 11px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.diag-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--hk-radius-pill);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: transform 0.18s var(--ease-out-expo), filter 0.18s ease;
+}
+.diag-btn:hover {
+  transform: translateY(-1px);
+}
+.diag-btn--outline {
+  background: var(--hk-surface);
+  border: 1px solid var(--accent, #16140f);
+  color: var(--accent-ink, #16140f);
+}
+.diag-btn--accent {
+  background: var(--accent, #16140f);
+  color: #fff;
 }
 </style>
