@@ -16,10 +16,12 @@ export default defineConfig({
   expect: {
     toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled' },
   },
+  // 항상 새 dev 서버를 띄운다(reuse 금지). 예전엔 leftover 서버를 재사용하다
+  // 옛 코드가 캡처되는 사일런트 회귀가 있었음 → strictPort 로 포트 점유 시 즉시 실패.
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run dev -- --port 5173 --strictPort',
     url: 'http://localhost:5173',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   use: { baseURL: 'http://localhost:5173' },
