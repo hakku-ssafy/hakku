@@ -84,3 +84,14 @@ test.describe('인증 라우트', () => {
     await snap(page, '/seller/products', 'seller', { authed: true, role: 'SELLER' })
   })
 })
+
+test.describe('오버레이', () => {
+  test('chat window — open (authed)', async ({ page }) => {
+    await mockApi(page, { authed: true })
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: '학꾸 AI 도우미 열기' }).click()
+    await expect(page.getByRole('button', { name: '닫기', exact: true })).toBeVisible()
+    await expect(page).toHaveScreenshot('chat-open.png', { fullPage: true })
+  })
+})
