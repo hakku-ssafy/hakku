@@ -7,6 +7,7 @@
           :diagnosis-state="heroState"
           :personal-color-label="formatPersonalColor(personalColor)"
           :has-diagnosis-image="!!diagnosisImageSrc"
+          :recommended-products="heroRecommendedProducts"
           @view-image="showDiagnosisModal = true"
         />
       </div>
@@ -29,7 +30,7 @@
 
           <div v-if="productStore.loading" class="product-grid">
             <div v-for="i in 8" :key="i">
-              <SkeletonBlock height="auto" width="100%" class="aspect-[3/4] mb-2.5 rounded-img" />
+              <SkeletonBlock height="auto" width="100%" class="aspect-square mb-2.5 rounded-img" />
               <SkeletonBlock height="0.875rem" width="80%" class="mb-1.5" />
               <SkeletonBlock height="0.875rem" width="50%" />
             </div>
@@ -166,6 +167,9 @@ const displayProducts = computed(() => {
   }
   return productStore.products.slice(0, 8)
 })
+
+// 히어로 리드 카드(진단 완료 시)용 추천 상품 — 상위 4개.
+const heroRecommendedProducts = computed(() => recommendations.value.slice(0, 4).map((r) => r.product))
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)

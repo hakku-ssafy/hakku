@@ -3,7 +3,7 @@
     <router-link :to="`/products/${item.productId}`" class="block">
       <div class="relative">
         <div
-          class="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-[5px]"
+          class="flex aspect-square items-center justify-center overflow-hidden rounded-[5px]"
           :class="item.productImageUrl ? 'bg-cream' : toneClass"
         >
           <img

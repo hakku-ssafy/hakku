@@ -2,7 +2,7 @@
   <router-link :to="`/products/${product.id}`" class="pcard group block">
     <div class="relative">
       <div
-        class="aspect-[3/4] overflow-hidden rounded-[5px] flex items-center justify-center"
+        class="aspect-square overflow-hidden rounded-[5px] flex items-center justify-center"
         :class="product.imageUrl ? 'bg-cream' : toneClass"
       >
         <img
