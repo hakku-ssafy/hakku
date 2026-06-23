@@ -1,27 +1,19 @@
 <template>
-  <div class="u-container max-w-2xl py-10 sm:py-12">
-    <div class="mb-9">
+  <div class="u-container u-container--reading py-10 sm:py-12">
+    <div class="diag-head">
       <span class="u-eyebrow">AI Personal Color</span>
-      <h1 class="u-serif text-headline text-ink mt-3">퍼스널컬러 진단</h1>
-      <p class="text-ink-soft mt-3">얼굴 사진을 올리면 AI가 당신의 계절 타입을 분석해드려요.</p>
+      <h1 class="diag-title">퍼스널컬러 진단</h1>
+      <p class="diag-sub">얼굴이 잘 보이는 사진을 올리면 16가지 퍼스널컬러를 분석해드려요.</p>
     </div>
 
     <!-- 프로필 로딩 중 -->
     <div v-if="profileLoading" class="flex justify-center py-20" role="status">
-      <svg class="animate-spin h-8 w-8 text-accent" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
-        <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
-      </svg>
+      <span class="hk-spinner" aria-hidden="true" />
     </div>
 
-    <!-- AI 분석 진행 중 (PENDING) -->
+    <!-- AI 분석 진행 중 (PENDING) — E5 로더 -->
     <AppCard v-else-if="diagnosisStatus === 'PENDING'" class="text-center" padded>
-      <div class="w-20 h-20 rounded-full border border-accent-line grid place-items-center mx-auto mb-6">
-        <svg class="w-9 h-9 text-accent animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
-          <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
-        </svg>
-      </div>
+      <span class="hk-spinner hk-spinner--lg mx-auto mb-6" role="status" aria-label="분석 중" />
       <h2 class="u-serif text-xl text-ink mb-2">AI가 분석하고 있어요</h2>
       <p class="text-ink-soft text-sm leading-relaxed">
         분석에는 수 분이 걸릴 수 있어요.<br />
@@ -29,35 +21,24 @@
       </p>
     </AppCard>
 
-    <!-- 진단 완료 (COMPLETED) -->
-    <div v-else-if="diagnosisStatus === 'COMPLETED'" class="rounded-2xl border border-line overflow-hidden shadow-sm u-rise">
-      <div class="relative u-gradient-accent px-8 py-10 text-center overflow-hidden">
-        <span class="pointer-events-none absolute top-5 left-6 text-xl text-accent-ink/40 u-float" aria-hidden="true">✦</span>
-        <span class="pointer-events-none absolute bottom-6 right-8 text-base text-accent-ink/30 u-float" style="animation-delay: -2s" aria-hidden="true">✧</span>
-        <img
-          v-if="resultImageSrc"
-          :src="resultImageSrc"
-          alt="진단 결과 이미지"
-          class="relative w-32 h-32 rounded-full object-cover mx-auto mb-5 border-4 border-canvas shadow-md"
-        />
-        <span class="u-eyebrow" style="color: var(--color-accent-ink)">My Personal Color</span>
-      </div>
-      <div class="p-6 text-center">
-        <h2 class="u-serif text-headline u-gradient-text">{{ formatPersonalColor(personalColor) }}</h2>
-        <p class="text-ink-soft text-sm mt-3 mb-5">진단 결과를 바탕으로 어울리는 상품을 추천해드려요.</p>
-        <div class="space-y-3">
-          <AppButton v-if="resultImageSrc" variant="secondary" block @click="showResultImage = true">
-            진단 이미지 보기
-          </AppButton>
-          <AppButton to="/recommendations" block>추천 상품 보기</AppButton>
-        </div>
+    <!-- 진단 완료 (COMPLETED) — accent-soft 결과 카드(accent 블록 + PC 라벨 + 버튼) -->
+    <div v-else-if="diagnosisStatus === 'COMPLETED'" class="diag-result">
+      <div class="diag-result__block" aria-hidden="true" />
+      <span class="u-eyebrow" style="color: var(--accent-ink)">진단 완료</span>
+      <h2 class="diag-result__label">{{ formatPersonalColor(personalColor) }}</h2>
+      <p class="diag-result__desc">이제 사이트 전체가 내 컬러로 물들었어요.</p>
+      <div class="diag-result__actions">
+        <button v-if="resultImageSrc" type="button" class="diag-btn diag-btn--outline" @click="showResultImage = true">
+          진단 이미지 보기
+        </button>
+        <router-link to="/recommendations" class="diag-btn diag-btn--accent">추천 상품 보기 →</router-link>
       </div>
     </div>
 
     <!-- 진단 접수 완료 (로컬 submitted 상태) -->
     <AppCard v-else-if="submitted" class="text-center" padded>
       <div class="w-16 h-16 rounded-full bg-accent-soft grid place-items-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 text-accent-ink" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
@@ -68,25 +49,25 @@
       </p>
     </AppCard>
 
-    <!-- 업로드 폼 (NONE) -->
+    <!-- 업로드 폼 (NONE) — E6 드롭존: 1.5px 점선 보더, 원형 아이콘(accent-soft), 안내 + 시작 버튼 -->
     <div v-else>
       <div
-        class="rounded-2xl border-2 border-dashed p-12 text-center transition-all duration-200"
-        :class="isDragging ? 'border-accent bg-accent-soft ring-4 ring-accent/15 scale-[1.01]' : 'border-line-strong hover:border-accent'"
+        class="hk-dropzone"
+        :class="isDragging ? 'is-dragging' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleDrop"
       >
         <div v-if="!previewUrl">
           <div class="w-16 h-16 rounded-full bg-accent-soft grid place-items-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <svg class="w-8 h-8 text-accent-ink" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
           <p class="text-ink font-medium mb-1">사진을 드래그하거나 클릭해서 업로드</p>
           <p class="text-ink-muted text-sm">JPG, PNG, WEBP (최대 10MB)</p>
           <label class="mt-5 inline-block cursor-pointer">
-            <span class="inline-flex items-center h-11 px-5 u-gradient-accent text-accent-ink rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
+            <span class="inline-flex items-center h-11 px-6 bg-ink text-white rounded-full text-sm font-semibold transition-colors hover:bg-ink/90">
               파일 선택
             </span>
             <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileChange" />
@@ -94,11 +75,11 @@
         </div>
 
         <div v-else class="relative inline-block">
-          <img :src="previewUrl" alt="업로드된 이미지" class="max-h-72 rounded-lg object-contain" />
+          <img :src="previewUrl" alt="업로드된 이미지" class="max-h-72 rounded-md object-contain" />
           <button
             type="button"
             aria-label="이미지 제거"
-            class="absolute top-2 right-2 w-8 h-8 bg-canvas rounded-full shadow grid place-items-center text-ink-muted hover:text-accent transition-colors"
+            class="absolute top-2 right-2 w-8 h-8 bg-surface border border-line rounded-full shadow-sm grid place-items-center text-ink-muted hover:text-ink hover:border-line-control transition-colors"
             @click="clearFile"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -111,7 +92,7 @@
       <div
         v-if="errorMessage"
         role="alert"
-        class="mt-4 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
+        class="mt-4 px-3.5 py-3 bg-accent-soft border border-line rounded-md text-ink text-sm"
       >
         {{ errorMessage }}
       </div>
@@ -130,7 +111,7 @@
 
     <!-- 진단 이미지 모달 -->
     <AppModal v-model:open="showResultImage" title="진단 이미지" max-width="md">
-      <img v-if="resultImageSrc" :src="resultImageSrc" alt="진단 이미지" class="w-full rounded-lg" />
+      <img v-if="resultImageSrc" :src="resultImageSrc" alt="진단 이미지" class="w-full rounded-md" />
     </AppModal>
   </div>
 </template>
@@ -260,3 +241,119 @@ async function runDiagnosis() {
   }
 }
 </script>
+
+<style scoped>
+/* E5. 로더 — 원형 보더 + accent border-top-color, hk-spin .8s linear infinite */
+.hk-spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--hk-radius-pill);
+  border: 3px solid var(--hk-border);
+  border-top-color: var(--accent);
+  animation: hk-spin 0.8s linear infinite;
+}
+.hk-spinner--lg {
+  display: block;
+  width: 52px;
+  height: 52px;
+  border-width: 4px;
+}
+
+/* E6. 업로드 드롭존 — 1.5px dashed 보더, 라운드 10px, 중앙 정렬 */
+.hk-dropzone {
+  padding: 48px 24px;
+  text-align: center;
+  border: 1.5px dashed var(--hk-border-dashed);
+  border-radius: var(--hk-radius-lg);
+  background: var(--hk-surface);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+.hk-dropzone:hover {
+  border-color: var(--accent);
+}
+.hk-dropzone.is-dragging {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+}
+
+/* 헤더 — 중앙 정렬 */
+.diag-head {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.diag-title {
+  margin: 14px 0 10px;
+  font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.diag-sub {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--hk-text-muted);
+}
+
+/* COMPLETED 결과 카드 — accent 그라데이션 + accent 블록 + hk-pop */
+.diag-result {
+  border-radius: var(--hk-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--accent, #16140f);
+  background: linear-gradient(160deg, var(--accent-soft, #f1efec), var(--hk-surface-warm));
+  padding: 44px 36px;
+  text-align: center;
+  animation: hk-pop 0.5s var(--ease-out-soft, ease) both;
+}
+.diag-result__block {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 22px;
+  border-radius: var(--hk-radius-block);
+  background: var(--accent, #16140f);
+  box-shadow: var(--hk-shadow-result);
+}
+.diag-result__label {
+  margin: 12px 0 6px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink, #16140f);
+}
+.diag-result__desc {
+  margin: 0 0 26px;
+  font-size: 14px;
+  color: var(--hk-text-muted);
+}
+.diag-result__actions {
+  display: flex;
+  gap: 11px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.diag-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--hk-radius-pill);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: transform 0.18s var(--ease-out-expo), filter 0.18s ease;
+}
+.diag-btn:hover {
+  transform: translateY(-1px);
+}
+.diag-btn--outline {
+  background: var(--hk-surface);
+  border: 1px solid var(--accent, #16140f);
+  color: var(--accent-ink, #16140f);
+}
+.diag-btn--accent {
+  background: var(--accent, #16140f);
+  color: #fff;
+}
+</style>

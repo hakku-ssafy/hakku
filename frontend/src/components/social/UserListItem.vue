@@ -1,16 +1,26 @@
 <template>
   <router-link
     :to="`/users/${user.id}`"
-    class="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 u-pop hover:border-accent-line"
+    class="group flex items-center gap-3 rounded-lg border border-line bg-surface p-3 u-pop hover:border-line-control"
   >
-    <div class="w-11 h-11 rounded-full u-gradient-accent text-accent-ink grid place-items-center shrink-0">
-      <span class="font-bold">{{ initial }}</span>
+    <div
+      class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-cream text-base font-bold text-ink/70 select-none"
+      aria-hidden="true"
+    >
+      {{ initial }}
     </div>
     <div class="min-w-0">
-      <p class="text-sm font-semibold text-ink truncate">{{ user.nickname }}</p>
-      <p v-if="colorLabel" class="text-xs text-ink-muted truncate">{{ colorLabel }}</p>
+      <p class="truncate text-sm font-medium text-ink">{{ user.nickname }}</p>
+      <p v-if="colorLabel" class="truncate text-sm text-ink-muted">{{ colorLabel }}</p>
     </div>
-    <svg class="w-4 h-4 text-ink-muted ml-auto shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <svg
+      class="ml-auto h-4 w-4 shrink-0 text-ink-faint transition-all duration-200 ease-out group-hover:translate-x-0.5 group-hover:text-ink"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   </router-link>

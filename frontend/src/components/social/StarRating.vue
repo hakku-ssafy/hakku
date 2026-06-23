@@ -10,11 +10,17 @@
       type="button"
       :disabled="!editable"
       class="leading-none select-none"
-      :class="[sizeClass, editable ? 'cursor-pointer transition-transform hover:scale-125' : 'cursor-default']"
+      :class="[
+        sizeClass,
+        star <= rating ? 'text-accent' : 'text-line-control',
+        editable
+          ? 'cursor-pointer transition-transform duration-150 ease-out hover:scale-125 focus-visible:scale-125'
+          : 'cursor-default',
+      ]"
       :aria-label="`${star}점`"
       @click="onPick(star)"
     >
-      <span :style="{ color: star <= rating ? '#ffb020' : 'var(--color-line-strong)' }">★</span>
+      <span aria-hidden="true">★</span>
     </button>
   </div>
 </template>

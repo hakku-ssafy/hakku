@@ -59,7 +59,7 @@ describe('ProductListView', () => {
       global: { plugins: [createPinia(), router] }
     })
 
-    expect(screen.getByRole('heading', { name: /상품/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /꾸미기 아이템/ })).toBeInTheDocument()
   })
 
   it('로딩 중에 스피너가 표시된다', async () => {

@@ -1,18 +1,24 @@
 <template>
-  <div class="u-container flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
-    <div class="w-full max-w-sm u-rise">
-      <div class="text-center mb-9">
-        <router-link to="/" class="u-serif text-3xl font-bold text-ink">학꾸</router-link>
-        <p class="text-ink-muted text-sm mt-2">AI 퍼스널컬러 꾸미기 플랫폼</p>
+  <div class="u-container u-container--auth flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
+    <div class="w-full u-rise">
+      <div class="text-center mb-8">
+        <router-link to="/" class="auth-logo">hakku<span class="text-accent">.</span></router-link>
+        <p class="auth-subtitle">다시 만나서 반가워요</p>
       </div>
 
       <AppCard>
-        <h1 class="u-serif text-2xl text-ink mb-6">로그인</h1>
+        <!-- B5. 세그먼트 토글 — 로그인/회원가입 전환 -->
+        <nav class="hk-seg mb-7" aria-label="인증 전환">
+          <span class="hk-seg__item is-active" aria-current="page">로그인</span>
+          <router-link to="/signup" class="hk-seg__item">회원가입</router-link>
+        </nav>
+
+        <h1 class="u-serif text-[1.5rem] text-ink mb-6">로그인</h1>
 
         <div
           v-if="errorMessage"
           role="alert"
-          class="mb-5 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
+          class="mb-5 px-3.5 py-3 bg-accent-soft border border-line rounded-md text-ink text-sm"
         >
           {{ errorMessage }}
         </div>
@@ -90,3 +96,48 @@ async function handleLogin() {
   }
 }
 </script>
+
+<style scoped>
+.auth-logo {
+  font-weight: 800;
+  font-size: 1.875rem;
+  letter-spacing: -0.04em;
+  color: var(--hk-ink);
+}
+.auth-subtitle {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--hk-text-muted);
+}
+
+/* B5. 세그먼트 토글 — #f0ebe2 트랙(알약, 패딩 4px), 활성=흰 배경+먹색, 비활성=투명+ink-muted */
+.hk-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--hk-track);
+  border-radius: var(--hk-radius-pill);
+}
+.hk-seg__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: var(--hk-radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--hk-text-muted-2);
+  text-decoration: none;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+.hk-seg__item:hover {
+  color: var(--hk-ink);
+}
+.hk-seg__item.is-active {
+  background: var(--hk-surface);
+  color: var(--hk-ink);
+}
+</style>
