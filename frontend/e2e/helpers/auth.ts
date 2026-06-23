@@ -37,24 +37,35 @@ export async function mockApi(page: Page, opts: MockOpts = {}): Promise<void> {
     })
   }
 
-  await page.route('**/api/**', async (route) => {
-    const body = fixtures.resolve(route.request().url(), {
-      ...opts,
-      method: route.request().method(),
-      body: parseBody(route),
-    })
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(body),
-    })
-  })
+  // 루트 경로 기준으로만 가로챈다. glob `**/api/**`는 Vite 가 서빙하는
+  // `/src/api/*.ts` 모듈 요청까지 잡아 앱 마운트를 깨뜨리므로 pathname 접두사로 좁힌다.
+  await page.route(
+    (url) => url.pathname.startsWith('/api/'),
+    async (route) => {
+      const body = fixtures.resolve(route.request().url(), {
+        ...opts,
+        method: route.request().method(),
+        body: parseBody(route),
+      })
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      })
+    },
+  )
 
-  await page.route('**/storage/**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: PLACEHOLDER_SVG })
-  })
+  await page.route(
+    (url) => url.pathname.startsWith('/storage/'),
+    async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: PLACEHOLDER_SVG })
+    },
+  )
 
-  await page.route('**/ai/**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-  })
+  await page.route(
+    (url) => url.pathname.startsWith('/ai/'),
+    async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    },
+  )
 }
