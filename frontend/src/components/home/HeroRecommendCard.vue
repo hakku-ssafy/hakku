@@ -91,8 +91,8 @@ const slots = computed<(Product | null)[]>(() => {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 .rcard__cell {
