@@ -1,10 +1,10 @@
 <template>
-  <header class="sticky top-0 z-50 border-b border-line bg-canvas/80 backdrop-blur-xl">
-    <div class="u-container h-16 flex items-center justify-between gap-4">
-      <!-- 로고 -->
+  <header class="sticky top-0 z-50 border-b border-line app-header">
+    <div class="u-container h-[72px] flex items-center justify-between gap-4">
+      <!-- 로고 — hakku. 워드마크(마침표 accent) + 브랜드 마크 -->
       <router-link to="/" class="flex items-center gap-2 shrink-0" aria-label="학꾸 홈">
-        <img src="/logo.png" alt="" class="w-8 h-8 rounded-lg object-contain" />
-        <span class="u-serif text-2xl text-ink">학꾸</span>
+        <img src="/logo.png" alt="" class="w-7 h-7 rounded-md object-contain" />
+        <span class="logo-word text-ink">hakku<span class="text-accent">.</span></span>
       </router-link>
 
       <!-- 데스크탑 텍스트 메뉴 -->
@@ -24,6 +24,10 @@
 
       <!-- 우측 액션: 모든 화면에서 오른쪽 고정 -->
       <div class="flex items-center gap-1">
+        <!-- 진단 완료 시 퍼스널컬러 배지 (accent 로 물듦) -->
+        <span v-if="authStore.user?.personalColor" class="pc-badge" aria-label="내 퍼스널컬러">
+          <span class="pc-badge__dot" aria-hidden="true" />내 컬러
+        </span>
         <template v-if="authStore.isAuthenticated">
           <!-- 알림·장바구니 아이콘 (모바일·데스크탑 항상 노출) -->
           <router-link to="/notifications" class="icon-btn relative" aria-label="알림" active-class="icon-btn--active">
@@ -68,34 +72,49 @@ function handleLogout() {
 </script>
 
 <style scoped>
+/* 반투명 + 블러 + 1px 보더(그림자 없음) */
+.app-header {
+  background: var(--hk-header-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.logo-word {
+  font-weight: 800;
+  font-size: 1.4375rem; /* 23px */
+  letter-spacing: -0.04em;
+}
+
+/* 언더라인 탭 — 활성 = 먹색 + 2px 하단 보더 */
 .nav-link {
   display: inline-flex;
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-ink-soft);
-  border-radius: 9999px;
+  color: var(--hk-text-muted);
   white-space: nowrap;
   background: none;
   border: none;
+  border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.18s ease, background 0.18s ease;
+  transition: color 0.18s ease, border-color 0.18s ease;
 }
 .nav-link:hover {
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
+  color: var(--hk-ink);
 }
 .nav-link--active {
-  color: var(--color-accent);
+  color: var(--hk-ink);
+  border-bottom-color: var(--hk-ink);
 }
+
 .icon-btn {
   display: inline-grid;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 9999px;
-  color: var(--color-ink-soft);
+  color: var(--hk-text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -103,9 +122,33 @@ function handleLogout() {
 }
 .icon-btn:hover,
 .icon-btn--active {
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
+  color: var(--hk-ink);
+  background: var(--hk-cream);
 }
+
+/* 퍼스널컬러 배지 — accent-soft 배경 + accent 보더 + accent-ink 텍스트 */
+.pc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 1.75rem;
+  padding: 0 0.7rem;
+  margin-right: 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+.pc-badge__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
 .badge-dot {
   position: absolute;
   top: 0.45rem;
@@ -113,7 +156,7 @@ function handleLogout() {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 9999px;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-canvas);
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--hk-surface-warm);
 }
 </style>

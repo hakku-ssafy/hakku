@@ -1,7 +1,7 @@
 <template>
   <!-- 모바일 전용 하단 고정 탭바 -->
   <nav
-    class="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-line bg-canvas/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
+    class="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-line bg-surface-warm/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
     aria-label="모바일 주 메뉴"
   >
     <ul class="grid h-16" :style="{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }">
@@ -61,14 +61,14 @@ const tabs = computed<Tab[]>(() => {
   justify-content: center;
   gap: 0.2rem;
   height: 100%;
-  color: var(--color-ink-muted);
+  color: var(--hk-text-muted-2);
   transition: color 0.18s ease;
 }
 .tab:hover {
-  color: var(--color-ink-soft);
+  color: var(--hk-text-muted);
 }
 .tab--active {
-  color: var(--color-accent);
+  color: var(--hk-ink);
 }
 .tab__icon :deep(svg) {
   width: 1.5rem;
