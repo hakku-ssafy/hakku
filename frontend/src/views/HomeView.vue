@@ -1,12 +1,18 @@
 <template>
   <div>
-    <!-- ===== 꾸미기 키워드 마퀴 ===== -->
-    <div class="flex overflow-hidden border-b border-line bg-surface-soft py-2.5" aria-hidden="true">
-      <div
-        v-for="n in 2"
-        :key="n"
-        class="u-marquee text-xs font-semibold uppercase tracking-[0.15em] text-ink-muted"
-      >
+    <!-- ===== 꾸미기 키워드 마퀴 (다크 프로모 띠) ===== -->
+    <div class="flex overflow-hidden bg-dark text-cream py-2.5">
+      <div class="u-marquee text-[11px] font-semibold uppercase tracking-[0.16em]">
+        <span class="px-4">핀뱃지 <span class="text-accent">✦</span></span>
+        <span class="px-4">키링 <span class="text-accent">✦</span></span>
+        <span class="px-4">꾸미기 스티커 <span class="text-accent">✦</span></span>
+        <span class="px-4">퍼스널컬러 <span class="text-accent">✦</span></span>
+        <span class="px-4">그립톡 <span class="text-accent">✦</span></span>
+        <span class="px-4">키캡 <span class="text-accent">✦</span></span>
+        <span class="px-4">다꾸 <span class="text-accent">✦</span></span>
+        <span class="px-4">마스킹테이프 <span class="text-accent">✦</span></span>
+      </div>
+      <div class="u-marquee text-[11px] font-semibold uppercase tracking-[0.16em]" aria-hidden="true">
         <span class="px-4">핀뱃지 <span class="text-accent">✦</span></span>
         <span class="px-4">키링 <span class="text-accent">✦</span></span>
         <span class="px-4">꾸미기 스티커 <span class="text-accent">✦</span></span>
@@ -29,66 +35,52 @@
 
       <!-- 비로그인: 웰컴 -->
       <template v-else-if="!authStore.isAuthenticated">
-        <div class="relative">
-          <!-- 배경 블롭 장식 -->
-          <div class="pointer-events-none absolute -top-12 -right-8 w-64 h-64 u-blob u-gradient-accent opacity-20 blur-2xl u-float" aria-hidden="true" />
-          <div
-            class="pointer-events-none absolute top-28 -left-12 w-44 h-44 u-blob opacity-20 blur-2xl u-float"
-            style="background: var(--color-accent-2); animation-delay: -3s"
-            aria-hidden="true"
-          />
-
-          <div class="relative grid md:grid-cols-[1.2fr_0.8fr] gap-12 items-center">
-            <div class="u-rise">
-              <span class="u-eyebrow">AI Personal Color</span>
-              <h1 class="u-serif text-display text-ink mt-5">
-                <span class="u-gradient-text">AI 퍼스널컬러</span>로<br /><span class="u-gradient-text">학생증</span>을 꾸며보자!
-              </h1>
-              <p class="text-ink-soft mt-6 text-base sm:text-lg leading-relaxed max-w-md">
-                얼굴 사진 한 장이면 충분합니다. AI가 16종 퍼스널컬러를 진단하고,
-                당신에게 꼭 맞는 학생증 꾸미기 아이템을 골라드려요.
-              </p>
-              <div class="flex flex-col sm:flex-row gap-3 mt-9">
-                <AppButton to="/diagnosis" size="lg">퍼스널컬러 진단 받기</AppButton>
-                <AppButton to="/products" variant="secondary" size="lg">상품 둘러보기</AppButton>
-              </div>
+        <div class="grid md:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-14 items-center">
+          <div class="u-rise">
+            <span class="u-eyebrow">AI Personal Color</span>
+            <h1 class="u-serif text-display text-ink mt-5">
+              AI 퍼스널컬러로<br />학생증을 꾸며보자!
+            </h1>
+            <p class="text-ink-soft mt-6 text-base sm:text-lg leading-relaxed max-w-md">
+              얼굴 사진 한 장이면 충분합니다. AI가 16종 퍼스널컬러를 진단하고,
+              당신에게 꼭 맞는 학생증 꾸미기 아이템을 골라드려요.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 mt-9">
+              <AppButton to="/diagnosis" size="lg">퍼스널컬러 진단 받기</AppButton>
+              <AppButton to="/products" variant="secondary" size="lg">상품 둘러보기</AppButton>
             </div>
-            <!-- 비비드 컬러 스와치 — "당신의 색을 깨우다" -->
-            <div class="hidden md:grid grid-cols-2 gap-3" aria-hidden="true">
-              <div class="aspect-square rounded-2xl u-gradient-accent shadow-pop u-float" />
-              <div class="aspect-square rounded-2xl translate-y-6 u-float" style="background: #ffd166; animation-delay: -1.5s" />
-              <div class="aspect-square rounded-2xl -translate-y-6 u-float" style="background: #06d6a0; animation-delay: -2.4s" />
-              <div class="aspect-square rounded-2xl u-float" style="background: linear-gradient(135deg, #4d9bff, #7c5cff); animation-delay: -3.2s" />
-            </div>
+          </div>
+          <!-- 퍼스널컬러 스와치 — 웜 톤 4종 (에디토리얼) -->
+          <div class="hidden md:grid grid-cols-2 gap-3" aria-hidden="true">
+            <div class="aspect-square rounded-md u-tone-2 border border-line" />
+            <div class="aspect-square rounded-md u-tone-4 border border-line translate-y-5" />
+            <div class="aspect-square rounded-md u-tone-3 border border-line -translate-y-5" />
+            <div class="aspect-square rounded-md u-tone-1 border border-line" />
           </div>
         </div>
       </template>
 
       <!-- NONE: 진단 필요 — 다크 에디토리얼 패널 -->
       <template v-else-if="diagnosisStatus === 'NONE'">
-        <div class="relative overflow-hidden rounded-2xl bg-ink text-canvas px-8 py-12 sm:px-14 sm:py-16 u-rise">
-          <div class="pointer-events-none absolute -top-16 -right-10 w-72 h-72 u-blob u-gradient-accent opacity-30 blur-2xl u-float" aria-hidden="true" />
-          <span class="u-eyebrow relative" style="color: rgba(255, 255, 255, 0.55)">Personal Color Diagnosis</span>
-          <h2 class="u-serif text-headline mt-4 max-w-xl relative">
+        <div class="overflow-hidden rounded-modal bg-dark text-on-dark px-8 py-12 sm:px-14 sm:py-16 u-rise">
+          <span class="u-eyebrow" style="color: rgba(244, 239, 230, 0.55)">Personal Color Diagnosis</span>
+          <h2 class="u-serif text-headline mt-4 max-w-xl">
             퍼스널컬러 진단받고<br />맞춤 상품을 만나보세요
           </h2>
-          <p class="mt-5 text-base leading-relaxed relative" style="color: rgba(255, 255, 255, 0.7)">
+          <p class="mt-5 text-base leading-relaxed" style="color: rgba(244, 239, 230, 0.7)">
             얼굴 사진 한 장으로 AI가 당신의 계절 타입을 분석해드려요.
           </p>
-          <router-link
-            to="/diagnosis"
-            class="relative inline-flex items-center gap-2 mt-9 h-12 px-7 rounded-full bg-canvas text-ink font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
+          <AppButton to="/diagnosis" variant="on-dark" size="lg" class="mt-9">
             지금 진단받기
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </router-link>
+          </AppButton>
         </div>
       </template>
 
       <!-- PENDING: 분석 중 -->
       <template v-else-if="diagnosisStatus === 'PENDING'">
-        <div class="rounded-2xl border border-line bg-surface-soft px-8 py-10 flex flex-col sm:flex-row items-center gap-6 u-rise">
-          <span class="shrink-0 grid place-items-center w-14 h-14 rounded-full border border-accent-line">
+        <div class="rounded-modal border border-line bg-surface-soft px-8 py-10 flex flex-col sm:flex-row items-center gap-6 u-rise">
+          <span class="shrink-0 grid place-items-center w-14 h-14 rounded-full border-2 border-accent">
             <svg class="w-6 h-6 text-accent animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
               <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
@@ -103,12 +95,9 @@
 
       <!-- COMPLETED: 결과 — 액센트(퍼스널컬러)로 물든 패널 -->
       <template v-else-if="diagnosisStatus === 'COMPLETED'">
-        <div class="relative overflow-hidden rounded-2xl border border-accent-line bg-accent-soft px-8 py-10 sm:px-12 sm:py-12 u-rise">
-          <div class="pointer-events-none absolute -top-16 -right-12 w-60 h-60 u-blob u-gradient-accent opacity-25 blur-2xl" aria-hidden="true" />
-          <span class="pointer-events-none absolute top-6 right-8 text-2xl text-accent/40 u-float" aria-hidden="true">✦</span>
-          <span class="pointer-events-none absolute bottom-8 right-1/3 text-base text-accent-2/40 u-float" style="animation-delay: -2s" aria-hidden="true">✧</span>
-          <div class="relative flex flex-col sm:flex-row sm:items-center gap-8">
-            <div class="shrink-0 grid place-items-center w-20 h-20 rounded-2xl u-gradient-accent text-accent-ink text-3xl shadow-pop u-float">
+        <div class="overflow-hidden rounded-modal border border-accent bg-accent-soft px-8 py-10 sm:px-12 sm:py-12 u-rise">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-8">
+            <div class="shrink-0 grid place-items-center w-20 h-20 rounded-md bg-accent text-white text-3xl">
               ✦
             </div>
             <div class="min-w-0">
@@ -119,7 +108,7 @@
                 <AppButton v-if="diagnosisImageSrc" variant="secondary" size="sm" @click="showDiagnosisModal = true">
                   진단 이미지 보기
                 </AppButton>
-                <AppButton to="/recommendations" size="sm">
+                <AppButton to="/recommendations" variant="accent" size="sm">
                   맞춤 상품 보기
                 </AppButton>
               </div>
@@ -129,14 +118,43 @@
       </template>
     </section>
 
-    <!-- ===== 상품 ===== -->
-    <section class="u-container pb-16">
-      <SectionHeader
-        eyebrow="Shop"
-        :title="diagnosisStatus === 'COMPLETED' && recommendations.length > 0 ? '맞춤 추천 상품' : '상품'"
-      >
+    <!-- ===== 상품 / For You ===== -->
+    <section
+      v-if="diagnosisStatus === 'COMPLETED' && recommendations.length > 0"
+      class="bg-accent-soft py-12 sm:py-14"
+    >
+      <div class="u-container">
+        <SectionHeader eyebrow="For You" title="맞춤 추천 상품">
+          <template #action>
+            <router-link to="/recommendations" class="text-sm text-ink-soft hover:text-ink transition-colors">전체보기 →</router-link>
+          </template>
+        </SectionHeader>
+
+        <div v-if="productStore.loading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div v-for="i in 8" :key="i">
+            <SkeletonBlock height="auto" width="100%" class="aspect-square mb-2.5" />
+            <SkeletonBlock height="0.875rem" width="80%" class="mb-1.5" />
+            <SkeletonBlock height="0.875rem" width="50%" />
+          </div>
+        </div>
+
+        <div v-else-if="displayProducts.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <ProductCard v-for="product in displayProducts" :key="product.id" :product="product">
+            <template #meta>
+              <AppBadge variant="accent" class="mt-2">추천 ✦</AppBadge>
+            </template>
+          </ProductCard>
+        </div>
+
+        <EmptyState v-else icon="◍" title="등록된 상품이 없어요" />
+      </div>
+    </section>
+
+    <!-- ===== 상품 (기본) ===== -->
+    <section v-else class="u-container pb-16">
+      <SectionHeader eyebrow="Shop" title="상품">
         <template #action>
-          <router-link to="/products" class="text-sm text-ink-soft hover:text-accent transition-colors">전체보기 →</router-link>
+          <router-link to="/products" class="text-sm text-ink-soft hover:text-ink transition-colors">전체보기 →</router-link>
         </template>
       </SectionHeader>
 
@@ -159,7 +177,7 @@
     <section class="u-container pb-8">
       <SectionHeader eyebrow="Community" title="커뮤니티">
         <template #action>
-          <router-link to="/community" class="text-sm text-ink-soft hover:text-accent transition-colors">더보기 →</router-link>
+          <router-link to="/community" class="text-sm text-ink-soft hover:text-ink transition-colors">더보기 →</router-link>
         </template>
       </SectionHeader>
 
@@ -177,7 +195,7 @@
             class="group flex items-start justify-between gap-4 py-5 transition-colors hover:bg-surface-soft -mx-3 px-3 rounded-lg"
           >
             <div class="flex-1 min-w-0">
-              <h3 class="font-medium text-ink truncate group-hover:underline underline-offset-4 decoration-accent-line">{{ post.title }}</h3>
+              <h3 class="font-medium text-ink truncate group-hover:underline underline-offset-4 decoration-ink">{{ post.title }}</h3>
               <p class="text-sm text-ink-muted mt-1 truncate">{{ post.content }}</p>
               <div class="flex items-center gap-2 mt-2.5 text-xs text-ink-muted">
                 <span>{{ post.authorNickname }}</span>
@@ -185,7 +203,7 @@
                 <span>{{ formatDate(post.createdAt) }}</span>
               </div>
             </div>
-            <div class="flex items-center gap-3.5 text-xs text-ink-muted shrink-0 mt-1 tabular-nums">
+            <div class="u-mono flex items-center gap-3.5 text-xs text-ink-muted shrink-0 mt-1 tabular-nums">
               <span class="flex items-center gap-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>
                 {{ post.likeCount }}
@@ -204,8 +222,8 @@
 
     <!-- 진단 이미지 모달 -->
     <AppModal v-model:open="showDiagnosisModal" title="퍼스널컬러 진단 결과" max-width="md">
-      <img v-if="diagnosisImageSrc" :src="diagnosisImageSrc" alt="진단 이미지" class="w-full rounded-lg" />
-      <p v-if="personalColor" class="text-center text-sm font-semibold mt-4 u-gradient-text">
+      <img v-if="diagnosisImageSrc" :src="diagnosisImageSrc" alt="진단 이미지" class="w-full rounded-md" />
+      <p v-if="personalColor" class="text-center text-sm font-bold mt-4 text-accent">
         {{ formatPersonalColor(personalColor) }}
       </p>
     </AppModal>
@@ -221,6 +239,7 @@ import apiClient from '@/api/client'
 import { formatPersonalColor, type DiagnosisStatus, type RecommendationItem } from '@/types'
 import { useAuthedImage } from '@/composables/useAuthedImage'
 import AppButton from '@/components/ui/AppButton.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import ProductCard from '@/components/ui/ProductCard.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'

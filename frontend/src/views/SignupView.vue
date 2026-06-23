@@ -1,18 +1,24 @@
 <template>
-  <div class="u-container flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
-    <div class="w-full max-w-sm u-rise">
-      <div class="text-center mb-9">
-        <router-link to="/" class="u-serif text-3xl font-bold text-ink">학꾸</router-link>
-        <p class="text-ink-muted text-sm mt-2">AI 퍼스널컬러 꾸미기 플랫폼</p>
+  <div class="u-container u-container--auth flex items-center justify-center py-16 sm:py-24 min-h-[70vh]">
+    <div class="w-full u-rise">
+      <div class="text-center mb-8">
+        <router-link to="/" class="u-serif text-[1.75rem] text-ink">학꾸</router-link>
+        <p class="u-eyebrow mt-3 text-ink-muted">AI Personal Color</p>
       </div>
 
       <AppCard>
-        <h1 class="u-serif text-2xl text-ink mb-6">회원가입</h1>
+        <!-- B5. 세그먼트 토글 — 로그인/회원가입 전환 -->
+        <nav class="hk-seg mb-7" aria-label="인증 전환">
+          <router-link to="/login" class="hk-seg__item">로그인</router-link>
+          <span class="hk-seg__item is-active" aria-current="page">회원가입</span>
+        </nav>
+
+        <h1 class="u-serif text-[1.5rem] text-ink mb-6">회원가입</h1>
 
         <div
           v-if="errorMessage"
           role="alert"
-          class="mb-5 px-3.5 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
+          class="mb-5 px-3.5 py-3 bg-accent-soft border border-line rounded-md text-ink text-sm"
         >
           {{ errorMessage }}
         </div>
@@ -29,23 +35,25 @@
               autocomplete="new-password"
               placeholder="비밀번호를 한 번 더 입력하세요"
             />
-            <p v-if="passwordMismatch" class="mt-1.5 text-xs text-red-500">비밀번호가 일치하지 않아요.</p>
+            <p v-if="passwordMismatch" class="mt-1.5 text-xs text-accent-ink">비밀번호가 일치하지 않아요.</p>
           </div>
 
+          <!-- B6. 역할 선택 카드 — 선택=1.5px 먹색 보더 + paper-selected 배경 -->
           <div>
             <span class="block text-sm font-medium text-ink mb-2">가입 유형</span>
             <div class="grid grid-cols-2 gap-3">
               <label
                 v-for="opt in roleOptions"
                 :key="opt.value"
-                class="flex items-center gap-2 p-3.5 border rounded-lg cursor-pointer transition-colors"
-                :class="role === opt.value
-                  ? 'border-ink bg-ink text-canvas'
-                  : 'border-line-strong text-ink-soft hover:border-ink-muted'"
+                class="hk-role"
+                :class="role === opt.value ? 'is-selected' : ''"
               >
                 <input v-model="role" type="radio" :value="opt.value" class="sr-only" />
-                <span class="text-lg" aria-hidden="true">{{ opt.icon }}</span>
-                <span class="text-sm font-medium">{{ opt.label }}</span>
+                <span class="hk-role__icon" aria-hidden="true">{{ opt.icon }}</span>
+                <span class="hk-role__title">{{ opt.label }}</span>
+                <span class="hk-role__desc">
+                  {{ opt.value === 'SELLER' ? '상품을 등록하고 판매해요' : '추천받고 꾸미기를 즐겨요' }}
+                </span>
               </label>
             </div>
           </div>
@@ -135,3 +143,73 @@ async function handleSignup() {
   }
 }
 </script>
+
+<style scoped>
+/* B5. 세그먼트 토글 */
+.hk-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--hk-track);
+  border-radius: var(--hk-radius-pill);
+}
+.hk-seg__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: var(--hk-radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--hk-text-muted-2);
+  text-decoration: none;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+.hk-seg__item:hover {
+  color: var(--hk-ink);
+}
+.hk-seg__item.is-active {
+  background: var(--hk-surface);
+  color: var(--hk-ink);
+}
+
+/* B6. 역할 선택 카드 — 선택=1.5px 먹색 보더 + paper-selected, 제목 700/13.5px + 설명 11.5px */
+.hk-role {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  cursor: pointer;
+  background: var(--hk-surface);
+  border: 1.5px solid var(--hk-border);
+  border-radius: var(--hk-radius-lg);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+.hk-role:hover {
+  border-color: var(--hk-border-control);
+}
+.hk-role.is-selected {
+  border-color: var(--hk-border-strong);
+  background: var(--hk-paper-selected);
+}
+.hk-role__icon {
+  font-size: 1.125rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.hk-role__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--hk-ink);
+}
+.hk-role__desc {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--hk-text-muted-2);
+}
+</style>

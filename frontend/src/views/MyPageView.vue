@@ -1,11 +1,11 @@
 <template>
-  <div class="u-container max-w-2xl py-10 sm:py-12">
-    <div class="border-b border-line pb-4 mb-6">
+  <div class="u-container u-container--mypage py-10 sm:py-12">
+    <header class="border-b border-line pb-5 mb-7">
       <span class="u-eyebrow">My Page</span>
       <h1 class="u-serif text-title text-ink mt-2.5">마이페이지</h1>
-    </div>
+    </header>
 
-    <div v-if="loading" class="rounded-xl border border-line p-6 space-y-4">
+    <div v-if="loading" class="rounded-lg border border-line bg-surface p-6 space-y-4">
       <div class="flex items-center gap-4">
         <SkeletonBlock height="4rem" width="4rem" class="!rounded-full" />
         <div class="space-y-2">
@@ -15,21 +15,49 @@
       </div>
     </div>
 
-    <div v-else-if="errorMessage" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+    <div v-else-if="errorMessage" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
       {{ errorMessage }}
     </div>
 
     <template v-else-if="user">
-      <!-- 탭 -->
-      <nav class="flex gap-1 mb-6 overflow-x-auto -mx-1 px-1" aria-label="마이페이지 탭">
+      <!-- 퍼스널컬러 카드 -->
+      <section
+        class="rounded-lg p-5 mb-7"
+        :class="user.personalColor
+          ? 'bg-accent-soft border border-accent'
+          : 'bg-surface border border-line'"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold tracking-[0.18em] uppercase" :class="user.personalColor ? 'text-accent-ink' : 'text-ink-muted'">
+              Personal Color
+            </p>
+            <p v-if="user.personalColor" class="mt-1.5 text-lg font-extrabold text-accent-ink tracking-tight">
+              {{ formatPersonalColor(user.personalColor) }}
+            </p>
+            <p v-else class="mt-1.5 text-base font-semibold text-ink">아직 진단하지 않았어요</p>
+          </div>
+          <router-link
+            to="/diagnosis"
+            class="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline transition-colors"
+            :class="user.personalColor ? 'text-accent-ink' : 'text-ink'"
+          >
+            {{ user.personalColor ? '재진단' : 'AI 진단 시작' }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </router-link>
+        </div>
+      </section>
+
+      <!-- 언더라인 탭 (D1) -->
+      <nav class="flex gap-6 mb-7 border-b border-line overflow-x-auto" aria-label="마이페이지 탭">
         <button
           v-for="tab in tabs"
           :key="tab.key"
           type="button"
-          class="shrink-0 px-3.5 py-2 rounded-full text-sm font-medium transition-colors"
+          class="shrink-0 -mb-px pb-3 text-sm font-semibold transition-colors border-b-2"
           :class="activeTab === tab.key
-            ? 'u-gradient-accent text-accent-ink shadow-sm'
-            : 'text-ink-soft hover:text-ink hover:bg-surface-soft'"
+            ? 'text-ink border-ink'
+            : 'text-ink-muted border-transparent hover:text-ink'"
           @click="selectTab(tab.key)"
         >
           {{ tab.label }}
@@ -38,10 +66,10 @@
 
       <!-- 프로필 -->
       <section v-show="activeTab === 'profile'">
-        <div class="rounded-xl border border-line bg-surface p-6 mb-4">
+        <div class="rounded-lg border border-line bg-surface p-6 mb-4">
           <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 rounded-full u-gradient-accent text-accent-ink grid place-items-center shrink-0">
-              <span class="text-2xl font-bold">{{ userInitial }}</span>
+            <div class="w-16 h-16 rounded-full u-tone-0 grid place-items-center shrink-0 ring-1 ring-line">
+              <span class="text-2xl font-extrabold text-ink-soft">{{ userInitial }}</span>
             </div>
             <div class="min-w-0">
               <h2 class="u-serif text-lg text-ink">{{ user.nickname }}</h2>
@@ -49,20 +77,19 @@
             </div>
           </div>
 
-          <dl>
-            <div class="flex justify-between items-center py-3 border-t border-line">
-              <dt class="text-sm text-ink-soft">역할</dt>
-              <dd><span class="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full" :class="roleBadge(user.role)">{{ roleLabel(user.role) }}</span></dd>
+          <dl class="border-t border-line-soft">
+            <div class="flex justify-between items-center py-3.5 border-b border-line-soft">
+              <dt class="text-[12px] font-semibold tracking-[0.06em] uppercase text-ink-muted">역할</dt>
+              <dd><span class="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full" :class="roleBadge(user.role)">{{ roleLabel(user.role) }}</span></dd>
             </div>
 
-            <div class="flex justify-between items-center py-3 border-t border-line">
-              <dt class="text-sm text-ink-soft">퍼스널컬러</dt>
-              <dd class="text-sm font-medium">
+            <div class="flex justify-between items-center py-3.5 border-b border-line-soft">
+              <dt class="text-[12px] font-semibold tracking-[0.06em] uppercase text-ink-muted">퍼스널컬러</dt>
+              <dd class="text-sm">
                 <button
                   v-if="user.personalColor"
                   type="button"
-                  class="hover:underline underline-offset-4 cursor-pointer"
-                  style="color: var(--color-accent)"
+                  class="font-semibold text-accent-ink underline-offset-4 hover:underline cursor-pointer"
                   @click="showDiagnosisModal = true"
                 >
                   {{ formatPersonalColor(user.personalColor) }}
@@ -71,12 +98,12 @@
               </dd>
             </div>
 
-            <div class="py-3 border-t border-line">
-              <div class="flex items-center justify-between mb-2">
-                <dt class="text-sm text-ink-soft">선호 컬러</dt>
+            <div class="py-3.5 border-b border-line-soft">
+              <div class="flex items-center justify-between mb-2.5">
+                <dt class="text-[12px] font-semibold tracking-[0.06em] uppercase text-ink-muted">선호 컬러</dt>
                 <button
                   type="button"
-                  class="text-xs text-accent hover:underline underline-offset-4"
+                  class="text-xs font-semibold text-ink underline-offset-4 hover:underline"
                   @click="openColorEditor"
                 >
                   변경
@@ -88,8 +115,8 @@
               <dd v-else class="text-sm text-ink-muted">아직 선택한 컬러가 없어요.</dd>
             </div>
 
-            <div v-if="user.preferredStyles.length > 0" class="py-3 border-t border-line">
-              <dt class="text-sm text-ink-soft mb-2">선호 스타일</dt>
+            <div v-if="user.preferredStyles.length > 0" class="py-3.5 border-b border-line-soft">
+              <dt class="text-[12px] font-semibold tracking-[0.06em] uppercase text-ink-muted mb-2.5">선호 스타일</dt>
               <dd class="flex flex-wrap gap-1.5">
                 <AppBadge v-for="style in user.preferredStyles" :key="style">{{ style }}</AppBadge>
               </dd>
@@ -97,37 +124,14 @@
           </dl>
         </div>
 
-        <div class="space-y-2">
-          <router-link
-            v-if="!user.personalColor"
-            to="/diagnosis"
-            class="flex items-center justify-between w-full u-gradient-accent text-accent-ink rounded-xl px-5 py-4 u-pop"
-          >
-            <div>
-              <p class="font-semibold text-sm">AI 퍼스널컬러 진단</p>
-              <p class="text-xs mt-0.5" style="color: rgba(255,255,255,0.75)">나에게 맞는 컬러를 찾아보세요</p>
-            </div>
-            <svg class="w-5 h-5 shrink-0" style="color: rgba(255,255,255,0.85)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-          </router-link>
-
-          <router-link
-            v-else
-            to="/diagnosis"
-            class="flex items-center justify-between w-full bg-surface border border-line rounded-xl px-5 py-4 hover:bg-surface-soft hover:border-accent-line transition-colors"
-          >
-            <p class="text-sm font-medium text-ink">퍼스널컬러 재진단</p>
-            <svg class="w-5 h-5 text-ink-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-          </router-link>
-
-          <button
-            type="button"
-            class="flex items-center justify-between w-full bg-surface border border-line rounded-xl px-5 py-4 hover:bg-surface-soft transition-colors"
-            @click="handleLogout"
-          >
-            <p class="text-sm font-medium text-red-500">로그아웃</p>
-            <svg class="w-5 h-5 text-ink-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          class="flex items-center justify-between w-full bg-surface border border-line rounded-lg px-5 py-4 hover:border-line-strong transition-colors"
+          @click="handleLogout"
+        >
+          <span class="text-sm font-semibold text-ink-soft">로그아웃</span>
+          <svg class="w-5 h-5 text-ink-faint shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+        </button>
       </section>
 
       <!-- 내 리뷰 -->
@@ -139,7 +143,7 @@
           title="작성한 리뷰가 없어요"
           description="상품 페이지에서 첫 리뷰를 남겨보세요."
         />
-        <div v-else class="rounded-xl border border-line bg-surface px-5">
+        <div v-else class="rounded-lg border border-line bg-surface px-5">
           <ReviewItem v-for="review in reviewsState.items" :key="review.id" :review="review" show-product />
         </div>
       </section>
@@ -176,17 +180,17 @@
           <li v-for="post in postsState.items" :key="post.id">
             <router-link
               :to="`/community/${post.id}`"
-              class="block rounded-xl border border-line bg-surface p-4 u-pop hover:border-accent-line"
+              class="block rounded-lg border border-line bg-surface p-4 u-pop"
             >
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[0.7rem] px-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-soft">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[10px] font-semibold tracking-wide px-2 py-0.5 rounded-full bg-cream text-ink-soft">
                   {{ boardLabel(post.board) }}
                 </span>
-                <time class="text-xs text-ink-muted">{{ formatDate(post.createdAt) }}</time>
+                <time class="text-xs text-ink-faint u-mono">{{ formatDate(post.createdAt) }}</time>
               </div>
               <p class="text-sm font-semibold text-ink line-clamp-1">{{ post.title }}</p>
               <p class="text-sm text-ink-soft line-clamp-1 mt-0.5">{{ post.content }}</p>
-              <div class="flex items-center gap-3 mt-2 text-xs text-ink-muted tabular-nums">
+              <div class="flex items-center gap-3 mt-2.5 text-xs text-ink-faint tabular-nums u-mono">
                 <span>♥ {{ post.likeCount }}</span>
                 <span>💬 {{ post.commentCount }}</span>
               </div>
@@ -197,19 +201,19 @@
 
       <!-- 팔로우 -->
       <section v-show="activeTab === 'follow'">
-        <div class="flex gap-2 mb-4">
+        <div class="flex gap-2 mb-5">
           <button
             v-for="sub in followSubTabs"
             :key="sub.key"
             type="button"
-            class="flex-1 py-2 rounded-xl text-sm font-medium border transition-colors"
+            class="flex-1 py-2.5 rounded-full text-sm font-semibold border transition-colors"
             :class="followSub === sub.key
-              ? 'border-accent-line bg-accent-soft text-accent'
-              : 'border-line text-ink-soft hover:text-ink'"
+              ? 'border-ink bg-ink text-white'
+              : 'border-line text-ink-soft hover:border-line-strong hover:text-ink'"
             @click="followSub = sub.key"
           >
             {{ sub.label }}
-            <span class="tabular-nums">{{ sub.key === 'followers' ? followState.followers.length : followState.following.length }}</span>
+            <span class="u-mono tabular-nums ml-1">{{ sub.key === 'followers' ? followState.followers.length : followState.following.length }}</span>
           </button>
         </div>
 
@@ -243,8 +247,8 @@
 
     <!-- 진단 이미지 모달 -->
     <AppModal v-model:open="showDiagnosisModal" title="진단 이미지" max-width="md">
-      <img v-if="diagnosisPreviewSrc" :src="diagnosisPreviewSrc" alt="퍼스널컬러 진단 이미지" class="w-full rounded-lg" />
-      <p v-if="user?.personalColor" class="text-center text-sm font-semibold mt-4 u-gradient-text">
+      <img v-if="diagnosisPreviewSrc" :src="diagnosisPreviewSrc" alt="퍼스널컬러 진단 이미지" class="w-full rounded-img" />
+      <p v-if="user?.personalColor" class="text-center text-sm font-extrabold mt-4 text-accent-ink">
         {{ formatPersonalColor(user?.personalColor ?? null) }}
       </p>
     </AppModal>
@@ -257,10 +261,10 @@
           v-for="color in selectableColors"
           :key="color.value"
           type="button"
-          class="px-4 py-2 rounded-full text-sm font-medium border transition-colors"
+          class="px-4 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-colors"
           :class="draftColors.includes(color.value)
-            ? 'border-ink bg-ink text-canvas'
-            : 'border-line-strong text-ink-soft hover:border-ink-muted hover:text-ink'"
+            ? 'border-ink bg-paper-selected text-ink'
+            : 'border-line text-ink-soft hover:border-line-strong hover:text-ink'"
           @click="toggleDraftColor(color.value)"
         >
           {{ color.label }}
@@ -355,9 +359,9 @@ function roleLabel(role: UserRole): string {
 
 function roleBadge(role: UserRole): string {
   switch (role) {
-    case 'ADMIN': return 'bg-ink text-canvas'
+    case 'ADMIN': return 'bg-ink text-white'
     case 'SELLER': return 'border border-line-strong text-ink'
-    default: return 'bg-surface-sunken text-ink-soft'
+    default: return 'bg-cream text-ink-soft'
   }
 }
 

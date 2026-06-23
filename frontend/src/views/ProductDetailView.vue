@@ -1,13 +1,10 @@
 <template>
-  <div class="u-container max-w-3xl py-8 sm:py-10">
+  <div class="u-container u-container--product py-8 sm:py-10">
     <router-link
       to="/products"
-      class="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink mb-7 transition-colors"
+      class="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink mb-7 transition-colors"
     >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-      상품 목록
+      ← 상품 목록으로
     </router-link>
 
     <div v-if="loading" role="status" class="flex justify-center py-20">
@@ -22,69 +19,82 @@
     </div>
 
     <article v-else-if="product" class="u-rise">
-      <div class="aspect-square sm:aspect-[4/3] bg-surface-sunken rounded-2xl border border-line flex items-center justify-center overflow-hidden">
-        <img v-if="product.imageUrl" :src="product.imageUrl" :alt="product.name" class="w-full h-full object-cover" />
-        <span v-else class="text-6xl text-ink-muted" aria-hidden="true">◍</span>
-      </div>
+      <div class="grid lg:grid-cols-2 gap-8 lg:gap-14">
+        <!-- 이미지 -->
+        <div
+          class="aspect-square rounded-md border border-line flex items-center justify-center overflow-hidden"
+          :class="product.imageUrl ? 'bg-cream' : toneClass"
+        >
+          <img v-if="product.imageUrl" :src="product.imageUrl" :alt="product.name" class="w-full h-full object-cover" />
+          <span v-else class="text-6xl text-ink/20" aria-hidden="true">◍</span>
+        </div>
 
-      <div class="pt-7">
-        <div class="flex items-start justify-between gap-4">
-          <div class="min-w-0">
-            <p v-if="product.category" class="u-eyebrow mb-2">{{ product.category }}</p>
-            <h1 class="u-serif text-title text-ink">{{ product.name }}</h1>
+        <!-- 정보 -->
+        <div>
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <p v-if="product.category" class="text-[0.65rem] uppercase tracking-[0.14em] font-semibold text-ink-faint mb-2">{{ product.category }}</p>
+              <h1 class="u-serif text-title text-ink">{{ product.name }}</h1>
+            </div>
+
+            <button
+              type="button"
+              class="shrink-0 inline-flex flex-col items-center justify-center gap-0.5 rounded-md border px-4 py-2.5 transition-colors u-pop"
+              :class="wishlisted ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-ink'"
+              :aria-pressed="wishlisted"
+              aria-label="찜하기"
+              @click="handleWishlistToggle"
+            >
+              <span
+                class="text-xl leading-none"
+                :class="wishlisted ? 'text-accent' : ''"
+                :style="wishlisted ? undefined : { color: 'var(--hk-heart-off)' }"
+              >
+                {{ wishlisted ? '♥' : '♡' }}
+              </span>
+              <span class="u-mono text-xs text-ink-soft tabular-nums">{{ wishlistCount }}</span>
+            </button>
           </div>
 
-          <button
-            type="button"
-            class="shrink-0 inline-flex flex-col items-center justify-center gap-0.5 rounded-2xl border px-4 py-2.5 transition-colors u-pop"
-            :class="wishlisted ? 'border-accent-line bg-accent-soft' : 'border-line bg-surface hover:border-accent-line'"
-            :aria-pressed="wishlisted"
-            aria-label="찜하기"
-            @click="handleWishlistToggle"
+          <p class="text-2xl font-bold text-ink mt-4 tabular-nums">
+            {{ formatPrice(product.price) }}<span class="text-ink-muted font-normal text-lg">원</span>
+          </p>
+
+          <div v-if="product.colors.length > 0" class="flex flex-wrap gap-1.5 mt-5">
+            <AppBadge v-for="color in product.colors" :key="color">{{ getColorLabel(color) }}</AppBadge>
+          </div>
+
+          <p class="text-ink-soft leading-relaxed whitespace-pre-wrap mt-6 mb-8">{{ product.description }}</p>
+
+          <AppButton
+            v-if="product.purchaseUrl"
+            :href="product.purchaseUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="soft"
+            size="lg"
+            block
           >
-            <span class="text-xl leading-none" :style="{ color: wishlisted ? 'var(--color-accent)' : 'var(--color-line-strong)' }">
-              {{ wishlisted ? '♥' : '♡' }}
-            </span>
-            <span class="text-xs text-ink-soft tabular-nums">{{ wishlistCount }}</span>
-          </button>
+            구매처로 이동
+          </AppButton>
+          <p v-else class="text-sm text-ink-muted text-center py-2">구매 링크가 아직 등록되지 않았습니다.</p>
         </div>
-
-        <p class="text-2xl font-semibold text-ink mt-4 tabular-nums">
-          {{ formatPrice(product.price) }}<span class="text-ink-muted font-normal text-lg">원</span>
-        </p>
-
-        <div v-if="product.colors.length > 0" class="flex flex-wrap gap-1.5 mt-5">
-          <AppBadge v-for="color in product.colors" :key="color">{{ getColorLabel(color) }}</AppBadge>
-        </div>
-
-        <p class="text-ink-soft leading-relaxed whitespace-pre-wrap mt-6 mb-8">{{ product.description }}</p>
-
-        <a
-          v-if="product.purchaseUrl"
-          :href="product.purchaseUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center justify-center w-full h-12 bg-accent text-accent-ink rounded-lg font-medium hover:opacity-90 transition-opacity"
-        >
-          구매 링크 열기
-        </a>
-        <p v-else class="text-sm text-ink-muted text-center py-2">구매 링크가 아직 등록되지 않았습니다.</p>
       </div>
 
       <!-- 리뷰 -->
       <section aria-labelledby="reviews-heading" class="mt-12 pt-8 border-t border-line">
         <div class="flex items-baseline justify-between mb-5">
           <h2 id="reviews-heading" class="u-serif text-lg text-ink">
-            리뷰 <span class="text-ink-muted tabular-nums">{{ reviews.length }}</span>
+            리뷰 <span class="u-mono text-ink-muted tabular-nums">{{ reviews.length }}</span>
           </h2>
           <div v-if="reviews.length > 0" class="flex items-center gap-1.5">
             <StarRating :rating="Math.round(averageRating)" size="sm" />
-            <span class="text-sm text-ink-soft tabular-nums">{{ averageRating.toFixed(1) }}</span>
+            <span class="u-mono text-sm text-ink-soft tabular-nums">{{ averageRating.toFixed(1) }}</span>
           </div>
         </div>
 
         <!-- 내 리뷰 작성/수정 폼 -->
-        <div v-if="canWrite" class="rounded-2xl border border-line bg-surface-soft p-4 mb-6">
+        <div v-if="canWrite" class="rounded-block border border-line bg-surface-soft p-4 mb-6">
           <p class="text-sm font-medium text-ink mb-2.5">
             {{ editingReviewId ? '리뷰 수정' : '리뷰 작성' }}
           </p>
@@ -197,6 +207,13 @@ function formatPrice(price: number): string {
 function getColorLabel(value: string): string {
   return COLOR_OPTIONS.find((c) => c.value === value)?.label ?? value
 }
+
+// 이미지 미등록 시 상품 id 로 안정적인 웜 톤 그라데이션(8종) 도출 — ProductCard 와 동일 규칙
+const toneClass = computed(() => {
+  const n = Number(productId.value)
+  const idNum = Number.isFinite(n) ? Math.abs(Math.trunc(n)) : 0
+  return `u-tone-${idNum % 8}`
+})
 
 async function handleWishlistToggle() {
   if (!isAuthenticated.value) {

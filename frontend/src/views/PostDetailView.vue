@@ -1,79 +1,98 @@
 <template>
-  <div class="u-container max-w-3xl py-8 sm:py-10">
+  <div class="u-container u-container--reading py-8 sm:py-10">
     <router-link
       to="/community"
-      class="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink mb-7 transition-colors"
+      class="inline-flex items-center gap-1 text-[13px] text-ink-muted hover:text-ink mb-7 transition-colors"
     >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-      커뮤니티
+      <span aria-hidden="true">←</span>
+      커뮤니티로
     </router-link>
 
     <div v-if="loading" class="text-center py-20 text-ink-muted text-sm">불러오는 중...</div>
 
-    <div v-else-if="errorMessage" role="alert" class="text-center py-20 text-red-500 text-sm">
+    <div v-else-if="errorMessage" role="alert" class="text-center py-20 text-coral text-sm">
       {{ errorMessage }}
     </div>
 
     <template v-else-if="post">
       <article class="u-rise">
-        <h1 class="u-serif text-title text-ink mb-3">{{ post.title }}</h1>
-        <div class="flex items-center gap-3 text-sm text-ink-muted mb-6 flex-wrap pb-6 border-b border-line">
+        <h1 class="u-serif text-title text-ink mb-4">{{ post.title }}</h1>
+        <div class="flex items-center gap-3 text-sm text-ink-muted mb-7 flex-wrap pb-6 border-b border-line">
           <router-link :to="`/users/${post.authorId}`" class="font-medium text-ink-soft hover:text-accent transition-colors">
             {{ post.authorNickname }}
           </router-link>
-          <span>{{ formatDate(post.createdAt) }}</span>
+          <span class="text-ink-faint">{{ formatDate(post.createdAt) }}</span>
           <button
             v-if="authStore.isAuthenticated"
             type="button"
-            class="flex items-center gap-1 transition-colors tabular-nums"
-            :class="post.liked ? 'text-accent' : 'hover:text-ink'"
+            class="like-pill ml-auto"
+            :class="post.liked ? 'like-pill--active' : ''"
+            :aria-pressed="post.liked"
             :disabled="likeLoading"
             @click="handleLike"
           >
-            <HeartIcon :filled="post.liked" /> {{ post.likeCount }}
+            <HeartIcon :filled="post.liked" /> <span class="tabular-nums">{{ post.likeCount }}</span>
           </button>
-          <span v-else class="flex items-center gap-1 tabular-nums"><HeartIcon :filled="false" /> {{ post.likeCount }}</span>
+          <span v-else class="like-pill like-pill--static ml-auto"><HeartIcon :filled="false" /> <span class="tabular-nums">{{ post.likeCount }}</span></span>
         </div>
         <img
           v-if="post.imageUrl"
           :src="post.imageUrl"
           :alt="post.title"
-          class="w-full max-w-md mx-auto rounded-2xl border border-line mb-6 object-contain"
+          class="w-full max-w-md mx-auto rounded-md border border-line mb-7 object-contain"
         />
-        <p class="text-ink-soft leading-relaxed whitespace-pre-wrap">{{ post.content }}</p>
+        <p class="post-body whitespace-pre-wrap">{{ post.content }}</p>
       </article>
 
       <section class="mt-12">
         <h2 class="u-serif text-lg text-ink mb-5">댓글 {{ comments.length }}</h2>
 
-        <div v-if="commentsLoading" class="text-sm text-ink-muted py-4">댓글 불러오는 중...</div>
-        <div v-else-if="comments.length === 0" class="text-sm text-ink-muted py-4">아직 댓글이 없습니다</div>
-        <ul v-else class="divide-y divide-line border-y border-line mb-7">
-          <li v-for="comment in comments" :key="comment.id" class="py-4">
-            <div class="flex items-center gap-2 mb-1.5">
-              <router-link :to="`/users/${comment.authorId}`" class="text-sm font-medium text-ink hover:text-accent transition-colors">
-                {{ comment.authorNickname }}
-              </router-link>
-              <span class="text-xs text-ink-muted">{{ formatDate(comment.createdAt) }}</span>
-            </div>
-            <p class="text-sm text-ink-soft">{{ comment.content }}</p>
-          </li>
-        </ul>
-
-        <form v-if="authStore.isAuthenticated" class="space-y-3" @submit.prevent="handleComment">
-          <AppTextarea v-model="newComment" placeholder="댓글을 입력하세요" :rows="3" />
-          <div v-if="commentError" role="alert" class="text-sm text-red-500">{{ commentError }}</div>
-          <div class="flex justify-end">
-            <AppButton type="submit" size="sm" :disabled="!newComment.trim() || commentSubmitting" :loading="commentSubmitting">
-              댓글 등록
+        <!-- 인라인 입력 행 (components.md B4) -->
+        <form
+          v-if="authStore.isAuthenticated"
+          class="mb-7"
+          @submit.prevent="handleComment"
+        >
+          <div class="flex items-end gap-2 rounded-md border border-line-control bg-surface px-3.5 py-2 focus-within:border-ink transition-colors">
+            <textarea
+              v-model="newComment"
+              rows="1"
+              placeholder="댓글을 입력하세요"
+              class="flex-1 resize-none bg-transparent border-0 outline-none text-sm leading-relaxed text-ink placeholder:text-ink-faint py-1.5"
+            ></textarea>
+            <AppButton type="submit" variant="primary" size="sm" :disabled="!newComment.trim() || commentSubmitting" :loading="commentSubmitting">
+              등록
             </AppButton>
           </div>
+          <p v-if="commentError" role="alert" class="text-sm text-coral mt-2">{{ commentError }}</p>
         </form>
-        <p v-else class="text-sm text-ink-muted text-center py-2">
+        <p v-else class="text-sm text-ink-muted text-center py-3 mb-7 rounded-md border border-line bg-surface-soft">
           <router-link to="/login" class="text-ink font-medium hover:underline underline-offset-4">로그인</router-link> 후 댓글을 작성할 수 있습니다
         </p>
+
+        <div v-if="commentsLoading" class="text-sm text-ink-muted py-4">댓글 불러오는 중...</div>
+        <div v-else-if="comments.length === 0" class="text-sm text-ink-muted py-8 text-center">아직 댓글이 없습니다</div>
+        <ul v-else>
+          <li
+            v-for="comment in comments"
+            :key="comment.id"
+            class="flex gap-3 py-4 border-b border-line-soft last:border-b-0"
+          >
+            <span
+              class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-cream text-[13px] font-bold text-ink/70 select-none"
+              aria-hidden="true"
+            >{{ comment.authorNickname?.charAt(0).toUpperCase() ?? '?' }}</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <router-link :to="`/users/${comment.authorId}`" class="text-[13px] font-semibold text-ink hover:text-accent transition-colors truncate">
+                  {{ comment.authorNickname }}
+                </router-link>
+                <time class="text-xs text-ink-faint shrink-0">{{ formatDate(comment.createdAt) }}</time>
+              </div>
+              <p class="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">{{ comment.content }}</p>
+            </div>
+          </li>
+        </ul>
       </section>
     </template>
   </div>
@@ -87,7 +106,6 @@ import { usePostStore } from '@/stores/posts'
 import { getPost, getComments, createComment } from '@/api/posts'
 import type { Post, Comment } from '@/types'
 import AppButton from '@/components/ui/AppButton.vue'
-import AppTextarea from '@/components/ui/AppTextarea.vue'
 
 const HeartIcon = (props: { filled?: boolean }) =>
   h('svg', { class: 'w-4 h-4', viewBox: '0 0 24 24', fill: props.filled ? 'currentColor' : 'none', stroke: 'currentColor', 'stroke-width': 1.5 }, [
@@ -179,3 +197,53 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* 본문 — 에디토리얼 가독성 (reading 폭) */
+.post-body {
+  color: var(--hk-ink-2, #4f483f);
+  font-size: 0.9375rem;
+  line-height: 1.8;
+}
+
+/* 좋아요 알약 — 좋아요 활성 = accent 계열 동시 적용 */
+.like-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 2rem;
+  padding: 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.like-pill:hover {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+.like-pill:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.like-pill:active {
+  transform: translateY(1px);
+}
+.like-pill:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.like-pill--active,
+.like-pill--active:hover {
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+.like-pill--static {
+  cursor: default;
+}
+</style>

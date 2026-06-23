@@ -1,12 +1,12 @@
 <template>
   <div class="u-container py-10 sm:py-12">
     <!-- 추천 섹션 -->
-    <section v-if="showRecommendations" class="mb-14">
+    <section v-if="showRecommendations" class="mb-14 rounded-block bg-accent-soft border border-accent px-5 py-7 sm:px-8 sm:py-9">
       <SectionHeader eyebrow="For You" :title="recommendationTitle" />
       <div v-if="recLoading" class="flex justify-center py-12">
         <Spinner />
       </div>
-      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <ProductCard v-for="item in recommendedProducts" :key="'rec-' + item.product.id" :product="item.product">
           <template #meta>
             <AppBadge variant="accent" class="mt-2">추천 ✦</AppBadge>
@@ -39,16 +39,16 @@
       <Spinner />
     </div>
 
-    <div v-else-if="store.error" class="text-center py-20 text-red-500 text-sm">{{ store.error }}</div>
+    <div v-else-if="store.error" class="text-center py-20 text-red-600 text-sm">{{ store.error }}</div>
 
-    <div v-else-if="filteredProducts.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div v-else-if="filteredProducts.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
       <ProductCard v-for="product in filteredProducts" :key="product.id" :product="product">
         <template #meta>
           <div v-if="product.colors.length > 0" class="flex flex-wrap gap-1 mt-2">
             <span
               v-for="color in product.colors.slice(0, 3)"
               :key="color"
-              class="inline-block px-1.5 py-0.5 bg-surface-sunken text-ink-muted text-[10px] font-medium rounded-full"
+              class="inline-block px-2 py-0.5 bg-cream text-ink-soft text-[10px] font-medium rounded-full border border-line"
             >{{ getColorLabel(color) }}</span>
           </div>
         </template>
@@ -122,10 +122,10 @@ function getColorLabel(value: string): string {
 
 function chipClass(active: boolean): string {
   return [
-    'px-4 py-2 rounded-full text-sm font-medium border transition-colors',
+    'inline-flex items-center h-[38px] px-4 rounded-full text-sm font-medium border transition-colors',
     active
-      ? 'border-ink bg-ink text-canvas'
-      : 'border-line-strong text-ink-soft hover:border-ink-muted hover:text-ink',
+      ? 'border-ink bg-ink text-white'
+      : 'border-line bg-surface text-ink-soft hover:border-ink hover:text-ink',
   ].join(' ')
 }
 
