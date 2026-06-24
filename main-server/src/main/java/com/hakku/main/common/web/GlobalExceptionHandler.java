@@ -9,7 +9,6 @@ import com.hakku.main.community.exception.CommentAccessDeniedException;
 import com.hakku.main.community.exception.CommentNotFoundException;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
-import com.hakku.main.curation.exception.CurationCardNotFoundException;
 import com.hakku.main.follow.exception.SelfFollowException;
 import com.hakku.main.magazine.exception.MagazineNotFoundException;
 import com.hakku.main.order.exception.EmptyCartException;
@@ -124,11 +123,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(WishlistNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleWishlistNotFound(WishlistNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
-    }
-
-    @ExceptionHandler(CurationCardNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCurationCardNotFound(CurationCardNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
     }
 
