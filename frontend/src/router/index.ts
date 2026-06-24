@@ -16,6 +16,7 @@ const router = createRouter({
     { path: '/seller/products', component: () => import('@/views/SellerProductsView.vue'), meta: { requiresAuth: true } },
     { path: '/diagnosis', component: () => import('@/views/DiagnosisView.vue'), meta: { requiresAuth: true } },
     { path: '/cart', component: () => import('@/views/CartView.vue'), meta: { requiresAuth: true } },
+    { path: '/order/new', component: () => import('@/views/OrderFormView.vue'), meta: { requiresAuth: true, hideChatFab: true } },
     { path: '/payments/checkout', component: () => import('@/views/PaymentCheckoutView.vue'), meta: { requiresAuth: true, hideChatFab: true } },
     { path: '/payments/success', component: () => import('@/views/PaymentSuccessView.vue'), meta: { requiresAuth: true, hideChatFab: true } },
     { path: '/payments/fail', component: () => import('@/views/PaymentFailView.vue'), meta: { hideChatFab: true } },

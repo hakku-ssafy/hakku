@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.order.repository.OrderRepository">
+
+    <resultMap id="OrderResult" type="com.hakku.main.order.domain.Order">
+        <id property="id" column="o_id"/>
+        <result property="userId" column="o_user_id"/>
+        <result property="status" column="o_status"/>
+        <result property="recipientName" column="o_recipient_name"/>
+        <result property="phone" column="o_phone"/>
+        <result property="postalCode" column="o_postal_code"/>
+        <result property="address1" column="o_address1"/>
+        <result property="address2" column="o_address2"/>
+        <result property="totalAmount" column="o_total_amount"/>
+        <result property="createdAt" column="o_created_at"/>
+        <result property="updatedAt" column="o_updated_at"/>
+        <collection property="items" ofType="com.hakku.main.order.domain.OrderItem">
+            <id property="id" column="i_id"/>
+            <result property="orderId" column="i_order_id"/>
+            <result property="productId" column="i_product_id"/>
+            <result property="productName" column="i_product_name"/>
+            <result property="price" column="i_price"/>
+            <result property="quantity" column="i_quantity"/>
+            <result property="lineTotal" column="i_line_total"/>
+        </collection>
+    </resultMap>
+
+    <sql id="selectJoin">
+        SELECT
+            o.id             AS o_id,
+            o.user_id        AS o_user_id,
+            o.status         AS o_status,
+            o.recipient_name AS o_recipient_name,
+            o.phone          AS o_phone,
+            o.postal_code    AS o_postal_code,
+            o.address1       AS o_address1,
+            o.address2       AS o_address2,
+            o.total_amount   AS o_total_amount,
+            o.created_at     AS o_created_at,
+            o.updated_at     AS o_updated_at,
+            i.id             AS i_id,
+            i.order_id       AS i_order_id,
+            i.product_id     AS i_product_id,
+            i.product_name   AS i_product_name,
+            i.price          AS i_price,
+            i.quantity       AS i_quantity,
+            i.line_total     AS i_line_total
+        FROM orders o
+        LEFT JOIN order_items i ON i.order_id = o.id
+    </sql>
+
+    <insert id="insertOrder" parameterType="com.hakku.main.order.domain.Order"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (user_id, status, recipient_name, phone, postal_code,
+                            address1, address2, total_amount, created_at, updated_at)
+        VALUES (#{userId}, #{status}, #{recipientName}, #{phone}, #{postalCode},
+                #{address1}, #{address2}, #{totalAmount}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <insert id="insertItem" parameterType="com.hakku.main.order.domain.OrderItem"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO order_items (order_id, product_id, product_name, price, quantity, line_total)
+        VALUES (#{orderId}, #{productId}, #{productName}, #{price}, #{quantity}, #{lineTotal})
+    </insert>
+
+    <update id="updateStatus" parameterType="com.hakku.main.order.domain.Order">
+        UPDATE orders
+        SET status = #{status},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByUserId" resultMap="OrderResult">
+        <include refid="selectJoin"/>
+        WHERE o.user_id = #{userId}
+        ORDER BY o.created_at DESC, o.id DESC, i.id ASC
+    </select>
+
+    <select id="selectByIdAndUserId" resultMap="OrderResult">
+        <include refid="selectJoin"/>
+        WHERE o.id = #{id} AND o.user_id = #{userId}
+        ORDER BY i.id ASC
+    </select>
+
+    <select id="selectById" resultMap="OrderResult">
+        <include refid="selectJoin"/>
+        WHERE o.id = #{id}
+        ORDER BY i.id ASC
+    </select>
+</mapper>

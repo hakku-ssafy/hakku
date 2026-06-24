@@ -24,6 +24,10 @@
         DELETE FROM cart_items WHERE id = #{id}
     </delete>
 
+    <delete id="deleteByUserId">
+        DELETE FROM cart_items WHERE user_id = #{userId}
+    </delete>
+
     <select id="selectByUserIdAndProductId" resultType="com.hakku.main.cart.domain.CartItem">
         SELECT <include refid="columns"/>
         FROM cart_items

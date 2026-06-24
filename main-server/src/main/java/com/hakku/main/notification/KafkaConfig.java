@@ -1,5 +1,8 @@
 package com.hakku.main.notification;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hakku.main.order.PaymentApprovedEvent;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -60,6 +63,34 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, NotificationEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(notificationConsumerFactory());
+        return factory;
+    }
+
+    // ── payment.approved 소비(주문 결제 완료) ──
+    // payment-server 가 아웃박스 릴레이로 보내는 값은 타입 헤더 없는 순수 JSON 문자열이므로
+    // useTypeHeaders=false 로 PaymentApprovedEvent 에 매핑하고, 알 수 없는 필드는 무시한다(페이로드 진화 내성).
+
+    @Bean
+    public ConsumerFactory<String, PaymentApprovedEvent> paymentEventConsumerFactory() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        JsonDeserializer<PaymentApprovedEvent> deserializer =
+                new JsonDeserializer<>(PaymentApprovedEvent.class, mapper, false);
+        deserializer.addTrustedPackages("*");
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "hakku-payment-order-group");
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentApprovedEvent>
+            paymentEventKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, PaymentApprovedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(paymentEventConsumerFactory());
         return factory;
     }
 }

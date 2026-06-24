@@ -26,11 +26,17 @@
 
       <!-- 우측 액션 — 항상 오른쪽 정렬 -->
       <div class="flex items-center gap-3 md:gap-4 ml-auto md:ml-0">
-        <!-- 검색 알약 (장식 placeholder · ≥1024) -->
-        <div class="search-pill hidden lg:flex" aria-hidden="true">
-          <span class="search-pill__icon">⌕</span>
-          <span class="search-pill__text">키링, 퍼스널컬러, 다꾸…</span>
-        </div>
+        <!-- 검색 (≥1024) — 제출 시 /products?q= 로 이동 -->
+        <form class="search-pill hidden lg:flex" role="search" @submit.prevent="submitSearch">
+          <span class="search-pill__icon" aria-hidden="true">⌕</span>
+          <input
+            v-model="searchInput"
+            type="search"
+            class="search-pill__input"
+            aria-label="상품 검색"
+            placeholder="키링, 퍼스널컬러, 다꾸…"
+          />
+        </form>
 
         <template v-if="authStore.isAuthenticated">
           <!-- 진단 완료 시 퍼스널컬러 배지 (accent 로 물듦) → 마이 -->
@@ -49,6 +55,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.8 23.8 0 0 0 5.454-1.31A8.97 8.97 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.97 8.97 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.3 24.3 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
             </svg>
             <span v-if="notificationStore.hasUnread" class="badge-dot" aria-label="새 알림" />
+          </router-link>
+
+          <!-- 마이페이지 — 진단 여부와 무관하게 항상 노출 -->
+          <router-link to="/my" class="icon-btn" aria-label="마이페이지" active-class="icon-btn--active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
           </router-link>
 
           <!-- 위시리스트 (마이페이지 찜 탭) -->
@@ -80,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notifications'
@@ -114,6 +127,14 @@ const navItems = computed<NavItem[]>(() => {
 })
 
 const personalColorLabel = computed(() => formatPersonalColor(authStore.user?.personalColor ?? null))
+
+// 상단 검색 — 공백만 입력하면 무시, 그 외에는 상품 목록으로 검색어를 넘긴다.
+const searchInput = ref('')
+function submitSearch() {
+  const q = searchInput.value.trim()
+  if (!q) return
+  router.push({ path: '/products', query: { q } })
+}
 
 function handleLogout() {
   authStore.logout()
@@ -181,12 +202,30 @@ function handleLogout() {
   background: var(--hk-surface);
   color: var(--hk-text-faint);
 }
+.search-pill:focus-within {
+  border-color: var(--hk-ink);
+}
 .search-pill__icon {
   font-size: 0.8125rem;
 }
-.search-pill__text {
+.search-pill__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
   font-size: 0.78rem;
   letter-spacing: 0.01em;
+  color: var(--hk-ink);
+  outline: none;
+}
+.search-pill__input::placeholder {
+  color: var(--hk-text-faint);
+}
+/* type=search 기본 클리어 버튼 제거(웹킷) */
+.search-pill__input::-webkit-search-decoration,
+.search-pill__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .icon-btn {

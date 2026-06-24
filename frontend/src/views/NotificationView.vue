@@ -85,6 +85,7 @@ function typeIcon(type: string): string {
     case 'DIAGNOSIS_COMPLETE': return '🎨'
     case 'FOLLOW': return '👤'
     case 'WISHLIST_LIKE': return '💖'
+    case 'ORDER': return '📦'
     default: return '🔔'
   }
 }
@@ -110,6 +111,7 @@ function formatDate(createdAt: number): string {
 }
 
 function isClickable(notification: Notification): boolean {
+  if (notification.type === 'ORDER') return true
   if (notification.type === 'DIAGNOSIS_COMPLETE') return true
   if (notification.type === 'FOLLOW') return notification.actorId != null
   if (notification.type === 'WISHLIST_LIKE') return notification.productId != null
@@ -117,6 +119,10 @@ function isClickable(notification: Notification): boolean {
 }
 
 function handleNotificationClick(notification: Notification) {
+  if (notification.type === 'ORDER') {
+    router.push({ path: '/my', query: { tab: 'orders' } })
+    return
+  }
   if (notification.type === 'DIAGNOSIS_COMPLETE') {
     router.push({ path: '/my', query: { view: 'diagnosis' } })
     return

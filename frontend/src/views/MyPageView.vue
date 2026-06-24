@@ -143,6 +143,49 @@
         </button>
       </section>
 
+      <!-- 주문 내역 -->
+      <section v-show="activeTab === 'orders'">
+        <SkeletonList v-if="ordersState.loading" />
+        <EmptyState
+          v-else-if="ordersState.items.length === 0"
+          icon="📦"
+          title="주문 내역이 없어요"
+          description="마음에 드는 아이템을 주문해보세요."
+        />
+        <ul v-else class="space-y-3">
+          <li
+            v-for="order in ordersState.items"
+            :key="order.id"
+            class="rounded-lg border border-line bg-surface p-4"
+          >
+            <div class="flex items-center justify-between mb-2.5">
+              <span
+                class="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full"
+                :class="orderStatusBadge(order.status)"
+              >{{ orderStatusLabel(order.status) }}</span>
+              <time class="text-xs text-ink-faint u-mono">{{ formatOrderDate(order.createdAt) }}</time>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li
+                v-for="item in order.items"
+                :key="item.productId"
+                class="flex items-center justify-between text-sm gap-3"
+              >
+                <span class="text-ink truncate">
+                  {{ item.productName }}
+                  <span class="text-ink-faint">× {{ item.quantity }}</span>
+                </span>
+                <span class="u-mono tabular-nums text-ink-soft shrink-0">{{ item.lineTotal.toLocaleString('ko-KR') }}원</span>
+              </li>
+            </ul>
+            <div class="flex items-center justify-between border-t border-line-soft pt-2.5">
+              <span class="text-xs text-ink-muted truncate">{{ order.recipientName }} · {{ order.address1 }}</span>
+              <span class="text-sm font-extrabold u-mono tabular-nums shrink-0">{{ order.totalAmount.toLocaleString('ko-KR') }}원</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
       <!-- 내 리뷰 -->
       <section v-show="activeTab === 'reviews'">
         <SkeletonList v-if="reviewsState.loading" />
@@ -293,12 +336,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { COLOR_OPTIONS, formatPersonalColor } from '@/types'
-import type { User, UserRole, UserSummary, Review, WishlistItem, Post, PostBoard } from '@/types'
+import type { User, UserRole, UserSummary, Review, WishlistItem, Post, PostBoard, Order } from '@/types'
 import { useAuthedImage } from '@/composables/useAuthedImage'
 import { getUserReviews } from '@/api/products'
 import { getUserWishlist } from '@/api/wishlist'
 import { getPostsByAuthor } from '@/api/posts'
 import { getFollowers, getFollowing } from '@/api/follows'
+import { getMyOrders } from '@/api/orders'
 import { updatePreferredColors } from '@/api/users'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -310,7 +354,7 @@ import WishlistCard from '@/components/social/WishlistCard.vue'
 import UserListItem from '@/components/social/UserListItem.vue'
 import SkeletonList from '@/components/social/SkeletonList.vue'
 
-type TabKey = 'profile' | 'reviews' | 'wishlist' | 'posts' | 'follow'
+type TabKey = 'profile' | 'orders' | 'reviews' | 'wishlist' | 'posts' | 'follow'
 
 const route = useRoute()
 const router = useRouter()
@@ -323,6 +367,7 @@ const showDiagnosisModal = ref(false)
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: 'profile', label: '프로필' },
+  { key: 'orders', label: '주문 내역' },
   { key: 'reviews', label: '리뷰' },
   { key: 'wishlist', label: '찜' },
   { key: 'posts', label: '내 글' },
@@ -330,6 +375,7 @@ const tabs: { key: TabKey; label: string }[] = [
 ]
 const activeTab = ref<TabKey>('profile')
 
+const ordersState = ref<{ loading: boolean; loaded: boolean; items: Order[] }>({ loading: false, loaded: false, items: [] })
 const reviewsState = ref<{ loading: boolean; loaded: boolean; items: Review[] }>({ loading: false, loaded: false, items: [] })
 const wishlistState = ref<{ loading: boolean; loaded: boolean; items: WishlistItem[] }>({ loading: false, loaded: false, items: [] })
 const postsState = ref<{ loading: boolean; loaded: boolean; items: Post[] }>({ loading: false, loaded: false, items: [] })
@@ -378,6 +424,26 @@ function boardLabel(board: PostBoard): string {
   return board === 'STUDENT_ID' ? '학생증 자랑' : '자유'
 }
 
+function orderStatusLabel(status: Order['status']): string {
+  switch (status) {
+    case 'PAID': return '결제완료'
+    case 'CANCELLED': return '취소됨'
+    default: return '결제대기'
+  }
+}
+
+function orderStatusBadge(status: Order['status']): string {
+  switch (status) {
+    case 'PAID': return 'bg-accent-soft text-accent-ink'
+    case 'CANCELLED': return 'bg-cream text-ink-muted'
+    default: return 'border border-line-strong text-ink'
+  }
+}
+
+function formatOrderDate(createdAt: number): string {
+  return new Date(createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
 }
@@ -389,10 +455,23 @@ function handleLogout() {
 
 async function selectTab(tab: TabKey) {
   activeTab.value = tab
+  if (tab === 'orders' && !ordersState.value.loaded) await loadOrders()
   if (tab === 'reviews' && !reviewsState.value.loaded) await loadReviews()
   if (tab === 'wishlist' && !wishlistState.value.loaded) await loadWishlist()
   if (tab === 'posts' && !postsState.value.loaded) await loadPosts()
   if (tab === 'follow' && !followState.value.loaded) await loadFollow()
+}
+
+async function loadOrders() {
+  ordersState.value.loading = true
+  try {
+    ordersState.value.items = await getMyOrders()
+    ordersState.value.loaded = true
+  } catch {
+    ordersState.value.items = []
+  } finally {
+    ordersState.value.loading = false
+  }
 }
 
 async function loadReviews() {
@@ -487,6 +566,14 @@ watch(
   },
 )
 
+// 알림에서 /my?tab=orders 로 진입하면(이미 페이지에 있어도) 주문 내역 탭으로 전환한다.
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (typeof tab === 'string' && tabs.some((t) => t.key === tab)) selectTab(tab as TabKey)
+  },
+)
+
 onMounted(async () => {
   loading.value = true
   errorMessage.value = ''
@@ -494,6 +581,10 @@ onMounted(async () => {
     await authStore.fetchMe()
     user.value = authStore.user
     if (route.query.view === 'diagnosis' && user.value?.personalColor) showDiagnosisModal.value = true
+    const initialTab = route.query.tab
+    if (typeof initialTab === 'string' && tabs.some((t) => t.key === initialTab)) {
+      await selectTab(initialTab as TabKey)
+    }
   } catch {
     errorMessage.value = '사용자 정보를 불러오는데 실패했습니다.'
   } finally {

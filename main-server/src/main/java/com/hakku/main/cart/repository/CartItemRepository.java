@@ -27,6 +27,9 @@ public interface CartItemRepository {
 
     void deleteById(@Param("id") Long id);
 
+    /** 회원의 장바구니를 비운다(주문 결제 완료 시 호출). */
+    void deleteByUserId(@Param("userId") Long userId);
+
     /** 회원-상품으로 단건 조회한다. 서비스가 .map()/.orElseGet() 로 쓰므로 Optional 로 감싼다. */
     default Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId) {
         return Optional.ofNullable(selectByUserIdAndProductId(userId, productId));

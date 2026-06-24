@@ -2,8 +2,11 @@
   <div class="u-container shop">
     <!-- 헤더 -->
     <header class="shop__head">
-      <span class="u-eyebrow">Shop</span>
-      <h1 class="shop__title">꾸미기 아이템</h1>
+      <span class="u-eyebrow">{{ isSearching ? 'Search' : 'Shop' }}</span>
+      <h1 class="shop__title">
+        <template v-if="isSearching">‘{{ searchQuery }}’ 검색 결과</template>
+        <template v-else>꾸미기 아이템</template>
+      </h1>
     </header>
 
     <!-- For You 추천 섹션 -->
@@ -63,17 +66,25 @@
       </ProductCard>
     </div>
 
+    <EmptyState
+      v-else-if="isSearching"
+      icon="🔍"
+      title="검색 결과가 없어요"
+      :description="`‘${searchQuery}’에 해당하는 상품을 찾지 못했어요.`"
+    />
     <EmptyState v-else icon="◍" title="텅 비어 있어요" description="등록된 상품이 아직 없습니다." />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, h } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useProductStore } from '@/stores/products'
 import apiClient from '@/api/client'
 import { COLOR_OPTIONS, PRODUCT_CATEGORIES } from '@/types'
 import type { RecommendationItem } from '@/types'
+import { filterProductsByQuery } from '@/lib/productSearch'
 import ProductCard from '@/components/ui/ProductCard.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -106,9 +117,14 @@ function colorHex(value: string): string {
 
 const authStore = useAuthStore()
 const store = useProductStore()
+const route = useRoute()
 const selectedCategory = ref<string | null>(null)
 const recommendations = ref<RecommendationItem[]>([])
 const recLoading = ref(false)
+
+// 헤더 검색창에서 넘어온 검색어(?q=). 비어 있으면 전체 노출.
+const searchQuery = computed(() => String(route.query.q ?? '').trim())
+const isSearching = computed(() => searchQuery.value.length > 0)
 
 const recommendedIds = computed(() => new Set(recommendedProducts.value.map((r) => r.product.id)))
 
@@ -121,7 +137,7 @@ const recommendedProducts = computed(() => {
 })
 
 const showRecommendations = computed(
-  () => authStore.isAuthenticated && recommendedProducts.value.length > 0,
+  () => !isSearching.value && authStore.isAuthenticated && recommendedProducts.value.length > 0,
 )
 
 const recommendationTitle = computed(() => {
@@ -130,12 +146,15 @@ const recommendationTitle = computed(() => {
 })
 
 const filteredProducts = computed(() => {
-  let list = store.products
-  if (recommendedIds.value.size > 0) {
+  let list = filterProductsByQuery(store.products, searchQuery.value)
+  // 검색 중에는 추천 카드 섹션을 숨기므로 중복 제외도 하지 않는다.
+  if (!isSearching.value && recommendedIds.value.size > 0) {
     list = list.filter((p) => !recommendedIds.value.has(p.id))
   }
-  if (selectedCategory.value === null) return list
-  return list.filter((p) => p.category === selectedCategory.value)
+  if (selectedCategory.value !== null) {
+    list = list.filter((p) => p.category === selectedCategory.value)
+  }
+  return list
 })
 
 function getColorLabel(value: string): string {
