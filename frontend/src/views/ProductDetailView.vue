@@ -44,14 +44,12 @@
           </div>
 
           <div class="pd__cta-row">
-            <a
-              v-if="product.purchaseUrl"
-              :href="product.purchaseUrl"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               class="pd__buy"
-            >구매처로 이동 ↗</a>
-            <p v-else class="pd__buy pd__buy--disabled">구매 링크 미등록</p>
+              :disabled="addingToCart"
+              @click="addToCart"
+            >{{ addingToCart ? '담는 중…' : '장바구니 담기' }}</button>
 
             <button type="button" class="pd__buy pd__buy--pay" @click="goToCheckout">결제하기</button>
 
@@ -67,6 +65,10 @@
               <span class="pd__wish-count u-mono">{{ wishlistCount }}</span>
             </button>
           </div>
+
+          <p v-if="cartMessage" class="pd__cart-msg" :class="{ 'pd__cart-msg--error': cartError }" role="status">
+            {{ cartMessage }}
+          </p>
         </div>
       </div>
 
@@ -132,6 +134,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProduct, getReviews, createReview, updateReview, deleteReview } from '@/api/products'
 import { getWishlistStatus, toggleWishlist } from '@/api/wishlist'
+import { addCartItem } from '@/api/cart'
 import { useAuthStore } from '@/stores/auth'
 import { COLOR_OPTIONS } from '@/types'
 import type { Product, Review } from '@/types'
@@ -191,6 +194,31 @@ function colorHex(value: string): string {
 
 function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR')
+}
+
+const addingToCart = ref(false)
+const cartMessage = ref('')
+const cartError = ref(false)
+
+async function addToCart() {
+  if (!product.value) return
+  if (!isAuthenticated.value) {
+    router.push(loginLink.value)
+    return
+  }
+  addingToCart.value = true
+  cartMessage.value = ''
+  cartError.value = false
+  try {
+    await addCartItem(product.value.id)
+    cartError.value = false
+    cartMessage.value = '장바구니에 담았어요.'
+  } catch {
+    cartError.value = true
+    cartMessage.value = '장바구니 담기에 실패했어요. 잠시 후 다시 시도해주세요.'
+  } finally {
+    addingToCart.value = false
+  }
 }
 
 function goToCheckout() {
@@ -520,6 +548,15 @@ onMounted(async () => {
   font-size: 11px;
   color: var(--hk-text-muted);
   font-variant-numeric: tabular-nums;
+}
+.pd__cart-msg {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-ink, #16140f);
+}
+.pd__cart-msg--error {
+  color: #c0392b;
 }
 
 /* 리뷰 */
