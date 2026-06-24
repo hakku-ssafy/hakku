@@ -36,7 +36,8 @@ func main() {
 		opts = append(opts, api.WithJWT(internaljwt.New(keyBytes)))
 		log.Printf("JWT auth enabled for result images")
 	} else {
-		log.Printf("WARNING: JWT_SECRET not set — result images are publicly accessible")
+		// M-7: JWT_SECRET 누락 시 result 이미지가 무인증 공개된다. 운영에서 무음 보안 구멍이 되지 않도록 부팅을 중단한다.
+		log.Fatalf("JWT_SECRET must be set — result images would be publicly accessible without it")
 	}
 
 	mux := http.NewServeMux()
