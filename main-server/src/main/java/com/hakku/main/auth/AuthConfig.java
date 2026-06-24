@@ -21,7 +21,8 @@ public class AuthConfig {
     @Bean
     public JwtTokenProvider jwtTokenProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.access-ttl-seconds}") long accessTtlSeconds) {
-        return new JwtTokenProvider(secret, accessTtlSeconds);
+            @Value("${jwt.access-ttl-seconds}") long accessTtlSeconds,
+            @Value("${jwt.refresh-ttl-seconds}") long refreshTtlSeconds) {
+        return new JwtTokenProvider(secret, accessTtlSeconds, refreshTtlSeconds);
     }
 }
