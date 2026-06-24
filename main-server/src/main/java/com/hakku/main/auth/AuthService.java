@@ -1,5 +1,6 @@
 package com.hakku.main.auth;
 
+import com.hakku.main.auth.exception.AdminSignupForbiddenException;
 import com.hakku.main.auth.exception.EmailAlreadyExistsException;
 import com.hakku.main.auth.exception.InvalidCredentialsException;
 import com.hakku.main.auth.exception.InvalidRefreshTokenException;
@@ -31,6 +32,10 @@ public class AuthService {
 
     @Transactional
     public Long signup(String email, String rawPassword, String nickname, Role role) {
+        if (role == Role.ADMIN) {
+            // 공개 회원가입으로 ADMIN 자가 부여 차단. 관리자는 AdminSeeder/프로비저닝으로만 생성한다.
+            throw new AdminSignupForbiddenException();
+        }
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException(email);
         }

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hakku.main.auth.exception.AdminSignupForbiddenException;
 import com.hakku.main.auth.exception.EmailAlreadyExistsException;
 import com.hakku.main.auth.exception.InvalidCredentialsException;
 import com.hakku.main.auth.exception.InvalidRefreshTokenException;
@@ -62,6 +63,14 @@ class AuthServiceTest {
         User saved = captor.getValue();
         assertThat(saved.getPasswordHash()).isNotEqualTo("secret123"); // 평문 저장 금지
         assertThat(passwordEncoder.matches("secret123", saved.getPasswordHash())).isTrue();
+    }
+
+    @Test
+    @DisplayName("회원가입: ADMIN 역할은 거부하고 저장하지 않는다(자가 권한 상승 차단)")
+    void signupRejectsAdminRole() {
+        assertThatThrownBy(() -> authService.signup("evil@hakku.dev", "secret123", "해커", Role.ADMIN))
+                .isInstanceOf(AdminSignupForbiddenException.class);
+        verify(userRepository, never()).save(any());
     }
 
     @Test

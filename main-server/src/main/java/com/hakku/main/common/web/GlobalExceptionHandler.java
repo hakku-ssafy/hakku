@@ -1,5 +1,6 @@
 package com.hakku.main.common.web;
 
+import com.hakku.main.auth.exception.AdminSignupForbiddenException;
 import com.hakku.main.auth.exception.EmailAlreadyExistsException;
 import com.hakku.main.auth.exception.InvalidCredentialsException;
 import com.hakku.main.auth.exception.InvalidRefreshTokenException;
@@ -41,6 +42,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(AdminSignupForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleAdminSignupForbidden(AdminSignupForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(InvalidRefreshTokenException.class)

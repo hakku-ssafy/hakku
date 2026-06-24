@@ -59,6 +59,17 @@ class AuthApiTest {
     }
 
     @Test
+    @DisplayName("POST /api/auth/signup: role=ADMIN 이면 403 (자가 권한 상승 차단)")
+    void signupRejectsAdminRole() throws Exception {
+        mvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"email":"evil@hakku.dev","password":"secret123","nickname":"해커","role":"ADMIN"}
+                            """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("POST /api/auth/login → 200 + accessToken")
     void login() throws Exception {
         mvc.perform(post("/api/auth/signup")
