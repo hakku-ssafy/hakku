@@ -11,6 +11,7 @@ import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.curation.exception.CurationCardNotFoundException;
 import com.hakku.main.follow.exception.SelfFollowException;
+import com.hakku.main.magazine.exception.MagazineNotFoundException;
 import com.hakku.main.order.exception.EmptyCartException;
 import com.hakku.main.order.exception.OrderNotFoundException;
 import com.hakku.main.product.exception.ProductAccessDeniedException;
@@ -128,6 +129,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CurationCardNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCurationCardNotFound(CurationCardNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MagazineNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMagazineNotFound(MagazineNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
     }
 

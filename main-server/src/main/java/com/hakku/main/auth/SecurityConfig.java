@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 /**
  * Stateless JWT 보안 구성 (세션/CSRF/폼로그인 미사용).
  *
- * <p>공개: 인증 엔드포인트, 액추에이터, 상품/게시글/댓글 GET 조회. 그 외는 인증 필요.
+ * <p>공개: 인증 엔드포인트, 액추에이터, 상품/게시글/댓글/매거진 GET 조회. 그 외는 인증 필요.
  */
 @Configuration
 @EnableWebSecurity
@@ -31,7 +31,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/products/**", "/api/posts/**", "/api/comments/**",
-                                "/api/curation-cards/**").permitAll()
+                                "/api/curation-cards/**", "/api/magazines/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(httpBasic -> httpBasic.disable())
