@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.hakku.main.auth.exception.EmailAlreadyExistsException;
 import com.hakku.main.auth.exception.InvalidCredentialsException;
+import com.hakku.main.auth.exception.InvalidRefreshTokenException;
 import com.hakku.main.auth.jwt.JwtTokenProvider;
 import com.hakku.main.user.domain.Role;
 import com.hakku.main.user.domain.User;
@@ -74,17 +75,50 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인: 비밀번호 일치 시 회원 id와 role로 JWT 발급")
-    void loginIssuesToken() {
+    @DisplayName("로그인: 비밀번호 일치 시 회원 id와 role로 액세스+리프레시 토큰 발급")
+    void loginIssuesTokens() {
         var user = new User("user@hakku.dev", "유저", passwordEncoder.encode("pw"), Role.SELLER);
         ReflectionTestUtils.setField(user, "id", 42L);
         when(userRepository.findByEmail("user@hakku.dev")).thenReturn(Optional.of(user));
-        when(jwtTokenProvider.createAccessToken("42", Role.SELLER)).thenReturn("jwt-token");
+        when(jwtTokenProvider.createAccessToken("42", Role.SELLER)).thenReturn("access-token");
+        when(jwtTokenProvider.createRefreshToken("42", Role.SELLER)).thenReturn("refresh-token");
 
-        String token = authService.login("user@hakku.dev", "pw");
+        AuthService.AuthTokens tokens = authService.login("user@hakku.dev", "pw");
 
-        assertThat(token).isEqualTo("jwt-token");
+        assertThat(tokens.accessToken()).isEqualTo("access-token");
+        assertThat(tokens.refreshToken()).isEqualTo("refresh-token");
         verify(jwtTokenProvider).createAccessToken("42", Role.SELLER);
+        verify(jwtTokenProvider).createRefreshToken("42", Role.SELLER);
+    }
+
+    @Test
+    @DisplayName("리프레시: 유효한 리프레시 토큰이면 subject·role 로 새 액세스 토큰 발급")
+    void refreshIssuesNewAccessToken() {
+        when(jwtTokenProvider.validateRefresh("refresh-token")).thenReturn(true);
+        when(jwtTokenProvider.getSubject("refresh-token")).thenReturn("42");
+        when(jwtTokenProvider.getRole("refresh-token")).thenReturn(Role.SELLER);
+        when(jwtTokenProvider.createAccessToken("42", Role.SELLER)).thenReturn("new-access");
+
+        String access = authService.refreshAccessToken("refresh-token");
+
+        assertThat(access).isEqualTo("new-access");
+    }
+
+    @Test
+    @DisplayName("리프레시: 유효하지 않은 토큰이면 예외 + 액세스 토큰 발급 안 함")
+    void refreshRejectsInvalidToken() {
+        when(jwtTokenProvider.validateRefresh("bad")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.refreshAccessToken("bad"))
+                .isInstanceOf(InvalidRefreshTokenException.class);
+        verify(jwtTokenProvider, never()).createAccessToken(any(), any());
+    }
+
+    @Test
+    @DisplayName("리프레시: null 토큰이면 예외")
+    void refreshRejectsNull() {
+        assertThatThrownBy(() -> authService.refreshAccessToken(null))
+                .isInstanceOf(InvalidRefreshTokenException.class);
     }
 
     @Test
