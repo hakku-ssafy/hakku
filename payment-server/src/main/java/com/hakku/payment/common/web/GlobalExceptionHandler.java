@@ -99,11 +99,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * M-4: 위에서 매핑되지 않은 모든 예외의 최종 안전망 → 500. 내부 메시지/스택은 서버 로그에만 남기고
+     * M-4: 위에서 매핑되지 않은 미처리 런타임 예외의 최종 안전망 → 500. 내부 메시지/스택은 서버 로그에만 남기고
      * 클라이언트에는 일반화 메시지만 준다(정보 노출 방지). 단일 {@link ErrorResponse} 형태를 보장한다.
+     *
+     * <p><b>{@code RuntimeException} 으로 한정</b>한 이유: Spring MVC 의 4xx 프레임워크 예외 다수(예:
+     * {@code NoResourceFoundException}→404, 메서드 미지원→405, 미디어타입→415)는 {@code ServletException}
+     * (checked) 라 여기에 걸리지 않고 Spring 기본 매핑(정상 4xx)으로 흐른다 — catch-all 이 정당한 404 를 500 으로
+     * 삼키지 않게 한다. JSON 파싱 실패는 위 {@code HttpMessageNotReadableException} 핸들러가 400 으로 잡는다.
      */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(RuntimeException ex, HttpServletRequest request) {
         log.error("미처리 예외: {} {}", request.getMethod(), request.getRequestURI(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."));
