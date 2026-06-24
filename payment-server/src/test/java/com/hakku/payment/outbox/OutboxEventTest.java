@@ -1,9 +1,12 @@
 package com.hakku.payment.outbox;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -69,6 +72,53 @@ class OutboxEventTest {
         void payloadRequired() {
             assertThrows(IllegalArgumentException.class,
                     () -> new OutboxEvent("PAYMENT", 1L, "payment.approved", " "));
+        }
+
+        @Test
+        @DisplayName("M-5: payload 가 컬럼 한계(2000자)를 넘으면 IllegalStateException (DB 위반 500 방지)")
+        void rejectsOversizedPayload() {
+            String oversized = "x".repeat(2001);
+            assertThrows(IllegalStateException.class,
+                    () -> new OutboxEvent("PAYMENT", 1L, "payment.approved", oversized));
+        }
+
+        @Test
+        @DisplayName("M-5: payload 가 정확히 한계(2000자)면 허용된다")
+        void acceptsMaxLengthPayload() {
+            String max = "x".repeat(2000);
+            assertDoesNotThrow(() -> new OutboxEvent("PAYMENT", 1L, "payment.approved", max));
+        }
+    }
+
+    @Nested
+    @DisplayName("recordFailure (poison 격리)")
+    class RecordFailure {
+
+        @Test
+        @DisplayName("M-2: 한계 미만 실패는 retryCount 만 늘리고 PENDING 을 유지한다(false 반환)")
+        void belowLimitStaysPending() {
+            var event = pendingEvent();
+
+            boolean deadLettered = event.recordFailure();
+
+            assertFalse(deadLettered);
+            assertEquals(1, event.getRetryCount());
+            assertEquals(OutboxStatus.PENDING, event.getStatus());
+        }
+
+        @Test
+        @DisplayName("M-2: 한계(5회) 도달 시 DEAD 로 격리하고 true 를 반환한다(큐 차단 방지)")
+        void atLimitMarksDead() {
+            var event = pendingEvent();
+
+            boolean deadLettered = false;
+            for (int i = 0; i < OutboxEvent.MAX_PUBLISH_RETRIES; i++) {
+                deadLettered = event.recordFailure();
+            }
+
+            assertTrue(deadLettered);
+            assertEquals(OutboxStatus.DEAD, event.getStatus());
+            assertEquals(OutboxEvent.MAX_PUBLISH_RETRIES, event.getRetryCount());
         }
     }
 

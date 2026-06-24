@@ -95,4 +95,25 @@ class PaymentApiTest {
                         .content(body("idem-bad", 0)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("M-5: 129자 idempotencyKey → 400 (DB 컬럼 위반으로 인한 500 누수 방지)")
+    void rejectsTooLongIdempotencyKey() throws Exception {
+        String longKey = "a".repeat(129);
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer("7"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(longKey, 15000)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("M-5: 허용 문자(A-Za-z0-9-_) 외 idempotencyKey → 400")
+    void rejectsIllegalCharsIdempotencyKey() throws Exception {
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer("7"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body("bad key!@#", 15000)))
+                .andExpect(status().isBadRequest());
+    }
 }

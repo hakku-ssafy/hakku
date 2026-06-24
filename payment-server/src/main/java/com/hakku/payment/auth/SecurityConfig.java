@@ -1,7 +1,10 @@
 package com.hakku.payment.auth;
 
 import com.hakku.payment.auth.jwt.JwtAuthenticationFilter;
+import com.hakku.payment.ratelimit.PaymentRateLimitFilter;
+import com.hakku.payment.ratelimit.RateLimiter;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,7 +26,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   JwtAuthenticationFilter jwtAuthenticationFilter)
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter,
+                                                   RateLimiter rateLimiter,
+                                                   @Value("${payment.rate-limit.enabled:true}")
+                                                   boolean rateLimitEnabled)
             throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -38,7 +44,10 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         (request, response, authException) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // H-4: JWT 인증 직후(익명 인증 설정 전) 레이트리밋 — 인증 사용자는 subject, 익명 웹훅은 IP 로 묶인다.
+                .addFilterAfter(new PaymentRateLimitFilter(rateLimiter, rateLimitEnabled),
+                        JwtAuthenticationFilter.class);
         return http.build();
     }
 }

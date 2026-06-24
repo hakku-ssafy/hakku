@@ -265,3 +265,102 @@ func TestDownloadRaw_WithoutAuth_Succeeds(t *testing.T) {
 		t.Errorf("status = %d, want 200", rec.Code)
 	}
 }
+
+// ── H-3: stat/meta and delete must mirror download's owner check ───────────────
+
+func TestStatResult_RequiresAuth(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1"})
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID+"/meta", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("stat without token = %d, want 401", rec.Code)
+	}
+}
+
+func TestStatResult_AsNonOwner_Forbidden(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1", "tok2": "user2"})
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID+"/meta", nil)
+	req.Header.Set("Authorization", "Bearer tok2")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("stat as non-owner = %d, want 403", rec.Code)
+	}
+}
+
+func TestStatResult_AsOwner_Succeeds(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1"})
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID+"/meta", nil)
+	req.Header.Set("Authorization", "Bearer tok1")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("stat as owner = %d, want 200", rec.Code)
+	}
+}
+
+func TestStatRaw_WithoutAuth_Succeeds(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1"})
+	meta := upload(t, h, "raw", "image/png", "abc")
+
+	req := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID+"/meta", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("stat raw without token = %d, want 200", rec.Code)
+	}
+}
+
+func TestDeleteResult_RequiresAuth(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1"})
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodDelete, "/storage/images/"+meta.ID, nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("delete without token = %d, want 401", rec.Code)
+	}
+}
+
+func TestDeleteResult_AsNonOwner_Forbidden(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1", "tok2": "user2"})
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodDelete, "/storage/images/"+meta.ID, nil)
+	req.Header.Set("Authorization", "Bearer tok2")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("delete as non-owner = %d, want 403", rec.Code)
+	}
+
+	// 비소유자 삭제가 거부된 뒤에도 이미지는 그대로여야 한다(소유자는 여전히 조회 가능).
+	chk := httptest.NewRequest(http.MethodGet, "/storage/images/"+meta.ID, nil)
+	chk.Header.Set("Authorization", "Bearer tok1")
+	chkRec := httptest.NewRecorder()
+	h.ServeHTTP(chkRec, chk)
+	if chkRec.Code != http.StatusOK {
+		t.Errorf("after forbidden delete, owner get = %d, want 200", chkRec.Code)
+	}
+}
+
+func TestDeleteResult_AsOwner_Succeeds(t *testing.T) {
+	h := newServerWithAuth(t, map[string]string{"tok1": "user1"})
+	meta := uploadWithToken(t, h, "tok1", "result", "image/png", "fake-png")
+
+	req := httptest.NewRequest(http.MethodDelete, "/storage/images/"+meta.ID, nil)
+	req.Header.Set("Authorization", "Bearer tok1")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("delete as owner = %d, want 204", rec.Code)
+	}
+}

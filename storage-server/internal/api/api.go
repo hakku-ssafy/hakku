@@ -69,6 +69,26 @@ func (r *router) bearerSubject(req *http.Request) (string, error) {
 	return r.validator.Subject(strings.TrimPrefix(auth, "Bearer "))
 }
 
+// authorizeResult enforces owner-based access for result-kind images (H-3): download,
+// stat and delete all funnel through here. raw-kind images or a nil validator (dev mode)
+// are always allowed; result-kind images require a valid Bearer token whose subject
+// matches the owner. Writes the 401/403 response and returns false when access is denied.
+func (r *router) authorizeResult(w http.ResponseWriter, req *http.Request, meta storage.Metadata) bool {
+	if meta.Kind != storage.KindResult || r.validator == nil {
+		return true
+	}
+	sub, err := r.bearerSubject(req)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "authentication required")
+		return false
+	}
+	if meta.OwnerID != "" && sub != meta.OwnerID {
+		writeError(w, http.StatusForbidden, "access denied")
+		return false
+	}
+	return true
+}
+
 func (r *router) upload(w http.ResponseWriter, req *http.Request) {
 	kind := storage.Kind(req.URL.Query().Get("kind"))
 	if kind == "" {
@@ -113,16 +133,8 @@ func (r *router) download(w http.ResponseWriter, req *http.Request) {
 	}
 	defer body.Close()
 
-	if meta.Kind == storage.KindResult && r.validator != nil {
-		sub, err := r.bearerSubject(req)
-		if err != nil {
-			writeError(w, http.StatusUnauthorized, "authentication required")
-			return
-		}
-		if meta.OwnerID != "" && sub != meta.OwnerID {
-			writeError(w, http.StatusForbidden, "access denied")
-			return
-		}
+	if !r.authorizeResult(w, req, meta) {
+		return
 	}
 
 	w.Header().Set("Content-Type", meta.ContentType)
@@ -137,11 +149,25 @@ func (r *router) stat(w http.ResponseWriter, req *http.Request) {
 		writeStoreError(w, err)
 		return
 	}
+	// H-3: result 이미지 메타(ownerID 포함)는 소유자만 열람할 수 있다.
+	if !r.authorizeResult(w, req, meta) {
+		return
+	}
 	writeJSON(w, http.StatusOK, meta)
 }
 
 func (r *router) remove(w http.ResponseWriter, req *http.Request) {
-	if err := r.store.Delete(req.PathValue("id")); err != nil {
+	id := req.PathValue("id")
+	// H-3: 삭제 전에 메타를 조회해 소유권을 검증한다(id 만 알면 누구나 삭제하던 문제 차단).
+	meta, err := r.store.Stat(id)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
+	if !r.authorizeResult(w, req, meta) {
+		return
+	}
+	if err := r.store.Delete(id); err != nil {
 		writeStoreError(w, err)
 		return
 	}

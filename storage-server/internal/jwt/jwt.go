@@ -23,8 +23,9 @@ func New(key []byte) *HS256Validator {
 }
 
 type jwtPayload struct {
-	Sub string `json:"sub"`
-	Exp int64  `json:"exp"`
+	Sub  string `json:"sub"`
+	Exp  int64  `json:"exp"`
+	Type string `json:"type"`
 }
 
 // Subject validates the token signature and expiry, then returns the subject claim.
@@ -54,6 +55,10 @@ func (v *HS256Validator) Subject(token string) (string, error) {
 	}
 	if c.Exp > 0 && time.Now().Unix() > c.Exp {
 		return "", errors.New("token expired")
+	}
+	// 리프레시 토큰(24h, type=refresh)은 시크릿을 공유해 서명·만료가 유효하지만, Bearer 액세스 토큰으로 받아서는 안 된다.
+	if c.Type == "refresh" {
+		return "", errors.New("refresh token not accepted as access token")
 	}
 	if c.Sub == "" {
 		return "", errors.New("missing subject")
