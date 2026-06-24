@@ -1,0 +1,12 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  로컬 통합 검증 전용 오버라이드 — base docker-compose.yml 위에 Compose 가 자동 병합.
+#  운영 배포에는 사용하지 않는다(커밋/배포 대상 아님).
+# ─────────────────────────────────────────────────────────────────────────────
+name: hakku
+
+services:
+  # 토스 '샌드박스(test_)' 시크릿키로 부팅하기 위해 라이브키 검증을 끈다.
+  # (TossSecretKeyValidator 가 문서화한 테스트/샌드박스용 토글)
+  payment-server:
+    environment:
+      PAYMENT_TOSS_SECRET_KEY_VALIDATION_ENABLED: "false"
