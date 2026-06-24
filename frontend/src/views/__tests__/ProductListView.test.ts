@@ -48,10 +48,12 @@ const mockProducts = [
 ]
 
 describe('ProductListView', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     mockGetProducts.mockResolvedValue([])
+    await router.push('/products')
+    await router.isReady()
   })
 
   it('상품 목록 제목이 렌더링된다', async () => {
@@ -96,5 +98,20 @@ describe('ProductListView', () => {
     await waitFor(() => {
       expect(screen.getByText(/5,900/)).toBeInTheDocument()
     })
+  })
+
+  it('검색어(route query q)로 상품을 필터링한다', async () => {
+    mockGetProducts.mockResolvedValueOnce(mockProducts)
+    await router.push('/products?q=겨울')
+    await router.isReady()
+
+    render(ProductListView, {
+      global: { plugins: [createPinia(), router] }
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('겨울 배지 세트')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('봄 스티커 세트')).not.toBeInTheDocument()
   })
 })

@@ -26,6 +26,10 @@ public final class NotificationMessageFormatter {
         return actorNickname + "님이 회원님의 찜 \"" + preview(productName) + "\"을(를) 좋아해요.";
     }
 
+    public static String order() {
+        return "결제가 완료되었어요. 주문 내역을 확인해보세요!";
+    }
+
     private static String preview(String title) {
         if (title == null || title.isBlank()) {
             return "게시글";
