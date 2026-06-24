@@ -59,12 +59,23 @@ public class OutboxEvent {
     @Column(name = "sent_at")
     private Instant sentAt;
 
+    /** payload 컬럼 한계. 초과분이 DB 까지 내려가 제약 위반 500 이 되기 전에 도메인에서 막는다(M-5). */
+    static final int MAX_PAYLOAD_LENGTH = 2000;
+
     public OutboxEvent(String aggregateType, Long aggregateId, String eventType, String payload) {
         this.aggregateType = requireText(aggregateType, "애그리거트 종류");
         this.aggregateId = requireNonNull(aggregateId, "애그리거트 id");
         this.eventType = requireText(eventType, "이벤트 종류");
-        this.payload = requireText(payload, "이벤트 페이로드");
+        this.payload = requirePayloadWithinLimit(requireText(payload, "이벤트 페이로드"));
         this.status = OutboxStatus.PENDING;
+    }
+
+    private static String requirePayloadWithinLimit(String payload) {
+        if (payload.length() > MAX_PAYLOAD_LENGTH) {
+            throw new IllegalStateException(
+                    "아웃박스 payload 가 최대 길이(" + MAX_PAYLOAD_LENGTH + "자)를 초과했습니다: " + payload.length());
+        }
+        return payload;
     }
 
     /** PENDING -> SENT. Kafka 발행 성공 후 호출한다. 이미 SENT 면 거부한다. */

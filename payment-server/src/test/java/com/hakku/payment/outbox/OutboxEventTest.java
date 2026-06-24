@@ -1,5 +1,6 @@
 package com.hakku.payment.outbox;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -69,6 +70,21 @@ class OutboxEventTest {
         void payloadRequired() {
             assertThrows(IllegalArgumentException.class,
                     () -> new OutboxEvent("PAYMENT", 1L, "payment.approved", " "));
+        }
+
+        @Test
+        @DisplayName("M-5: payload 가 컬럼 한계(2000자)를 넘으면 IllegalStateException (DB 위반 500 방지)")
+        void rejectsOversizedPayload() {
+            String oversized = "x".repeat(2001);
+            assertThrows(IllegalStateException.class,
+                    () -> new OutboxEvent("PAYMENT", 1L, "payment.approved", oversized));
+        }
+
+        @Test
+        @DisplayName("M-5: payload 가 정확히 한계(2000자)면 허용된다")
+        void acceptsMaxLengthPayload() {
+            String max = "x".repeat(2000);
+            assertDoesNotThrow(() -> new OutboxEvent("PAYMENT", 1L, "payment.approved", max));
         }
     }
 
