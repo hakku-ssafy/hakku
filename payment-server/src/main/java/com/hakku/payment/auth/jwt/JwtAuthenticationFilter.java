@@ -38,7 +38,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader(HEADER);
         if (header != null && header.startsWith(PREFIX)) {
             String token = header.substring(PREFIX.length());
-            if (tokenProvider.validate(token)) {
+            // 리프레시 토큰(type=refresh)을 Bearer 액세스 토큰으로 쓰는 것을 거부한다 — 리프레시는 /api/auth 쿠키 전용.
+            if (tokenProvider.validate(token) && !tokenProvider.isRefreshToken(token)) {
                 String userId = tokenProvider.getSubject(token);
                 if (isNumericUserId(userId)) {
                     var authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());

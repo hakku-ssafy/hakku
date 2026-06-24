@@ -59,9 +59,11 @@ public class PaymentRateLimitFilter extends OncePerRequestFilter {
     }
 
     private static String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        // 신뢰 가능한 프록시(nginx)가 설정하는 X-Real-IP($remote_addr)만 신뢰한다. 클라이언트가 위조 가능한
+        // X-Forwarded-For 는 레이트리밋 키로 쓰지 않는다(스푸핑으로 IP 버킷 우회 방지).
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
         }
         return request.getRemoteAddr();
     }

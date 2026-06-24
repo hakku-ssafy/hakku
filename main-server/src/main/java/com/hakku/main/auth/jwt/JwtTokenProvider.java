@@ -75,16 +75,15 @@ public class JwtTokenProvider {
         }
     }
 
-    /** 서명·만료가 유효하고 {@code type=refresh} 일 때만 true. 액세스 토큰을 리프레시로 쓰는 것을 막는다. */
+    /**
+     * 서명·만료가 유효하고 {@code type=refresh} 일 때만 true. 액세스 토큰을 리프레시로 쓰는 것을 막는다.
+     * 판정은 {@link #isRefreshToken(String)} 과 동일하므로 위임한다(중복 제거 → 한쪽만 바뀌어 어긋나는 것 방지).
+     */
     public boolean validateRefresh(String token) {
-        try {
-            return TYPE_REFRESH.equals(parseClaims(token).get(TYPE_CLAIM, String.class));
-        } catch (JwtException | IllegalArgumentException ex) {
-            return false;
-        }
+        return isRefreshToken(token);
     }
 
-    /** 토큰 type 이 refresh 인지(파싱 실패 시 false). 인증 필터에서 리프레시 토큰을 액세스로 쓰는 것을 거부할 때 사용. */
+    /** 토큰이 유효 서명·미만료이며 {@code type=refresh} 인지(파싱 실패 시 false). 인증 필터의 리프레시 토큰 거부에도 사용. */
     public boolean isRefreshToken(String token) {
         try {
             return TYPE_REFRESH.equals(parseClaims(token).get(TYPE_CLAIM, String.class));

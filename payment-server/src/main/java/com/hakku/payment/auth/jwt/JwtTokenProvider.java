@@ -16,6 +16,9 @@ import javax.crypto.SecretKey;
  */
 public class JwtTokenProvider {
 
+    private static final String TYPE_CLAIM = "type";
+    private static final String TYPE_REFRESH = "refresh";
+
     private final SecretKey key;
 
     public JwtTokenProvider(String base64Secret) {
@@ -27,6 +30,18 @@ public class JwtTokenProvider {
         try {
             parseClaims(token);
             return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    /**
+     * 토큰 type 이 refresh 인지(파싱 실패 시 false). main-server 와 시크릿을 공유하므로, 24시간짜리
+     * 리프레시 토큰도 서명·만료는 유효하다 — 이를 Bearer 액세스 토큰으로 악용하는 것을 필터에서 거부한다.
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            return TYPE_REFRESH.equals(parseClaims(token).get(TYPE_CLAIM, String.class));
         } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }

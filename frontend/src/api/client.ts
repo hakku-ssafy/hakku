@@ -19,8 +19,9 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// 인증 시도 자체(로그인/회원가입)와 리프레시 호출의 401은 재시도/로그아웃 대상에서 제외한다.
-const AUTH_ENDPOINTS = ['/auth/login', '/auth/signup', '/auth/refresh']
+// 인증 시도 자체(로그인/회원가입)와 리프레시/로그아웃 호출의 401은 재시도/로그아웃 대상에서 제외한다.
+// (의도된 로그아웃 요청이 만료 토큰으로 401 → 불필요한 리프레시-재시도를 트리거하지 않도록 logout 도 포함)
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/signup', '/auth/refresh', '/auth/logout']
 
 // 동시 401 폭주 시 리프레시는 한 번만 수행하고 나머지 요청은 그 결과를 공유한다.
 let refreshPromise: Promise<string> | null = null
