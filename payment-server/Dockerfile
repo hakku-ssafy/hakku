@@ -1,5 +1,7 @@
 # --- Build stage ----------------------------------------------------------------
-FROM eclipse-temurin:17-jdk-alpine AS builder
+# eclipse-temurin:17-*-alpine 은 arm64(Apple Silicon) 매니페스트가 없어 빌드 실패 →
+# Alpine 기반이면서 arm64 를 포함하는 amazoncorretto:17-alpine(OpenJDK 17) 사용.
+FROM amazoncorretto:17-alpine AS builder
 
 WORKDIR /workspace
 
@@ -20,7 +22,7 @@ COPY src/ src/
 RUN ./gradlew bootJar -x test --no-daemon
 
 # --- Runtime stage --------------------------------------------------------------
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM amazoncorretto:17-alpine AS runtime
 
 WORKDIR /app
 
