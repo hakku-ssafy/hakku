@@ -57,6 +57,13 @@
             <span v-if="notificationStore.hasUnread" class="badge-dot" aria-label="새 알림" />
           </router-link>
 
+          <!-- 마이페이지 — 진단 여부와 무관하게 항상 노출 -->
+          <router-link to="/my" class="icon-btn" aria-label="마이페이지" active-class="icon-btn--active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+          </router-link>
+
           <!-- 위시리스트 (마이페이지 찜 탭) -->
           <router-link to="/my" class="icon-btn hide-mobile" aria-label="찜 목록" active-class="icon-btn--active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-5 h-5">

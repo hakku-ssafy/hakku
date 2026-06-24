@@ -56,4 +56,19 @@ describe('AppHeader', () => {
 
     expect(router.currentRoute.value.path).toBe('/')
   })
+
+  it('로그인 상태면 진단 여부와 무관하게 마이페이지 링크가 보인다', () => {
+    const auth = useAuthStore()
+    auth.token = 'test-token' // 진단 전(user=null)이라 퍼스널컬러 배지는 없음
+    render(AppHeader, { global: { plugins: [router] } })
+
+    const myLink = screen.getByRole('link', { name: /마이페이지/ })
+    expect(myLink).toBeInTheDocument()
+    expect(myLink.getAttribute('href')).toContain('/my')
+  })
+
+  it('비로그인 상태면 마이페이지 링크가 없다', () => {
+    render(AppHeader, { global: { plugins: [router] } })
+    expect(screen.queryByRole('link', { name: /마이페이지/ })).not.toBeInTheDocument()
+  })
 })
