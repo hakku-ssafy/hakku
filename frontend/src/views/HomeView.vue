@@ -49,6 +49,44 @@
           <EmptyState v-else icon="◍" title="등록된 상품이 없어요" />
         </section>
 
+        <!-- ===== 학생증 자랑 (이미지 격자) ===== -->
+        <section v-if="showcaseLoading || showcasePosts.length > 0" class="home-section">
+          <SectionHeader eyebrow="Show off" title="학생증 자랑">
+            <template #action>
+              <router-link to="/community?board=showcase" class="see-all">더보기 →</router-link>
+            </template>
+          </SectionHeader>
+
+          <div v-if="showcaseLoading" class="showcase-grid">
+            <SkeletonBlock
+              v-for="i in 6"
+              :key="i"
+              height="auto"
+              width="100%"
+              class="aspect-[3/4] rounded-md"
+            />
+          </div>
+
+          <div v-else class="showcase-grid">
+            <router-link
+              v-for="post in showcasePosts"
+              :key="post.id"
+              :to="`/community/${post.id}`"
+              class="showcase-card group"
+            >
+              <div class="showcase-card__thumb">
+                <img
+                  :src="post.imageUrl ?? ''"
+                  :alt="post.title"
+                  loading="lazy"
+                  class="showcase-card__img"
+                />
+              </div>
+              <p class="showcase-card__title">{{ post.title }}</p>
+            </router-link>
+          </div>
+        </section>
+
         <!-- ===== 커뮤니티 프리뷰 ===== -->
         <section class="home-section">
           <SectionHeader eyebrow="Community" title="지금 학꾸 라운지">
@@ -107,7 +145,8 @@ import { useAuthStore } from '@/stores/auth'
 import { usePostStore } from '@/stores/posts'
 import { useProductStore } from '@/stores/products'
 import apiClient from '@/api/client'
-import { formatPersonalColor, type DiagnosisStatus, type RecommendationItem } from '@/types'
+import { getPosts } from '@/api/posts'
+import { formatPersonalColor, type DiagnosisStatus, type Post, type RecommendationItem } from '@/types'
 import { useAuthedImage } from '@/composables/useAuthedImage'
 import HeroCarousel from '@/components/home/HeroCarousel.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
@@ -124,6 +163,10 @@ const productStore = useProductStore()
 const postsLoading = ref(false)
 const showDiagnosisModal = ref(false)
 const recommendations = ref<RecommendationItem[]>([])
+
+// 학생증 자랑(이미지 격자) — 커뮤니티 프리뷰가 쓰는 store.posts 를 건드리지 않도록 별도로 보관한다.
+const showcasePosts = ref<Post[]>([])
+const showcaseLoading = ref(false)
 
 // 진단 상태/퍼스널컬러는 인증 스토어를 단일 소스로 삼는다 → App.vue 폴링이
 // PENDING → COMPLETED 로 갱신하면 새로고침 없이 이 화면에 즉시 반영된다.
@@ -192,6 +235,19 @@ async function loadRecommendations() {
   }
 }
 
+/** 학생증 자랑 게시판에서 이미지가 있는 글만 상위 8개 격자로 노출. */
+async function loadShowcase() {
+  showcaseLoading.value = true
+  try {
+    const posts = await getPosts('STUDENT_ID')
+    showcasePosts.value = posts.filter((p) => p.imageUrl).slice(0, 8)
+  } catch {
+    showcasePosts.value = []
+  } finally {
+    showcaseLoading.value = false
+  }
+}
+
 onMounted(async () => {
   postsLoading.value = true
   await Promise.all([
@@ -199,6 +255,7 @@ onMounted(async () => {
       postsLoading.value = false
     }),
     productStore.fetchProducts(),
+    loadShowcase(),
   ])
 
   if (diagnosisStatus.value === 'COMPLETED') loadRecommendations()
@@ -281,6 +338,46 @@ watch(diagnosisStatus, (status) => {
   .product-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* 학생증 자랑 — 이미지 격자(4→3→2열, 세로 3:4 카드) */
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .showcase-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .showcase-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.showcase-card__thumb {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--hk-radius-md);
+  overflow: hidden;
+  background: var(--hk-cream);
+}
+.showcase-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.showcase-card:hover .showcase-card__img {
+  transform: scale(1.05);
+}
+.showcase-card__title {
+  margin-top: 9px;
+  font-size: 13px;
+  color: var(--hk-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 커뮤니티 프리뷰 — border-top 리스트 행 */
