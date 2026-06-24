@@ -3,15 +3,18 @@ package com.hakku.main.community;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hakku.main.community.domain.Post;
+import com.hakku.main.community.domain.PostBoard;
 import com.hakku.main.community.exception.PostAccessDeniedException;
 import com.hakku.main.community.exception.PostNotFoundException;
 import com.hakku.main.community.repository.CommentRepository;
 import com.hakku.main.community.repository.PostLikeRepository;
+import com.hakku.main.community.repository.PostProductRepository;
 import com.hakku.main.community.repository.PostRepository;
 import com.hakku.main.user.repository.UserRepository;
 import java.util.List;
@@ -41,11 +44,15 @@ class PostServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private PostProductRepository postProductRepository;
+
     private PostService postService;
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(postRepository, postLikeRepository, commentRepository, userRepository);
+        postService = new PostService(postRepository, postLikeRepository, commentRepository,
+                userRepository, postProductRepository);
     }
 
     @Test
@@ -121,6 +128,35 @@ class PostServiceTest {
         List<PostResponse> all = postService.list((Long) null);
 
         assertThat(all).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("create: productIds 를 받으면 중복 제거 후 position 순서로 연관 상품을 저장하고, 응답에 연관 상품을 담는다")
+    void create_withProductIds_persistsAndReturnsRelated() {
+        when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+        RelatedProductSummary summary = new RelatedProductSummary(10L, "다꾸 키링", "https://img/k.png", 4900L);
+        when(postProductRepository.findRelatedProductsByPostId(any())).thenReturn(List.of(summary));
+
+        PostResponse response = postService.create(
+                AUTHOR, "내 학생증", "꾸며봤어요", PostBoard.STUDENT_ID, "https://img/card.png",
+                List.of(10L, 20L, 10L));
+
+        // 중복(10L)은 한 번만, 입력 순서대로 position 0,1 부여
+        verify(postProductRepository).insert(any(), eq(10L), eq(0));
+        verify(postProductRepository).insert(any(), eq(20L), eq(1));
+        verify(postProductRepository, never()).insert(any(), eq(10L), eq(1));
+        assertThat(response.board()).isEqualTo("STUDENT_ID");
+        assertThat(response.relatedProducts()).containsExactly(summary);
+    }
+
+    @Test
+    @DisplayName("create: productIds 가 없으면(null) 연관 상품을 저장하지 않는다")
+    void create_withoutProductIds_savesNone() {
+        when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        postService.create(AUTHOR, "제목", "본문", PostBoard.GENERAL, null, null);
+
+        verify(postProductRepository, never()).insert(any(), any(), eq(0));
     }
 
     private Post post() {

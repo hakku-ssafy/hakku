@@ -36,7 +36,7 @@ public class PostController {
     public PostResponse create(@AuthenticationPrincipal String userId,
                                @Valid @RequestBody PostRequest request) {
         return postService.create(Long.valueOf(userId), request.title(), request.content(),
-                PostBoard.fromNullable(request.board()), request.imageUrl());
+                PostBoard.fromNullable(request.board()), request.imageUrl(), request.productIds());
     }
 
     @GetMapping
@@ -74,6 +74,7 @@ public class PostController {
             @NotBlank String title,
             @NotBlank String content,
             String board,
-            String imageUrl) {
+            String imageUrl,
+            List<Long> productIds) {
     }
 }
