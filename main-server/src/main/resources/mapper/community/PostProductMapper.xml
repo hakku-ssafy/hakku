@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.community.repository.PostProductRepository">
+
+    <!-- record 생성자 매핑(파라미터명 의존 없이 안전). 인자 순서 = RelatedProductSummary(Long,String,String,long). -->
+    <resultMap id="relatedProductResultMap" type="com.hakku.main.community.RelatedProductSummary">
+        <constructor>
+            <idArg column="id" javaType="long"/>
+            <arg column="name" javaType="string"/>
+            <arg column="image_url" javaType="string"/>
+            <arg column="price" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <!--
+      존재하는 상품만 링크한다: FROM products WHERE id=? 이므로 잘못된 상품 id 는 0행 → 미삽입.
+      덕분에 FK 위반으로 게시글 생성 트랜잭션이 깨지지 않는다. (PostgreSQL/H2 공통 동작)
+    -->
+    <insert id="insert">
+        INSERT INTO post_products (post_id, product_id, sort_order)
+        SELECT #{postId}, #{productId}, #{position}
+        FROM products
+        WHERE id = #{productId}
+    </insert>
+
+    <select id="findRelatedProductsByPostId" resultMap="relatedProductResultMap">
+        SELECT p.id, p.name, p.image_url, p.price
+        FROM post_products pp
+        JOIN products p ON p.id = pp.product_id
+        WHERE pp.post_id = #{postId}
+        ORDER BY pp.sort_order ASC, pp.id ASC
+    </select>
+</mapper>

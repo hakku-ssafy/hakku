@@ -197,6 +197,15 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${CHATBOT_MODEL:-gpt-4o}
       JWT_SECRET: ${JWT_SECRET}
+      # 대화 기억(1시간 윈도우)용 Redis + 고객센터 도구가 호출할 main-server
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MAIN_SERVER_URL: http://main-server:8080
+    depends_on:
+      redis:
+        condition: service_healthy
+      main-server:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
       interval: 10s

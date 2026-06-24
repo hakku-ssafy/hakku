@@ -71,4 +71,23 @@ describe('AppHeader', () => {
     render(AppHeader, { global: { plugins: [router] } })
     expect(screen.queryByRole('link', { name: /마이페이지/ })).not.toBeInTheDocument()
   })
+
+  it('로그인 상태여도 찜 목록(하트) 링크는 노출하지 않는다 — 마이페이지와 기능 중복', () => {
+    const auth = useAuthStore()
+    auth.token = 'test-token'
+    render(AppHeader, { global: { plugins: [router] } })
+
+    expect(screen.queryByRole('link', { name: /찜 목록/ })).not.toBeInTheDocument()
+  })
+
+  it('로고는 hakku 이미지이며 클릭하면 홈으로 이동한다', () => {
+    render(AppHeader, { global: { plugins: [router] } })
+
+    const homeLink = screen.getByRole('link', { name: '학꾸 홈' })
+    expect(homeLink.getAttribute('href')).toBe('/')
+
+    const img = homeLink.querySelector('img')
+    expect(img).not.toBeNull()
+    expect(img?.getAttribute('src')).toContain('hakku.png')
+  })
 })

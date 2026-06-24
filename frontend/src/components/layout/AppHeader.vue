@@ -1,9 +1,9 @@
 <template>
   <header class="sticky top-0 z-50 border-b border-line app-header">
     <div class="u-container h-[72px] flex items-center gap-6 md:gap-10">
-      <!-- 로고 — hakku. 워드마크(마침표 accent) -->
-      <router-link to="/" class="logo-word text-ink shrink-0" aria-label="학꾸 홈">
-        hakku<span class="text-accent">.</span>
+      <!-- 로고 — hakku 워드마크 이미지(클릭 시 홈으로) -->
+      <router-link to="/" class="logo-link shrink-0" aria-label="학꾸 홈">
+        <img src="/hakku.png" alt="hakku" class="logo-img" width="96" height="28" />
       </router-link>
 
       <!-- 데스크탑 언더라인 내비 (홈·상품·커뮤니티 + 로그인 시 진단·추천 + SELLER 시 판매) -->
@@ -61,13 +61,6 @@
           <router-link to="/my" class="icon-btn" aria-label="마이페이지" active-class="icon-btn--active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-5 h-5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-            </svg>
-          </router-link>
-
-          <!-- 위시리스트 (마이페이지 찜 탭) -->
-          <router-link to="/my" class="icon-btn hide-mobile" aria-label="찜 목록" active-class="icon-btn--active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
             </svg>
           </router-link>
 
@@ -159,11 +152,14 @@ function handleLogout() {
   -webkit-backdrop-filter: blur(12px);
 }
 
-.logo-word {
-  font-weight: 800;
-  font-size: 1.4375rem; /* 23px */
-  letter-spacing: -0.04em;
-  line-height: 1;
+.logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+.logo-img {
+  display: block;
+  height: 1.75rem; /* 28px — 워드마크, 폭은 비율에 맞춰 자동 */
+  width: auto;
 }
 
 /* 언더라인 탭 — 활성 = 먹색 + 2px 하단 보더 */

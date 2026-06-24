@@ -21,6 +21,14 @@ export interface AuthTokens {
 
 export type PostBoard = 'GENERAL' | 'STUDENT_ID'
 
+/** 게시글에 연결된 연관 상품 요약 (학생증 자랑 → 상품 페이지 이동용). */
+export interface RelatedProduct {
+  id: number
+  name: string
+  imageUrl: string | null
+  price: number
+}
+
 export interface Post {
   id: number
   title: string
@@ -32,6 +40,7 @@ export interface Post {
   likeCount: number
   commentCount: number
   liked: boolean
+  relatedProducts: RelatedProduct[]
   createdAt: string
 }
 
