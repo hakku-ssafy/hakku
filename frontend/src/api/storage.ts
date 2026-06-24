@@ -39,3 +39,20 @@ export async function uploadShowcaseImage(file: File): Promise<string> {
   )
   return publicImageUrl(data.id)
 }
+
+/**
+ * 큐레이션 카드 이미지를 업로드하고 공개 URL을 반환한다.
+ * 메인 캐러셀은 비로그인 포함 누구나 보므로 인증 없이 조회 가능한 raw 종류로 저장한다.
+ */
+export async function uploadCurationImage(file: File): Promise<string> {
+  const { data } = await storageClient.post<{ id: string }>(
+    '/images',
+    file,
+    {
+      params: { kind: 'raw' },
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      maxBodyLength: 10 * 1024 * 1024
+    }
+  )
+  return publicImageUrl(data.id)
+}

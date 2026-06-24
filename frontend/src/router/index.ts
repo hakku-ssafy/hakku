@@ -19,6 +19,12 @@ const router = createRouter({
     { path: '/recommendations', component: () => import('@/views/RecommendationView.vue'), meta: { requiresAuth: true } },
     { path: '/notifications', component: () => import('@/views/NotificationView.vue'), meta: { requiresAuth: true } },
     { path: '/my', component: () => import('@/views/MyPageView.vue'), meta: { requiresAuth: true } },
+    { path: '/magazine/:id', component: () => import('@/views/MagazineDetailView.vue') },
+    {
+      path: '/admin/curation',
+      component: () => import('@/views/AdminCurationView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
   ]
 })
 
@@ -44,6 +50,11 @@ router.beforeEach(async (to) => {
       authStore.logout()
       return '/login'
     }
+  }
+
+  // 어드민 전용 라우트 — ADMIN 역할이 아니면 홈으로. (백엔드 /api/admin/** 가 1차 방어선)
+  if (to.meta.requiresAdmin && authStore.user?.role !== 'ADMIN') {
+    return '/'
   }
 
   if (needsOnboarding(authStore.user) && to.path !== '/onboarding') {
