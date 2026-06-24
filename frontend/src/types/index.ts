@@ -67,6 +67,38 @@ export interface CartItem {
   quantity: number
 }
 
+export type OrderStatus = 'CREATED' | 'PAID' | 'CANCELLED'
+
+/** 배송지 입력값(주문 생성 요청 본문). */
+export interface ShippingAddress {
+  recipientName: string
+  phone: string
+  postalCode: string
+  address1: string
+  address2: string
+}
+
+export interface OrderItem {
+  productId: number
+  productName: string
+  price: number
+  quantity: number
+  lineTotal: number
+}
+
+export interface Order {
+  id: number
+  status: OrderStatus
+  recipientName: string
+  phone: string
+  postalCode: string
+  address1: string
+  address2: string | null
+  totalAmount: number
+  createdAt: number
+  items: OrderItem[]
+}
+
 export interface CurationCard {
   id: number
   kicker: string | null
@@ -174,6 +206,7 @@ export type NotificationType =
   | 'DIAGNOSIS_COMPLETE'
   | 'FOLLOW'
   | 'WISHLIST_LIKE'
+  | 'ORDER'
 
 export interface Notification {
   type: NotificationType

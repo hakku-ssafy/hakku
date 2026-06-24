@@ -109,13 +109,12 @@ const router = useRouter()
 
 function checkout() {
   if (items.value.length === 0) return
+  // 결제 전 배송지 입력 단계(주문서)로 이동. 주문 생성 후 ORDER 결제로 이어진다.
   router.push({
-    path: '/payments/checkout',
+    path: '/order/new',
     query: {
-      refType: 'CART',
-      refId: 'cart',
       amount: String(summary.value.total),
-      name: `장바구니 ${summary.value.itemCount}건`,
+      count: String(summary.value.itemCount),
     },
   })
 }

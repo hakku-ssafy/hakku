@@ -45,7 +45,8 @@ onMounted(async () => {
       <h1 class="pay-result__title">결제가 완료되었어요</h1>
       <p class="pay-result__amount">{{ amount.toLocaleString('ko-KR') }}원</p>
       <p class="pay-result__sandbox">샌드박스 결제 — 실제로 청구되지 않았습니다.</p>
-      <router-link to="/products" class="pay-result__cta">쇼핑 계속하기</router-link>
+      <router-link :to="{ path: '/my', query: { tab: 'orders' } }" class="pay-result__cta">주문 내역 보기</router-link>
+      <router-link to="/products" class="pay-result__link">쇼핑 계속하기</router-link>
     </template>
 
     <template v-else>
@@ -115,5 +116,13 @@ onMounted(async () => {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
+}
+.pay-result__link {
+  display: block;
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: var(--hk-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 </style>
