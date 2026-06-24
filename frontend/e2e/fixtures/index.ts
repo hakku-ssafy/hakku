@@ -201,6 +201,22 @@ function makeWishlistItem(id: number): WishlistItem {
 
 const WISHLIST: WishlistItem[] = [1, 2, 3].map(makeWishlistItem)
 
+function makeCurationCard(id: number) {
+  return {
+    id,
+    kicker: 'NEW',
+    title: `큐레이션 카드 ${id}`,
+    subtitle: '데모 큐레이션 문구',
+    body: '데모 매거진 본문입니다.',
+    imageUrl: DEMO_IMG,
+    linkUrl: null,
+    displayOrder: id,
+    active: true,
+    createdAt: '2026-06-22T09:00:00Z',
+    updatedAt: '2026-06-22T09:00:00Z',
+  }
+}
+
 function makeUserSummary(id: number): UserSummary {
   return {
     id,
@@ -312,6 +328,15 @@ function resolve(rawUrl: string, ctx: ResolveCtx = {}): unknown {
 
   // --- wishlist/:id/likes ---
   if (is(path, /^\/wishlist\/\d+\/likes$/)) return { liked: true, likeCount: 9 }
+
+  // --- curation cards (메인 캐러셀은 빈 배열 → 기본 슬라이드 폴백 유지) ---
+  if (is(path, /^\/admin\/curation-cards(\/\d+)?$/)) {
+    if (method === 'POST' || method === 'PUT') return makeCurationCard(99)
+    if (method === 'DELETE') return {}
+    return [makeCurationCard(1), makeCurationCard(2)]
+  }
+  if (is(path, /^\/curation-cards\/\d+$/)) return makeCurationCard(lastId(path))
+  if (is(path, /^\/curation-cards$/)) return []
 
   // --- recommendations ---
   if (is(path, /^\/recommendations$/)) return RECOMMENDATIONS

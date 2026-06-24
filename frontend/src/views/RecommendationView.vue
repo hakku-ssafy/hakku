@@ -19,7 +19,12 @@
 
 
     <div v-else-if="recommendations.length > 0" class="rec-grid">
-      <ProductCard v-for="item in recommendations" :key="item.product.id" :product="item.product">
+      <ProductCard
+        v-for="item in recommendations"
+        :key="item.product.id"
+        :product="item.product"
+        :overlay="false"
+      >
         <template #meta>
           <div class="mt-2.5 pt-2.5 border-t border-line">
             <div class="flex flex-wrap items-center gap-1.5 mb-2">

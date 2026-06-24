@@ -67,6 +67,32 @@ export interface CartItem {
   quantity: number
 }
 
+export interface CurationCard {
+  id: number
+  kicker: string | null
+  title: string
+  subtitle: string | null
+  body: string | null
+  imageUrl: string | null
+  linkUrl: string | null
+  displayOrder: number
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+/** 큐레이션 카드 생성/수정 입력(어드민). */
+export interface CurationCardInput {
+  kicker: string | null
+  title: string
+  subtitle: string | null
+  body: string | null
+  imageUrl: string | null
+  linkUrl: string | null
+  displayOrder: number
+  active: boolean
+}
+
 export interface Review {
   id: number
   rating: number

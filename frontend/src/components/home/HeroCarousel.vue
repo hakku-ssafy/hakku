@@ -30,9 +30,32 @@
             />
           </template>
           <!-- 에디토리얼 슬라이드 -->
-          <router-link v-else :to="slide.to" class="hero__slide-link">
-            <HeroEditorialCard :tone="slide.tone" :kicker="slide.kicker" :title="slide.title" :sub="slide.sub" />
-          </router-link>
+          <template v-else>
+            <a
+              v-if="isExternal(slide.to)"
+              :href="slide.to"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hero__slide-link"
+            >
+              <HeroEditorialCard
+                :tone="slide.tone"
+                :kicker="slide.kicker"
+                :title="slide.title"
+                :sub="slide.sub"
+                :image-url="slide.imageUrl"
+              />
+            </a>
+            <router-link v-else :to="slide.to" class="hero__slide-link">
+              <HeroEditorialCard
+                :tone="slide.tone"
+                :kicker="slide.kicker"
+                :title="slide.title"
+                :sub="slide.sub"
+                :image-url="slide.imageUrl"
+              />
+            </router-link>
+          </template>
         </li>
       </ul>
     </div>
@@ -60,8 +83,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Product } from '@/types'
+import { computed, onMounted, ref } from 'vue'
+import type { CurationCard, Product } from '@/types'
+import { listActiveCurationCards } from '@/api/curation'
 import { useHeroCarousel } from '@/composables/useHeroCarousel'
 import HeroDiagnosisCard from './HeroDiagnosisCard.vue'
 import HeroEditorialCard from './HeroEditorialCard.vue'
@@ -87,19 +111,57 @@ interface EditorialSlide {
   title: string
   sub: string
   to: string
+  imageUrl?: string
 }
 type BaseSlide = { type: 'lead' } | ({ type: 'editorial' } & EditorialSlide)
 
+// 어드민 큐레이션 카드가 없거나 조회 실패 시 폴백할 기본 슬라이드.
 const EDITORIAL_SLIDES: EditorialSlide[] = [
   { tone: 'u-tone-1', kicker: 'NEW ARRIVAL', title: '이주의 신상\n키링 모음', sub: '지금 가장 인기 있는 픽', to: '/products' },
   { tone: 'u-tone-2', kicker: 'LOUNGE', title: '학생증 자랑\n라운지', sub: '다꾸 인증 보러가기', to: '/community' },
   { tone: 'u-tone-4', kicker: 'GUIDE', title: '퍼스널컬러로\n고르는 법', sub: 'AI 추천 가이드', to: '/diagnosis' },
 ]
 
+const TONES = ['u-tone-1', 'u-tone-2', 'u-tone-4', 'u-tone-5', 'u-tone-6', 'u-tone-3']
+const fetchedSlides = ref<EditorialSlide[]>([])
+
+/** 큐레이션 카드 → 에디토리얼 슬라이드. 링크가 없으면 매거진 상세(/magazine/:id)로 연결. */
+function toSlide(card: CurationCard, i: number): EditorialSlide {
+  const link = card.linkUrl?.trim()
+  return {
+    tone: TONES[i % TONES.length],
+    kicker: card.kicker ?? '',
+    title: card.title,
+    sub: card.subtitle ?? '',
+    to: link ? link : `/magazine/${card.id}`,
+    imageUrl: card.imageUrl ?? undefined,
+  }
+}
+
+onMounted(async () => {
+  try {
+    const cards = await listActiveCurationCards()
+    if (Array.isArray(cards) && cards.length > 0) {
+      fetchedSlides.value = cards.map(toSlide)
+    }
+  } catch {
+    /* 폴백: 기본 슬라이드 유지 */
+  }
+})
+
+const editorialSlides = computed(() =>
+  fetchedSlides.value.length > 0 ? fetchedSlides.value : EDITORIAL_SLIDES,
+)
+
+/** 외부 링크(http/https)는 새 탭, 내부 경로는 router-link 로 처리한다. */
+function isExternal(to: string): boolean {
+  return /^https?:\/\//i.test(to)
+}
+
 // 한 벌의 슬라이드(리드 1 + 에디토리얼 N).
 const baseSlides = computed<BaseSlide[]>(() => [
   { type: 'lead' },
-  ...EDITORIAL_SLIDES.map((s): BaseSlide => ({ type: 'editorial', ...s })),
+  ...editorialSlides.value.map((s): BaseSlide => ({ type: 'editorial', ...s })),
 ])
 const TOTAL = computed(() => baseSlides.value.length)
 

@@ -47,6 +47,9 @@ test.describe('공개 라우트', () => {
   test('post detail', async ({ page }) => {
     await snap(page, '/community/1', 'post-detail')
   })
+  test('magazine detail', async ({ page }) => {
+    await snap(page, '/magazine/1', 'magazine-detail')
+  })
 })
 
 test.describe('게스트 전용 라우트', () => {
@@ -85,6 +88,9 @@ test.describe('인증 라우트', () => {
   })
   test('seller products', async ({ page }) => {
     await snap(page, '/seller/products', 'seller', { authed: true, role: 'SELLER' })
+  })
+  test('admin curation', async ({ page }) => {
+    await snap(page, '/admin/curation', 'admin-curation', { authed: true, role: 'ADMIN' })
   })
 })
 
