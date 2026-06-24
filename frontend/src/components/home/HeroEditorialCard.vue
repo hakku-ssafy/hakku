@@ -1,22 +1,25 @@
 <template>
-  <article class="ed-card" :class="tone">
-    <span class="ed-card__kicker">{{ kicker }}</span>
+  <article class="ed-card" :class="imageUrl ? 'ed-card--img' : tone">
+    <img v-if="imageUrl" :src="imageUrl" :alt="title" class="ed-card__img" loading="lazy" />
+    <span v-if="kicker" class="ed-card__kicker">{{ kicker }}</span>
     <div class="ed-card__caption">
       <h3 class="ed-card__title">{{ title }}</h3>
-      <span class="ed-card__sub">{{ sub }}</span>
+      <span v-if="sub" class="ed-card__sub">{{ sub }}</span>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
 interface Props {
-  /** 배경 톤 클래스(u-tone-0 ~ u-tone-7). */
-  tone: string
-  kicker: string
+  /** 배경 톤 클래스(u-tone-0 ~ u-tone-7). imageUrl 이 있으면 무시된다. */
+  tone?: string
+  kicker?: string
   title: string
-  sub: string
+  sub?: string
+  /** 카드 배경 이미지(있으면 톤 대신 이미지 사용). */
+  imageUrl?: string
 }
-defineProps<Props>()
+withDefaults(defineProps<Props>(), { tone: '', kicker: '', sub: '', imageUrl: '' })
 </script>
 
 <style scoped>
@@ -25,6 +28,16 @@ defineProps<Props>()
   height: 100%;
   border-radius: var(--hk-radius-md);
   overflow: hidden;
+}
+.ed-card--img {
+  background: var(--hk-cream);
+}
+.ed-card__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .ed-card__kicker {
   position: absolute;
@@ -36,6 +49,10 @@ defineProps<Props>()
   line-height: 1;
   letter-spacing: 0.2em;
   color: rgba(22, 20, 15, 0.55);
+}
+.ed-card--img .ed-card__kicker {
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .ed-card__caption {
   position: absolute;

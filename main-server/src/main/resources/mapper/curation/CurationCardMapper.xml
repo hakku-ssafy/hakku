@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.curation.repository.CurationCardRepository">
+
+    <resultMap id="curationCardResultMap" type="com.hakku.main.curation.domain.CurationCard">
+        <id property="id" column="id"/>
+        <result property="kicker" column="kicker"/>
+        <result property="title" column="title"/>
+        <result property="subtitle" column="subtitle"/>
+        <result property="body" column="body"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="linkUrl" column="link_url"/>
+        <result property="displayOrder" column="display_order"/>
+        <result property="active" column="active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, kicker, title, subtitle, body, image_url, link_url, display_order, active, created_at, updated_at
+    </sql>
+
+    <select id="selectById" resultMap="curationCardResultMap">
+        SELECT <include refid="columns"/>
+        FROM curation_cards
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAllOrdered" resultMap="curationCardResultMap">
+        SELECT <include refid="columns"/>
+        FROM curation_cards
+        ORDER BY display_order ASC, id ASC
+    </select>
+
+    <select id="findActiveOrdered" resultMap="curationCardResultMap">
+        SELECT <include refid="columns"/>
+        FROM curation_cards
+        WHERE active = TRUE
+        ORDER BY display_order ASC, id ASC
+    </select>
+
+    <insert id="insertCard" parameterType="com.hakku.main.curation.domain.CurationCard"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO curation_cards (kicker, title, subtitle, body, image_url, link_url,
+                                    display_order, active, created_at, updated_at)
+        VALUES (#{kicker}, #{title}, #{subtitle}, #{body}, #{imageUrl}, #{linkUrl},
+                #{displayOrder}, #{active}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="updateCard" parameterType="com.hakku.main.curation.domain.CurationCard">
+        UPDATE curation_cards
+        SET kicker = #{kicker},
+            title = #{title},
+            subtitle = #{subtitle},
+            body = #{body},
+            image_url = #{imageUrl},
+            link_url = #{linkUrl},
+            display_order = #{displayOrder},
+            active = #{active},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM curation_cards WHERE id = #{id}
+    </delete>
+</mapper>

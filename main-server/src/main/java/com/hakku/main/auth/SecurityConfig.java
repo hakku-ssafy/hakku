@@ -30,7 +30,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
-                                "/api/products/**", "/api/posts/**", "/api/comments/**").permitAll()
+                                "/api/products/**", "/api/posts/**", "/api/comments/**",
+                                "/api/curation-cards/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
