@@ -68,15 +68,15 @@ public class OrderService {
      * 이미 종료 상태면 멱등 no-op(이벤트 at-least-once 대비).
      */
     @Transactional
-    public void markPaid(Long orderId) {
-        orderRepository.findById(orderId).ifPresent(order -> {
-            if (order.getStatus() != OrderStatus.CREATED) {
-                return;
-            }
-            order.markPaid();
-            orderRepository.save(order);
-            cartItemRepository.deleteByUserId(order.getUserId());
-        });
+    public boolean markPaid(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null || order.getStatus() != OrderStatus.CREATED) {
+            return false; // 없음/이미 종료 상태 → 멱등 no-op
+        }
+        order.markPaid();
+        orderRepository.save(order);
+        cartItemRepository.deleteByUserId(order.getUserId());
+        return true;
     }
 
     private OrderItem toOrderItem(CartItem cartItem) {

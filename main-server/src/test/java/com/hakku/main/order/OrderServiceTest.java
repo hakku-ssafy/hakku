@@ -107,15 +107,30 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("markPaid: 주문을 PAID 로 전이하고 저장하며 장바구니를 비운다")
+    @DisplayName("markPaid: 주문을 PAID 로 전이하고 저장하며 장바구니를 비우고 true 를 반환한다")
     void markPaid_marksAndClearsCart() {
         Order order = new Order(USER, address(), List.of(new OrderItem(PRODUCT, "키링", 4900L, 2)));
         when(orderRepository.findById(7L)).thenReturn(Optional.of(order));
 
-        orderService.markPaid(7L);
+        boolean transitioned = orderService.markPaid(7L);
 
+        assertThat(transitioned).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
         verify(orderRepository).save(order);
         verify(cartItemRepository).deleteByUserId(USER);
+    }
+
+    @Test
+    @DisplayName("markPaid: 이미 PAID 면 멱등 no-op 으로 false 를 반환한다(이벤트 중복 수신 대비)")
+    void markPaid_alreadyPaid_returnsFalse() {
+        Order order = new Order(USER, address(), List.of(new OrderItem(PRODUCT, "키링", 4900L, 2)));
+        order.markPaid();
+        when(orderRepository.findById(7L)).thenReturn(Optional.of(order));
+
+        boolean transitioned = orderService.markPaid(7L);
+
+        assertThat(transitioned).isFalse();
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(cartItemRepository, never()).deleteByUserId(any());
     }
 }

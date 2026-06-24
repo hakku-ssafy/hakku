@@ -5,5 +5,6 @@ public enum NotificationType {
     LIKE,
     DIAGNOSIS_COMPLETE,
     FOLLOW,
-    WISHLIST_LIKE
+    WISHLIST_LIKE,
+    ORDER
 }
