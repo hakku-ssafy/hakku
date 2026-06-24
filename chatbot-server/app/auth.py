@@ -1,5 +1,6 @@
 """main-server가 발급한 HS256 JWT 검증 (로그인 사용자 전용 챗봇)."""
 import base64
+from dataclasses import dataclass
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -10,10 +11,18 @@ from app.config import settings
 _bearer = HTTPBearer(auto_error=False)
 
 
-def get_current_user_id(
+@dataclass
+class AuthContext:
+    """검증된 사용자 식별자와, 고객센터 도구가 main-server 로 전달할 원본 토큰."""
+
+    user_id: str
+    token: str
+
+
+def get_auth_context(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-) -> str:
-    """Authorization: Bearer 토큰을 검증하고 사용자 ID(sub)를 반환한다."""
+) -> AuthContext:
+    """Authorization: Bearer 토큰을 검증하고 사용자 ID(sub)와 원본 토큰을 반환한다."""
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,4 +45,9 @@ def get_current_user_id(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="유효하지 않은 인증 정보입니다. 다시 로그인해주세요.",
         )
-    return user_id
+    return AuthContext(user_id=user_id, token=credentials.credentials)
+
+
+def get_current_user_id(ctx: AuthContext = Depends(get_auth_context)) -> str:
+    """사용자 ID 만 필요할 때 쓰는 얇은 래퍼."""
+    return ctx.user_id

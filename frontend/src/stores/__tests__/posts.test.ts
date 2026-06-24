@@ -20,6 +20,7 @@ const mockPost = {
   likeCount: 3,
   commentCount: 1,
   liked: false,
+  relatedProducts: [],
   createdAt: '2026-06-01T10:00:00'
 }
 

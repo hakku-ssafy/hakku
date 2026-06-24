@@ -49,6 +49,34 @@
         <p class="post-body whitespace-pre-wrap">{{ post.content }}</p>
       </article>
 
+      <!-- 관련 상품: 게시물에서 상품 페이지로 바로 이동 -->
+      <section v-if="post.relatedProducts.length" class="mt-10 pt-8 border-t border-line">
+        <h2 class="u-serif text-base text-ink mb-4">관련 상품</h2>
+        <ul class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <li v-for="rp in post.relatedProducts" :key="rp.id">
+            <router-link
+              :to="`/products/${rp.id}`"
+              class="group block rounded-md border border-line overflow-hidden hover:border-ink transition-colors"
+            >
+              <div class="aspect-square bg-cream overflow-hidden">
+                <img
+                  v-if="rp.imageUrl"
+                  :src="rp.imageUrl"
+                  :alt="rp.name"
+                  loading="lazy"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div v-else class="w-full h-full grid place-items-center text-2xl text-ink/20" aria-hidden="true">🛍️</div>
+              </div>
+              <div class="p-2.5">
+                <p class="text-[13px] text-ink truncate">{{ rp.name }}</p>
+                <p class="text-[13px] font-semibold text-ink mt-0.5 tabular-nums">{{ rp.price.toLocaleString('ko-KR') }}원</p>
+              </div>
+            </router-link>
+          </li>
+        </ul>
+      </section>
+
       <section class="mt-12">
         <h2 class="u-serif text-lg text-ink mb-5">댓글 {{ comments.length }}</h2>
 
@@ -140,6 +168,7 @@ function normalizePost(raw: Post): Post {
     likeCount: raw.likeCount ?? 0,
     commentCount: raw.commentCount ?? 0,
     liked: raw.liked ?? false,
+    relatedProducts: raw.relatedProducts ?? [],
   }
 }
 

@@ -1,10 +1,15 @@
+import time
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.auth import get_current_user_id
+from app.auth import AuthContext, get_auth_context
+from app.config import settings
+from app.redis_client import get_redis
 from app.services.chat_service import stream_chat
+from app.services.conversation import ConversationStore
+from app.services.main_server import MainServerClient
 
 router = APIRouter(tags=["chat"])
 
@@ -13,7 +18,7 @@ router = APIRouter(tags=["chat"])
 async def chat_stream(
     message: str = Form(...),
     image: Optional[UploadFile] = File(None),
-    user_id: str = Depends(get_current_user_id),
+    auth: AuthContext = Depends(get_auth_context),
 ) -> StreamingResponse:
     image_bytes: Optional[bytes] = None
     media_type = "image/jpeg"
@@ -22,8 +27,20 @@ async def chat_stream(
         image_bytes = await image.read()
         media_type = image.content_type or "image/jpeg"
 
+    store = ConversationStore(get_redis())
+    main_client = MainServerClient(settings.main_server_url, auth.token)
+    now_ms = int(time.time() * 1000)
+
     return StreamingResponse(
-        stream_chat(message, image_bytes, media_type),
+        stream_chat(
+            message,
+            image_bytes,
+            media_type,
+            user_id=auth.user_id,
+            store=store,
+            main_client=main_client,
+            now_ms=now_ms,
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

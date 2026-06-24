@@ -49,7 +49,13 @@
           <img :src="msg.image" alt="첨부 이미지" class="chat-msg__image" />
         </div>
         <div class="chat-msg__bubble">
-          <span v-if="msg.content">{{ msg.content }}</span>
+          <!-- AI 답변은 마크다운을 살균(DOMPurify)해 렌더링, 사용자 입력은 평문 그대로 -->
+          <div
+            v-if="msg.content && msg.role === 'assistant'"
+            class="chat-md"
+            v-html="renderMarkdown(msg.content)"
+          />
+          <span v-else-if="msg.content">{{ msg.content }}</span>
           <span v-else-if="msg.role === 'assistant'" class="chat-typing">
             <span /><span /><span />
           </span>
@@ -101,6 +107,7 @@
 import { ref, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { renderMarkdown } from '@/lib/markdown'
 
 interface Message {
   id: number
@@ -424,6 +431,60 @@ async function send() {
   color: var(--hk-ink-3);
   border: 1px solid var(--hk-border-soft);
   border-bottom-left-radius: var(--hk-radius-cta);
+}
+
+/* 마크다운 렌더링(AI 답변) — pre-wrap 영향 제거 + 블록 요소 간격/링크 스타일 */
+.chat-md {
+  white-space: normal;
+}
+.chat-md :first-child {
+  margin-top: 0;
+}
+.chat-md :last-child {
+  margin-bottom: 0;
+}
+.chat-md p {
+  margin: 0 0 0.5rem;
+}
+.chat-md ul,
+.chat-md ol {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.1rem;
+}
+.chat-md li {
+  margin: 0.15rem 0;
+}
+.chat-md a {
+  color: var(--accent, #16140f);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+.chat-md strong {
+  font-weight: 700;
+}
+.chat-md code {
+  background: var(--hk-cream);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+.chat-md pre {
+  background: var(--hk-cream);
+  padding: 0.6rem;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.chat-md pre code {
+  background: none;
+  padding: 0;
+}
+.chat-md h1,
+.chat-md h2,
+.chat-md h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.3rem;
 }
 
 /* Typing indicator */
