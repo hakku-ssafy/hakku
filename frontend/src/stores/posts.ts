@@ -13,6 +13,7 @@ function normalizePost(raw: Post): Post {
     likeCount: raw.likeCount ?? 0,
     commentCount: raw.commentCount ?? 0,
     liked: raw.liked ?? false,
+    relatedProducts: raw.relatedProducts ?? [],
   }
 }
 

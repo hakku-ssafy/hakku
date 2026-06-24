@@ -9,7 +9,7 @@
         <AppButton v-if="authStore.user?.role === 'SELLER'" to="/seller/products" variant="secondary" size="sm">
           상품 올리기
         </AppButton>
-        <AppButton v-if="authStore.isAuthenticated" variant="primary" size="sm" @click="showCreateForm = !showCreateForm">
+        <AppButton v-if="authStore.isAuthenticated" variant="primary" size="sm" @click="toggleCreateForm">
           {{ isShowcase ? '학생증 자랑하기' : '글쓰기' }}
         </AppButton>
       </div>
@@ -79,6 +79,56 @@
           :placeholder="isShowcase ? '어떻게 꾸몄는지 자랑해 주세요 (선택)' : '내용을 입력하세요'"
           :rows="isShowcase ? 3 : 4"
         />
+
+        <!-- 연관 상품 첨부 (학생증 자랑 전용): 상품 목록을 검색해 추가 -->
+        <div v-if="isShowcase" class="space-y-2">
+          <span class="block text-xs font-medium text-ink-muted">연관 상품 <span class="text-ink-faint">(선택)</span></span>
+          <input
+            v-model="productQuery"
+            type="search"
+            aria-label="연관 상품 검색"
+            placeholder="상품명으로 검색…"
+            class="w-full h-11 px-3.5 rounded-md border border-line-control bg-surface text-sm text-ink placeholder:text-ink-faint outline-none focus:border-ink transition-colors"
+          />
+          <ul
+            v-if="productQuery.trim() && productResults.length"
+            class="rounded-md border border-line divide-y divide-line-soft max-h-52 overflow-auto"
+          >
+            <li v-for="p in productResults" :key="p.id">
+              <button
+                type="button"
+                class="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-cream transition-colors"
+                @click="addProduct(p)"
+              >
+                <span class="h-8 w-8 shrink-0 rounded bg-cream overflow-hidden grid place-items-center">
+                  <img v-if="p.imageUrl" :src="p.imageUrl" alt="" class="h-full w-full object-cover" />
+                </span>
+                <span class="text-sm text-ink truncate flex-1">{{ p.name }}</span>
+                <span class="text-xs text-ink-muted tabular-nums">{{ p.price.toLocaleString('ko-KR') }}원</span>
+              </button>
+            </li>
+          </ul>
+          <p v-else-if="productQuery.trim()" class="text-xs text-ink-muted px-1">검색 결과가 없어요.</p>
+
+          <ul v-if="selectedProducts.length" class="flex flex-wrap gap-2 pt-1">
+            <li
+              v-for="p in selectedProducts"
+              :key="p.id"
+              class="inline-flex items-center gap-1.5 h-8 pl-2.5 pr-1.5 rounded-full bg-accent-soft border border-accent text-accent-ink text-xs font-medium"
+            >
+              <span class="truncate max-w-[8rem]">{{ p.name }}</span>
+              <button
+                type="button"
+                :aria-label="`연관 상품 제거: ${p.name}`"
+                class="grid place-items-center h-5 w-5 rounded-full hover:bg-accent/20 transition-colors"
+                @click="removeProduct(p.id)"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </li>
+          </ul>
+        </div>
+
         <div class="flex justify-end gap-2">
           <AppButton variant="ghost" size="sm" @click="cancelCreate">취소</AppButton>
           <AppButton size="sm" :disabled="!canSubmit || creating" :loading="creating" @click="handleCreatePost">
@@ -193,7 +243,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePostStore } from '@/stores/posts'
 import { uploadShowcaseImage } from '@/api/storage'
-import type { PostBoard } from '@/types'
+import { getProducts } from '@/api/products'
+import { filterProductsByQuery } from '@/lib/productSearch'
+import type { PostBoard, Product } from '@/types'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -230,11 +282,50 @@ const creating = ref(false)
 const selectedImage = ref<File | null>(null)
 const imagePreview = ref<string | null>(null)
 
+// 연관 상품 첨부 (학생증 자랑 전용)
+const allProducts = ref<Product[]>([])
+const productsLoaded = ref(false)
+const productQuery = ref('')
+const selectedProducts = ref<Product[]>([])
+
+const productResults = computed(() => {
+  const selectedIds = new Set(selectedProducts.value.map((p) => p.id))
+  return filterProductsByQuery(allProducts.value, productQuery.value)
+    .filter((p) => !selectedIds.has(p.id))
+    .slice(0, 8)
+})
+
 const canSubmit = computed(() => {
   if (!newTitle.value.trim()) return false
   if (isShowcase.value) return selectedImage.value !== null
   return newContent.value.trim() !== ''
 })
+
+function toggleCreateForm() {
+  showCreateForm.value = !showCreateForm.value
+  if (showCreateForm.value && isShowcase.value) loadProducts()
+}
+
+/** 연관 상품 후보를 한 번만 불러온다(검색은 클라이언트 사이드 필터). 실패해도 작성은 가능. */
+async function loadProducts() {
+  if (productsLoaded.value) return
+  try {
+    allProducts.value = await getProducts()
+    productsLoaded.value = true
+  } catch {
+    /* 상품 목록 로드 실패는 치명적이지 않음 */
+  }
+}
+
+function addProduct(product: Product) {
+  if (selectedProducts.value.some((p) => p.id === product.id)) return
+  selectedProducts.value = [...selectedProducts.value, product]
+  productQuery.value = ''
+}
+
+function removeProduct(id: number) {
+  selectedProducts.value = selectedProducts.value.filter((p) => p.id !== id)
+}
 
 function selectBoard(board: 'general' | 'showcase') {
   if ((board === 'showcase') === isShowcase.value) return
@@ -271,6 +362,8 @@ function resetForm() {
   newTitle.value = ''
   newContent.value = ''
   errorMessage.value = ''
+  productQuery.value = ''
+  selectedProducts.value = []
   clearImage()
 }
 
@@ -307,6 +400,7 @@ async function handleCreatePost() {
       content,
       board: activeBoard.value,
       imageUrl,
+      productIds: isShowcase.value ? selectedProducts.value.map((p) => p.id) : undefined,
     })
     showCreateForm.value = false
     resetForm()

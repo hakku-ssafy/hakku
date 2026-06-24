@@ -10,6 +10,7 @@ function normalizePost(raw: Post): Post {
     likeCount: raw.likeCount ?? 0,
     commentCount: raw.commentCount ?? 0,
     liked: raw.liked ?? false,
+    relatedProducts: raw.relatedProducts ?? [],
   }
 }
 
@@ -25,6 +26,8 @@ export interface CreatePostRequest {
   content: string
   board?: PostBoard
   imageUrl?: string | null
+  /** 연관 상품 id 목록 (학생증 자랑 글에서 첨부). */
+  productIds?: number[]
 }
 
 export async function getPosts(board?: PostBoard): Promise<Post[]> {
