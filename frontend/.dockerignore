@@ -1,0 +1,10 @@
+# 빌드 컨텍스트에서 제외 — 이미지 내부 `npm ci` 결과만 사용(호스트 산출물 오염 방지)
+node_modules
+dist
+coverage
+.git
+.env
+.env.*
+*.log
+playwright-report
+test-results
