@@ -59,12 +59,30 @@ public class OutboxEvent {
     @Column(name = "sent_at")
     private Instant sentAt;
 
+    /** 발행 실패 누적 횟수. {@link #MAX_PUBLISH_RETRIES} 도달 시 DEAD 로 격리한다(M-2). */
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
+    /** payload 컬럼 한계. 초과분이 DB 까지 내려가 제약 위반 500 이 되기 전에 도메인에서 막는다(M-5). */
+    static final int MAX_PAYLOAD_LENGTH = 2000;
+
+    /** 발행 재시도 한계. 초과 시 DEAD 격리(M-2) — poison 이벤트가 뒤 이벤트를 영구히 막는 것을 방지한다. */
+    static final int MAX_PUBLISH_RETRIES = 5;
+
     public OutboxEvent(String aggregateType, Long aggregateId, String eventType, String payload) {
         this.aggregateType = requireText(aggregateType, "애그리거트 종류");
         this.aggregateId = requireNonNull(aggregateId, "애그리거트 id");
         this.eventType = requireText(eventType, "이벤트 종류");
-        this.payload = requireText(payload, "이벤트 페이로드");
+        this.payload = requirePayloadWithinLimit(requireText(payload, "이벤트 페이로드"));
         this.status = OutboxStatus.PENDING;
+    }
+
+    private static String requirePayloadWithinLimit(String payload) {
+        if (payload.length() > MAX_PAYLOAD_LENGTH) {
+            throw new IllegalStateException(
+                    "아웃박스 payload 가 최대 길이(" + MAX_PAYLOAD_LENGTH + "자)를 초과했습니다: " + payload.length());
+        }
+        return payload;
     }
 
     /** PENDING -> SENT. Kafka 발행 성공 후 호출한다. 이미 SENT 면 거부한다. */
@@ -75,6 +93,23 @@ public class OutboxEvent {
         }
         this.status = OutboxStatus.SENT;
         this.sentAt = Instant.now();
+    }
+
+    /**
+     * 발행 실패 1회를 기록한다(M-2). 재시도 한계({@link #MAX_PUBLISH_RETRIES}) 도달 시 DEAD 로 격리하고
+     * {@code true} 를 반환한다 — 릴레이는 이를 보고 다음 이벤트로 진행해 poison 이 큐를 막지 않게 한다.
+     */
+    public boolean recordFailure() {
+        if (this.status != OutboxStatus.PENDING) {
+            throw new IllegalStateException(
+                    "PENDING 상태에서만 발행 실패를 기록할 수 있습니다. 현재 상태: " + this.status);
+        }
+        this.retryCount++;
+        if (this.retryCount >= MAX_PUBLISH_RETRIES) {
+            this.status = OutboxStatus.DEAD;
+            return true;
+        }
+        return false;
     }
 
     private static String requireText(String value, String field) {

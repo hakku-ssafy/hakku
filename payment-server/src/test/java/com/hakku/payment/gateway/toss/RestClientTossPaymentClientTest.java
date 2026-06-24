@@ -14,7 +14,10 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hakku.payment.config.RestClientConfig;
 import com.hakku.payment.gateway.GatewayResult;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,5 +97,31 @@ class RestClientTossPaymentClientTest {
 
         assertThrows(TossApiUnavailableException.class,
                 () -> client.confirm("pk_3", "order_3", 15000L));
+    }
+
+    @Test
+    @DisplayName("H-1: 응답 지연이 read timeout 을 넘으면 TossApiUnavailableException — 워커 스레드 무한 점유 방지")
+    void readTimeoutMapsToUnavailable() throws Exception {
+        // 연결은 받아주되 응답을 보내지 않는 로컬 서버 → read timeout 을 강제 유발.
+        try (ServerSocket stalling = new ServerSocket(0)) {
+            Thread acceptor = new Thread(() -> {
+                try (Socket s = stalling.accept()) {
+                    Thread.sleep(2_000);
+                } catch (Exception ignored) {
+                    // accept/sleep 중단은 테스트 종료 정리 과정 — 무시.
+                }
+            });
+            acceptor.setDaemon(true);
+            acceptor.start();
+
+            String baseUrl = "http://localhost:" + stalling.getLocalPort();
+            RestClient.Builder timed = RestClient.builder()
+                    .requestFactory(RestClientConfig.requestFactory(1_000, 300)); // connect 1s / read 300ms
+            RestClientTossPaymentClient timeoutClient =
+                    new RestClientTossPaymentClient(timed, new ObjectMapper(), baseUrl, SECRET_KEY);
+
+            assertThrows(TossApiUnavailableException.class,
+                    () -> timeoutClient.confirm("pk_to", "order_to", 15000L));
+        }
     }
 }

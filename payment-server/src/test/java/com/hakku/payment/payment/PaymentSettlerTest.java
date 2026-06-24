@@ -13,8 +13,10 @@ import com.hakku.payment.outbox.OutboxRecorder;
 import com.hakku.payment.payment.domain.Payment;
 import com.hakku.payment.payment.domain.PaymentStatus;
 import com.hakku.payment.payment.exception.PaymentNotFoundException;
+import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +43,10 @@ class PaymentSettlerTest {
     }
 
     private Payment pending() {
-        return new Payment(1L, "CART", "cart-42", 15000L, "KRW", "MOCK", "idem-1");
+        Payment payment = new Payment(1L, "CART", "cart-42", 15000L, "KRW", "MOCK", "idem-1");
+        // 영속(로딩)된 결제는 @UpdateTimestamp 로 updatedAt 이 채워져 있다 — PaymentEvent.occurredAt(M-3)의 출처.
+        ReflectionTestUtils.setField(payment, "updatedAt", Instant.parse("2026-06-24T00:00:00Z"));
+        return payment;
     }
 
     @Test

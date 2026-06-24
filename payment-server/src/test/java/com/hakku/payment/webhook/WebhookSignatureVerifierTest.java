@@ -1,6 +1,7 @@
 package com.hakku.payment.webhook;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
@@ -11,7 +12,8 @@ import org.junit.jupiter.api.Test;
  */
 class WebhookSignatureVerifierTest {
 
-    private static final String SECRET = "test-webhook-secret";
+    // M-6: HMAC-SHA256 보안 강도를 위해 시크릿은 32바이트 이상이어야 한다.
+    private static final String SECRET = "test-webhook-secret-0123456789abcdef";
 
     private final WebhookSignatureVerifier verifier = new WebhookSignatureVerifier(SECRET);
 
@@ -46,5 +48,12 @@ class WebhookSignatureVerifierTest {
 
         assertFalse(verifier.isValid(body, null));
         assertFalse(verifier.isValid(body, "   "));
+    }
+
+    @Test
+    @DisplayName("M-6: 32바이트 미만 시크릿은 생성(부팅) 시 IllegalStateException 으로 거부한다")
+    void rejectsTooShortSecret() {
+        assertThrows(IllegalStateException.class,
+                () -> new WebhookSignatureVerifier("short-secret")); // 12바이트 < 32
     }
 }

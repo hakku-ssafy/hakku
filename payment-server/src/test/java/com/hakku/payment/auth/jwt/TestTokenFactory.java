@@ -33,4 +33,18 @@ public final class TestTokenFactory {
                 .signWith(key)
                 .compact();
     }
+
+    /** main-server 가 발급하는 리프레시 토큰 형태({@code type=refresh}). 액세스 토큰으로 거부되는지 검증용. */
+    public static String refreshToken(String base64Secret, String subject) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(subject)
+                .claim("role", "NORMAL")
+                .claim("type", "refresh")
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + 86_400_000L))
+                .signWith(key)
+                .compact();
+    }
 }

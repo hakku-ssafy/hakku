@@ -18,11 +18,19 @@ import org.springframework.stereotype.Component;
 public class WebhookSignatureVerifier {
 
     private static final String HMAC_ALGORITHM = "HmacSHA256";
+    /** M-6: HMAC-SHA256 키는 최소 32바이트여야 한다. 약한 키로 부팅하면 위조 방어가 약화되므로 fail-fast. */
+    private static final int MIN_SECRET_LENGTH = 32;
 
     private final byte[] secret;
 
     public WebhookSignatureVerifier(@Value("${payment.webhook.secret}") String secret) {
-        this.secret = secret.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < MIN_SECRET_LENGTH) {
+            throw new IllegalStateException(
+                    "payment.webhook.secret 은 최소 " + MIN_SECRET_LENGTH
+                            + "바이트여야 합니다 (현재 " + bytes.length + "바이트).");
+        }
+        this.secret = bytes;
     }
 
     /** raw 본문에 대한 서명이 유효하면 true. 헤더가 없거나 본문이 null 이면 false. */

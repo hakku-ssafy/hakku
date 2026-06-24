@@ -8,12 +8,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hakku.main.user.domain.Role;
+import com.hakku.main.user.domain.User;
+import com.hakku.main.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -23,14 +27,31 @@ class CurationCardApiTest {
     @Autowired
     private MockMvc mvc;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 주어진 role 로 회원을 만들고 로그인 토큰을 돌려준다. 공개 signup 은 ADMIN 을 거부하므로
+     * ADMIN 은 리포지토리로 직접 프로비저닝한다(운영의 시드/프로비저닝 경로를 미러링).
+     */
     private String tokenFor(String email, String role) throws Exception {
-        mvc.perform(post("/api/auth/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {"email":"%s","password":"secret123","nickname":"유저","role":"%s"}
-                    """.formatted(email, role)));
+        if ("ADMIN".equals(role)) {
+            if (!userRepository.existsByEmail(email)) {
+                userRepository.save(new User(email, "유저",
+                        passwordEncoder.encode("secret123"), Role.ADMIN));
+            }
+        } else {
+            mvc.perform(post("/api/auth/signup")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {"email":"%s","password":"secret123","nickname":"유저","role":"%s"}
+                        """.formatted(email, role)));
+        }
         String body = mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

@@ -69,6 +69,15 @@ class TossPaymentApiTest {
     }
 
     @Test
+    @DisplayName("리프레시 토큰(type=refresh)을 Bearer 액세스 토큰으로 쓰면 거부 → 401")
+    void rejectsRefreshTokenAsAccess() throws Exception {
+        mvc.perform(post("/api/payments/toss/prepare")
+                        .header("Authorization", "Bearer " + TestTokenFactory.refreshToken(secret, "7"))
+                        .contentType(MediaType.APPLICATION_JSON).content(prepareBody(15000)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("prepare → 200 + orderId, 이어서 confirm(승인) → 200 APPROVED")
     void prepareThenConfirmApproves() throws Exception {
         String orderId = prepareAndGetOrderId("7", 15000);
