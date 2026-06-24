@@ -83,7 +83,7 @@
           <span class="tabular-nums">{{ formatPrice(summary.total) }}원</span>
         </div>
         <p class="cart-summary__note">3만원 이상 구매 시 배송비 무료</p>
-        <button type="button" class="cart-summary__cta">주문하기</button>
+        <button type="button" class="cart-summary__cta" :disabled="items.length === 0" @click="checkout">주문하기</button>
       </aside>
     </div>
   </div>
@@ -91,6 +91,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import apiClient from '@/api/client'
 import type { CartItem } from '@/types'
 import { calcCartSummary } from '@/lib/cart'
@@ -104,6 +105,20 @@ const updatingId = ref<number | null>(null)
 const deletingId = ref<number | null>(null)
 
 const summary = computed(() => calcCartSummary(items.value))
+const router = useRouter()
+
+function checkout() {
+  if (items.value.length === 0) return
+  router.push({
+    path: '/payments/checkout',
+    query: {
+      refType: 'CART',
+      refId: 'cart',
+      amount: String(summary.value.total),
+      name: `장바구니 ${summary.value.itemCount}건`,
+    },
+  })
+}
 
 function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR')

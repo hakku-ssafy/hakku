@@ -53,6 +53,8 @@
             >구매처로 이동 ↗</a>
             <p v-else class="pd__buy pd__buy--disabled">구매 링크 미등록</p>
 
+            <button type="button" class="pd__buy pd__buy--pay" @click="goToCheckout">결제하기</button>
+
             <button
               type="button"
               class="pd__wish"
@@ -189,6 +191,23 @@ function colorHex(value: string): string {
 
 function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR')
+}
+
+function goToCheckout() {
+  if (!product.value) return
+  if (!isAuthenticated.value) {
+    router.push(loginLink.value)
+    return
+  }
+  router.push({
+    path: '/payments/checkout',
+    query: {
+      refType: 'PRODUCT',
+      refId: String(product.value.id),
+      amount: String(product.value.price),
+      name: product.value.name,
+    },
+  })
 }
 
 function getColorLabel(value: string): string {
@@ -459,6 +478,14 @@ onMounted(async () => {
   border-color: var(--hk-border);
   color: var(--hk-text-muted);
   cursor: default;
+}
+.pd__buy--pay {
+  background: var(--accent, #16140f);
+  border-color: var(--accent, #16140f);
+  color: #fff;
+}
+.pd__buy--pay:hover {
+  filter: brightness(0.95);
 }
 .pd__wish {
   display: flex;
