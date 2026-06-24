@@ -29,11 +29,13 @@
           </SectionHeader>
 
           <div v-if="productStore.loading" class="product-grid">
-            <div v-for="i in 8" :key="i">
-              <SkeletonBlock height="auto" width="100%" class="aspect-square mb-2.5 rounded-img" />
-              <SkeletonBlock height="0.875rem" width="80%" class="mb-1.5" />
-              <SkeletonBlock height="0.875rem" width="50%" />
-            </div>
+            <SkeletonBlock
+              v-for="i in 8"
+              :key="i"
+              height="auto"
+              width="100%"
+              class="aspect-square rounded-[5px]"
+            />
           </div>
 
           <div v-else-if="displayProducts.length > 0" class="product-grid">
@@ -267,11 +269,12 @@ watch(diagnosisStatus, (status) => {
 .product-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 18px;
+  gap: 6px;
 }
 @media (min-width: 768px) {
   .product-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 }
 @media (min-width: 1024px) {
