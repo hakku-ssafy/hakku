@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login, signup, getMe } from '@/api/auth'
+import { login, signup, getMe, logout as apiLogout } from '@/api/auth'
 import type { User } from '@/types'
 import type { LoginRequest, SignupRequest } from '@/api/auth'
 
@@ -23,6 +23,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
+    // 서버 리프레시 쿠키 제거(베스트에포트) — 실패해도 로컬 상태는 항상 정리한다.
+    void Promise.resolve(apiLogout()).catch(() => {})
     token.value = null
     user.value = null
     localStorage.removeItem('accessToken')

@@ -27,3 +27,8 @@ export async function getMe(): Promise<User> {
   const { data } = await apiClient.get<User>('/users/me')
   return data
 }
+
+/** 서버의 리프레시 토큰 쿠키를 만료시킨다(로그아웃). */
+export async function logout(): Promise<void> {
+  await apiClient.post('/auth/logout')
+}
