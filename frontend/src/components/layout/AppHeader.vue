@@ -26,11 +26,17 @@
 
       <!-- 우측 액션 — 항상 오른쪽 정렬 -->
       <div class="flex items-center gap-3 md:gap-4 ml-auto md:ml-0">
-        <!-- 검색 알약 (장식 placeholder · ≥1024) -->
-        <div class="search-pill hidden lg:flex" aria-hidden="true">
-          <span class="search-pill__icon">⌕</span>
-          <span class="search-pill__text">키링, 퍼스널컬러, 다꾸…</span>
-        </div>
+        <!-- 검색 (≥1024) — 제출 시 /products?q= 로 이동 -->
+        <form class="search-pill hidden lg:flex" role="search" @submit.prevent="submitSearch">
+          <span class="search-pill__icon" aria-hidden="true">⌕</span>
+          <input
+            v-model="searchInput"
+            type="search"
+            class="search-pill__input"
+            aria-label="상품 검색"
+            placeholder="키링, 퍼스널컬러, 다꾸…"
+          />
+        </form>
 
         <template v-if="authStore.isAuthenticated">
           <!-- 진단 완료 시 퍼스널컬러 배지 (accent 로 물듦) → 마이 -->
@@ -80,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notifications'
@@ -114,6 +120,14 @@ const navItems = computed<NavItem[]>(() => {
 })
 
 const personalColorLabel = computed(() => formatPersonalColor(authStore.user?.personalColor ?? null))
+
+// 상단 검색 — 공백만 입력하면 무시, 그 외에는 상품 목록으로 검색어를 넘긴다.
+const searchInput = ref('')
+function submitSearch() {
+  const q = searchInput.value.trim()
+  if (!q) return
+  router.push({ path: '/products', query: { q } })
+}
 
 function handleLogout() {
   authStore.logout()
@@ -181,12 +195,30 @@ function handleLogout() {
   background: var(--hk-surface);
   color: var(--hk-text-faint);
 }
+.search-pill:focus-within {
+  border-color: var(--hk-ink);
+}
 .search-pill__icon {
   font-size: 0.8125rem;
 }
-.search-pill__text {
+.search-pill__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
   font-size: 0.78rem;
   letter-spacing: 0.01em;
+  color: var(--hk-ink);
+  outline: none;
+}
+.search-pill__input::placeholder {
+  color: var(--hk-text-faint);
+}
+/* type=search 기본 클리어 버튼 제거(웹킷) */
+.search-pill__input::-webkit-search-decoration,
+.search-pill__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .icon-btn {
