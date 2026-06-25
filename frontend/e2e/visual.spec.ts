@@ -89,8 +89,8 @@ test.describe('인증 라우트', () => {
   test('seller products', async ({ page }) => {
     await snap(page, '/seller/products', 'seller', { authed: true, role: 'SELLER' })
   })
-  test('admin curation', async ({ page }) => {
-    await snap(page, '/admin/curation', 'admin-curation', { authed: true, role: 'ADMIN' })
+  test('admin magazine', async ({ page }) => {
+    await snap(page, '/admin/magazine', 'admin-magazine', { authed: true, role: 'ADMIN' })
   })
 })
 

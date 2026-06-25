@@ -2,21 +2,24 @@
   <div class="u-container admin">
     <header class="admin__head">
       <span class="u-eyebrow">Admin</span>
-      <h1 class="admin__title">큐레이션 카드 관리</h1>
-      <p class="admin__desc">메인 캐러셀에 노출되는 프로모션·매거진 카드를 추가·수정·정렬합니다.</p>
+      <h1 class="admin__title">매거진 관리</h1>
+      <p class="admin__desc">
+        메인 캐러셀에 노출되는 매거진을 발행·수정·정렬합니다. 본문은 마크다운으로 작성하고,
+        <code>/products/123</code> 링크를 한 줄로 넣으면 상품이 가로 카드로 임베드됩니다.
+      </p>
     </header>
 
     <!-- ===== 작성/수정 폼 ===== -->
     <form class="card-form" @submit.prevent="save">
       <div class="card-form__head">
-        <h2 class="card-form__title">{{ editingId ? '카드 수정' : '새 카드 추가' }}</h2>
-        <button v-if="editingId" type="button" class="link-btn" @click="resetForm">새 카드로 전환</button>
+        <h2 class="card-form__title">{{ editingId ? '매거진 수정' : '새 매거진 발행' }}</h2>
+        <button v-if="editingId" type="button" class="link-btn" @click="resetForm">새 매거진으로 전환</button>
       </div>
 
       <div class="field-grid">
         <label class="field">
           <span class="field__label">키커 (작은 라벨)</span>
-          <input v-model="form.kicker" type="text" class="input" placeholder="NEW ARRIVAL" maxlength="80" />
+          <input v-model="form.kicker" type="text" class="input" placeholder="EDITORIAL" maxlength="80" />
         </label>
         <label class="field">
           <span class="field__label">정렬 순서</span>
@@ -26,81 +29,89 @@
 
       <label class="field">
         <span class="field__label">제목 <em class="req">*</em></span>
-        <input v-model="form.title" type="text" class="input" placeholder="이주의 신상 키링 모음" maxlength="200" required />
+        <input v-model="form.title" type="text" class="input" placeholder="이주의 다꾸 특집" maxlength="200" required />
       </label>
 
       <label class="field">
         <span class="field__label">문구 (부제)</span>
-        <input v-model="form.subtitle" type="text" class="input" placeholder="지금 가장 인기 있는 픽" maxlength="300" />
+        <input v-model="form.subtitle" type="text" class="input" placeholder="겨울 감성 데코 모음" maxlength="300" />
       </label>
 
       <label class="field">
-        <span class="field__label">이미지</span>
+        <span class="field__label">커버 이미지</span>
         <div class="uploader">
-          <div class="uploader__preview" :class="{ 'uploader__preview--empty': !form.imageUrl }">
-            <img v-if="form.imageUrl" :src="form.imageUrl" alt="미리보기" />
+          <div class="uploader__preview" :class="{ 'uploader__preview--empty': !form.coverImageUrl }">
+            <img v-if="form.coverImageUrl" :src="form.coverImageUrl" alt="미리보기" />
             <span v-else aria-hidden="true">◍</span>
           </div>
           <div class="uploader__actions">
             <label class="btn btn--ghost">
-              {{ uploading ? '업로드 중…' : '이미지 선택' }}
-              <input type="file" accept="image/*" class="sr-only" :disabled="uploading" @change="onImageChange" />
+              {{ uploadingCover ? '업로드 중…' : '이미지 선택' }}
+              <input type="file" accept="image/*" class="sr-only" :disabled="uploadingCover" @change="onCoverChange" />
             </label>
-            <button v-if="form.imageUrl" type="button" class="link-btn" @click="form.imageUrl = ''">제거</button>
+            <button v-if="form.coverImageUrl" type="button" class="link-btn" @click="form.coverImageUrl = ''">제거</button>
           </div>
         </div>
       </label>
 
       <label class="field">
-        <span class="field__label">링크 URL</span>
-        <input v-model="form.linkUrl" type="text" class="input" placeholder="/products 또는 https://…" />
-        <span class="field__hint">비워두면 카드를 누를 때 본문(매거진 상세)으로 이동합니다.</span>
-      </label>
-
-      <label class="field">
-        <span class="field__label">본문 (매거진 콘텐츠)</span>
-        <textarea v-model="form.body" class="input textarea" rows="6" placeholder="링크가 없을 때 매거진 상세에 표시될 내용을 작성하세요."></textarea>
+        <span class="field__label">본문 (마크다운)</span>
+        <textarea
+          v-model="form.content"
+          class="input textarea"
+          rows="12"
+          placeholder="## 소제목&#10;&#10;사진과 글을 마크다운으로 작성하세요.&#10;&#10;![설명](이미지URL)&#10;&#10;/products/123"
+        ></textarea>
+        <span class="field__hint">
+          사진은 <code>![설명](URL)</code>, 학꾸 상품은 <code>/products/123</code> 링크를 한 줄로 넣으면 카드로 임베드됩니다.
+        </span>
+        <div class="content-tools">
+          <label class="btn btn--ghost btn--sm">
+            {{ uploadingBody ? '업로드 중…' : '＋ 본문에 사진 추가' }}
+            <input type="file" accept="image/*" class="sr-only" :disabled="uploadingBody" @change="onBodyImageChange" />
+          </label>
+        </div>
       </label>
 
       <label class="toggle">
-        <input v-model="form.active" type="checkbox" />
-        <span>메인에 노출 (활성)</span>
+        <input v-model="form.published" type="checkbox" />
+        <span>메인에 노출 (발행)</span>
       </label>
 
       <p v-if="errorMsg" class="card-form__error">{{ errorMsg }}</p>
 
       <div class="card-form__actions">
         <button type="submit" class="btn btn--solid" :disabled="!canSave">
-          {{ saving ? '저장 중…' : editingId ? '수정 저장' : '카드 추가' }}
+          {{ saving ? '저장 중…' : editingId ? '수정 저장' : '발행' }}
         </button>
       </div>
     </form>
 
-    <!-- ===== 카드 목록 ===== -->
+    <!-- ===== 매거진 목록 ===== -->
     <section class="list">
-      <h2 class="list__title">등록된 카드 <span class="list__count">{{ cards.length }}</span></h2>
+      <h2 class="list__title">등록된 매거진 <span class="list__count">{{ magazines.length }}</span></h2>
 
       <div v-if="loading" role="status" class="list__center">불러오는 중…</div>
-      <p v-else-if="cards.length === 0" class="list__empty">아직 등록된 카드가 없습니다.</p>
+      <p v-else-if="magazines.length === 0" class="list__empty">아직 발행된 매거진이 없습니다.</p>
 
       <ul v-else class="list__items">
-        <li v-for="card in cards" :key="card.id" class="row" :class="{ 'row--inactive': !card.active }">
-          <div class="row__thumb" :class="{ 'row__thumb--empty': !card.imageUrl }">
-            <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.title" />
+        <li v-for="mag in magazines" :key="mag.id" class="row" :class="{ 'row--inactive': !mag.published }">
+          <div class="row__thumb" :class="{ 'row__thumb--empty': !mag.coverImageUrl }">
+            <img v-if="mag.coverImageUrl" :src="mag.coverImageUrl" :alt="mag.title" />
             <span v-else aria-hidden="true">◍</span>
           </div>
           <div class="row__main">
             <div class="row__top">
-              <span class="row__order">#{{ card.displayOrder }}</span>
-              <span v-if="!card.active" class="row__badge">비활성</span>
-              <span class="row__dest">{{ card.linkUrl ? card.linkUrl : '매거진 상세' }}</span>
+              <span class="row__order">#{{ mag.displayOrder }}</span>
+              <span v-if="!mag.published" class="row__badge">미발행</span>
+              <router-link :to="`/magazine/${mag.id}`" class="row__dest">/magazine/{{ mag.id }}</router-link>
             </div>
-            <p class="row__name">{{ card.title }}</p>
-            <p v-if="card.subtitle" class="row__sub">{{ card.subtitle }}</p>
+            <p class="row__name">{{ mag.title }}</p>
+            <p v-if="mag.subtitle" class="row__sub">{{ mag.subtitle }}</p>
           </div>
           <div class="row__actions">
-            <button type="button" class="link-btn" @click="startEdit(card)">수정</button>
-            <button type="button" class="link-btn link-btn--danger" @click="remove(card)">삭제</button>
+            <button type="button" class="link-btn" @click="startEdit(mag)">수정</button>
+            <button type="button" class="link-btn link-btn--danger" @click="remove(mag)">삭제</button>
           </div>
         </li>
       </ul>
@@ -111,18 +122,19 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import {
-  listAllCurationCards,
-  createCurationCard,
-  updateCurationCard,
-  deleteCurationCard,
-} from '@/api/curation'
-import { uploadCurationImage } from '@/api/storage'
-import type { CurationCard, CurationCardInput } from '@/types'
+  listAllMagazines,
+  createMagazine,
+  updateMagazine,
+  deleteMagazine,
+} from '@/api/magazine'
+import { uploadMagazineImage } from '@/api/storage'
+import type { Magazine, MagazineInput } from '@/types'
 
-const cards = ref<CurationCard[]>([])
+const magazines = ref<Magazine[]>([])
 const loading = ref(false)
 const saving = ref(false)
-const uploading = ref(false)
+const uploadingCover = ref(false)
+const uploadingBody = ref(false)
 const editingId = ref<number | null>(null)
 const errorMsg = ref<string | null>(null)
 
@@ -130,19 +142,20 @@ const form = reactive({
   kicker: '',
   title: '',
   subtitle: '',
-  body: '',
-  imageUrl: '',
-  linkUrl: '',
+  content: '',
+  coverImageUrl: '',
   displayOrder: 0,
-  active: true,
+  published: true,
 })
 
-const canSave = computed(() => form.title.trim().length > 0 && !saving.value && !uploading.value)
+const canSave = computed(
+  () => form.title.trim().length > 0 && !saving.value && !uploadingCover.value && !uploadingBody.value,
+)
 
 async function load() {
   loading.value = true
   try {
-    cards.value = await listAllCurationCards()
+    magazines.value = await listAllMagazines()
   } catch {
     errorMsg.value = '목록을 불러오지 못했습니다.'
   } finally {
@@ -157,47 +170,64 @@ function resetForm() {
     kicker: '',
     title: '',
     subtitle: '',
-    body: '',
-    imageUrl: '',
-    linkUrl: '',
-    displayOrder: cards.value.length,
-    active: true,
+    content: '',
+    coverImageUrl: '',
+    displayOrder: magazines.value.length,
+    published: true,
   })
 }
 
-function startEdit(card: CurationCard) {
-  editingId.value = card.id
+function startEdit(mag: Magazine) {
+  editingId.value = mag.id
   errorMsg.value = null
   Object.assign(form, {
-    kicker: card.kicker ?? '',
-    title: card.title,
-    subtitle: card.subtitle ?? '',
-    body: card.body ?? '',
-    imageUrl: card.imageUrl ?? '',
-    linkUrl: card.linkUrl ?? '',
-    displayOrder: card.displayOrder,
-    active: card.active,
+    kicker: mag.kicker ?? '',
+    title: mag.title,
+    subtitle: mag.subtitle ?? '',
+    content: mag.content ?? '',
+    coverImageUrl: mag.coverImageUrl ?? '',
+    displayOrder: mag.displayOrder,
+    published: mag.published,
   })
   if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-async function onImageChange(event: Event) {
+async function onCoverChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  uploading.value = true
+  uploadingCover.value = true
   errorMsg.value = null
   try {
-    form.imageUrl = await uploadCurationImage(file)
+    form.coverImageUrl = await uploadMagazineImage(file)
   } catch {
     errorMsg.value = '이미지 업로드에 실패했습니다.'
   } finally {
-    uploading.value = false
+    uploadingCover.value = false
     input.value = ''
   }
 }
 
-function buildInput(): CurationCardInput {
+/** 본문 이미지 업로드 → 마크다운 이미지 문법을 본문 끝에 덧붙인다. */
+async function onBodyImageChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  uploadingBody.value = true
+  errorMsg.value = null
+  try {
+    const url = await uploadMagazineImage(file)
+    const prefix = form.content.trim().length > 0 ? `${form.content.replace(/\s+$/, '')}\n\n` : ''
+    form.content = `${prefix}![](${url})\n`
+  } catch {
+    errorMsg.value = '이미지 업로드에 실패했습니다.'
+  } finally {
+    uploadingBody.value = false
+    input.value = ''
+  }
+}
+
+function buildInput(): MagazineInput {
   const nz = (s: string) => {
     const t = s.trim()
     return t.length > 0 ? t : null
@@ -206,11 +236,10 @@ function buildInput(): CurationCardInput {
     kicker: nz(form.kicker),
     title: form.title.trim(),
     subtitle: nz(form.subtitle),
-    body: nz(form.body),
-    imageUrl: nz(form.imageUrl),
-    linkUrl: nz(form.linkUrl),
+    content: nz(form.content),
+    coverImageUrl: nz(form.coverImageUrl),
     displayOrder: Number(form.displayOrder) || 0,
-    active: form.active,
+    published: form.published,
   }
 }
 
@@ -221,9 +250,9 @@ async function save() {
   try {
     const input = buildInput()
     if (editingId.value != null) {
-      await updateCurationCard(editingId.value, input)
+      await updateMagazine(editingId.value, input)
     } else {
-      await createCurationCard(input)
+      await createMagazine(input)
     }
     await load()
     resetForm()
@@ -234,11 +263,11 @@ async function save() {
   }
 }
 
-async function remove(card: CurationCard) {
-  if (typeof window !== 'undefined' && !window.confirm(`'${card.title}' 카드를 삭제할까요?`)) return
+async function remove(mag: Magazine) {
+  if (typeof window !== 'undefined' && !window.confirm(`'${mag.title}' 매거진을 삭제할까요?`)) return
   try {
-    await deleteCurationCard(card.id)
-    if (editingId.value === card.id) resetForm()
+    await deleteMagazine(mag.id)
+    if (editingId.value === mag.id) resetForm()
     await load()
   } catch {
     errorMsg.value = '삭제에 실패했습니다.'
@@ -247,7 +276,7 @@ async function remove(card: CurationCard) {
 
 onMounted(async () => {
   await load()
-  form.displayOrder = cards.value.length
+  form.displayOrder = magazines.value.length
 })
 </script>
 
@@ -268,7 +297,17 @@ onMounted(async () => {
 .admin__desc {
   margin-top: 8px;
   font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--hk-text-quiet);
+}
+.admin__desc code,
+.field__hint code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--hk-cream);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--hk-ink);
 }
 
 /* ── 폼 ── */
@@ -313,6 +352,7 @@ onMounted(async () => {
   display: block;
   margin-top: 6px;
   font-size: 11.5px;
+  line-height: 1.6;
   color: var(--hk-text-quiet);
 }
 .input {
@@ -333,8 +373,13 @@ onMounted(async () => {
 .textarea {
   height: auto;
   padding: 11px 13px;
-  line-height: 1.6;
+  line-height: 1.7;
   resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.content-tools {
+  margin-top: 10px;
 }
 
 /* 이미지 업로더 */
@@ -406,6 +451,11 @@ onMounted(async () => {
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.16s ease, opacity 0.16s ease;
+}
+.btn--sm {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 12.5px;
 }
 .btn:disabled {
   opacity: 0.5;
@@ -528,11 +578,16 @@ onMounted(async () => {
   color: var(--hk-text-quiet);
 }
 .row__dest {
+  font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--hk-text-quiet);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.16s ease;
+}
+.row__dest:hover {
+  color: var(--hk-ink);
 }
 .row__name {
   font-size: 14px;
