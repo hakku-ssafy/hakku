@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -63,7 +64,7 @@ class ProductServiceTest {
     @DisplayName("create: SELLER 가 등록하면 상품을 저장한다")
     void create_bySeller_saves() {
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
+        doReturn(List.of(sellerNamed(SELLER, "판매왕"))).when(userRepository).findAllById(anyList());
 
         ProductResponse response = productService.create(SELLER, Role.SELLER, command());
 
@@ -77,7 +78,7 @@ class ProductServiceTest {
     @DisplayName("create: 응답에 판매자 닉네임을 포함한다")
     void create_includesSellerNickname() {
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
+        doReturn(List.of(sellerNamed(SELLER, "판매왕"))).when(userRepository).findAllById(anyList());
 
         ProductResponse response = productService.create(SELLER, Role.SELLER, command());
 
@@ -117,7 +118,7 @@ class ProductServiceTest {
     @DisplayName("update: 등록한 판매자 본인이면 갱신한다")
     void update_byOwner_updates() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product()));
-        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
+        doReturn(List.of(sellerNamed(SELLER, "판매왕"))).when(userRepository).findAllById(anyList());
 
         ProductCommand changed = new ProductCommand("니트", "봄 니트", 49000L, "기타", "SPRING", null,
                 Set.of(), Set.of("캐주얼"), "https://img/knit.png", null);
@@ -161,7 +162,7 @@ class ProductServiceTest {
     @DisplayName("list: 모든 상품을 응답으로 변환한다")
     void list_returnsAll() {
         when(productRepository.findAllByOrderByIdDesc()).thenReturn(List.of(product(), product()));
-        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
+        doReturn(List.of(sellerNamed(SELLER, "판매왕"))).when(userRepository).findAllById(anyList());
 
         List<ProductResponse> all = productService.list();
 
