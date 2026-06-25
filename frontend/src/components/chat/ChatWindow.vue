@@ -111,6 +111,7 @@ import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { renderMarkdown } from '@/lib/markdown'
+import { compressImage } from '@/lib/compressImage'
 import ChatProductCard from './ChatProductCard.vue'
 import type { ChatProduct } from './chatTypes'
 
@@ -195,7 +196,8 @@ async function send() {
   try {
     const formData = new FormData()
     formData.append('message', text || '이 학생증 어떻게 꾸미면 좋을까요?')
-    if (file) formData.append('image', file)
+    // 첨부 이미지는 업로드 전 일정 크기를 넘으면 자동으로 용량을 줄인다.
+    if (file) formData.append('image', await compressImage(file))
 
     const token = localStorage.getItem('accessToken')
     const response = await fetch('/chat/stream', {

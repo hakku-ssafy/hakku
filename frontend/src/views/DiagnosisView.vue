@@ -122,6 +122,7 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import { formatPersonalColor, type DiagnosisStatus } from '@/types'
 import { useAuthedImage } from '@/composables/useAuthedImage'
+import { compressImage } from '@/lib/compressImage'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppModal from '@/components/ui/AppModal.vue'
@@ -211,8 +212,10 @@ async function runDiagnosis() {
 
   try {
     const token = localStorage.getItem('accessToken')
+    // 진단 사진도 업로드 전 일정 크기를 넘으면 자동으로 용량을 줄인다.
+    const optimized = await compressImage(selectedFile.value)
     const formData = new FormData()
-    formData.append('image', selectedFile.value)
+    formData.append('image', optimized)
 
     await aiClient.post('/api/diagnosis', formData, {
       headers: {
