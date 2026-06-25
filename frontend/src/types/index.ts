@@ -66,6 +66,8 @@ export interface Product {
   colors: string[]
   styles: string[]
   sellerId: number
+  /** 판매자(등록자) 닉네임. 추천 등 닉네임을 모르는 응답에서는 null. */
+  sellerNickname?: string | null
   /** 활성화 여부(서버 응답에 항상 포함; normalizeProduct 가 기본 true 로 채움). 비활성이면 공개 목록·검색·추천에서 숨김. */
   active?: boolean
 }
@@ -289,6 +291,7 @@ export function normalizeProduct(raw: Product): Product {
     colors: raw.colors ?? [],
     styles: raw.styles ?? [],
     purchaseUrl: raw.purchaseUrl ?? null,
+    sellerNickname: raw.sellerNickname ?? null,
     active: raw.active ?? true,
   }
 }
