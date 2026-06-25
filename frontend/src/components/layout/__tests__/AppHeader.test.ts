@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory, type Router } from 'vue-router'
 import AppHeader from '../AppHeader.vue'
 import { useAuthStore } from '@/stores/auth'
+import type { User, UserRole } from '@/types'
 
 const blank = { template: '<div />' }
 
@@ -19,8 +20,27 @@ function makeRouter(): Router {
       { path: '/signup', component: blank },
       { path: '/cart', component: blank },
       { path: '/notifications', component: blank },
+      { path: '/diagnosis', component: blank },
+      { path: '/recommendations', component: blank },
+      { path: '/seller/products', component: blank },
     ],
   })
+}
+
+function userWith(role: UserRole): User {
+  return {
+    id: 1,
+    email: 'u@hakku.com',
+    nickname: '회원',
+    role,
+    personalColor: null,
+    profileImageUrl: null,
+    diagnosisImageUrl: null,
+    preferredStyles: [],
+    preferredColors: [],
+    diagnosisStatus: 'NONE',
+    onboardingCompleted: true,
+  }
 }
 
 describe('AppHeader', () => {
@@ -89,5 +109,34 @@ describe('AppHeader', () => {
     const img = homeLink.querySelector('img')
     expect(img).not.toBeNull()
     expect(img?.getAttribute('src')).toContain('hakku.png')
+  })
+
+  it('판매자(SELLER)는 판매 메뉴가 보인다', () => {
+    const auth = useAuthStore()
+    auth.token = 'test-token'
+    auth.user = userWith('SELLER')
+    render(AppHeader, { global: { plugins: [router] } })
+
+    expect(screen.getByRole('button', { name: '판매' })).toBeInTheDocument()
+  })
+
+  it('관리자(ADMIN)도 판매 메뉴로 상품 등록 페이지에 접근할 수 있다', async () => {
+    const auth = useAuthStore()
+    auth.token = 'test-token'
+    auth.user = userWith('ADMIN')
+    render(AppHeader, { global: { plugins: [router] } })
+
+    const sell = screen.getByRole('button', { name: '판매' })
+    await fireEvent.click(sell)
+    await waitFor(() => expect(router.currentRoute.value.path).toBe('/seller/products'))
+  })
+
+  it('일반(NORMAL) 회원은 판매 메뉴가 없다', () => {
+    const auth = useAuthStore()
+    auth.token = 'test-token'
+    auth.user = userWith('NORMAL')
+    render(AppHeader, { global: { plugins: [router] } })
+
+    expect(screen.queryByRole('button', { name: '판매' })).not.toBeInTheDocument()
   })
 })

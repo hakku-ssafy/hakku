@@ -7,6 +7,7 @@ import java.util.Set;
 public record ProductResponse(
         Long id,
         Long sellerId,
+        String sellerNickname,
         String name,
         String description,
         long price,
@@ -21,10 +22,16 @@ public record ProductResponse(
         Instant updatedAt,
         boolean active) {
 
+    /** 판매자 닉네임을 알 수 없는 맥락(예: 추천 응답)에서는 null 로 둔다. */
     public static ProductResponse from(Product product) {
+        return from(product, null);
+    }
+
+    public static ProductResponse from(Product product, String sellerNickname) {
         return new ProductResponse(
                 product.getId(),
                 product.getSellerId(),
+                sellerNickname,
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),

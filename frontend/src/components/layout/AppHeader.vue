@@ -102,7 +102,7 @@ const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const router = useRouter()
 
-// 권한별 노출 규칙 보존: 진단·추천은 로그인 시, 판매는 SELLER 시.
+// 권한별 노출 규칙 보존: 진단·추천은 로그인 시, 판매(상품 등록)는 SELLER·ADMIN 시.
 const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { to: '/', label: '홈' },
@@ -112,7 +112,8 @@ const navItems = computed<NavItem[]>(() => {
   if (authStore.isAuthenticated) {
     items.push({ to: '/diagnosis', label: '진단' })
     items.push({ to: '/recommendations', label: '추천' })
-    if (authStore.user?.role === 'SELLER') {
+    const role = authStore.user?.role
+    if (role === 'SELLER' || role === 'ADMIN') {
       items.push({ to: '/seller/products', label: '판매' })
     }
   }

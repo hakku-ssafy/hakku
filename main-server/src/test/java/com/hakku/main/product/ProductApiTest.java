@@ -65,7 +65,8 @@ class ProductApiTest {
         mvc.perform(get("/api/products/" + id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("코트"))
-                .andExpect(jsonPath("$.price").value(89000));
+                .andExpect(jsonPath("$.price").value(89000))
+                .andExpect(jsonPath("$.sellerNickname").value("판매자"));
     }
 
     @Test

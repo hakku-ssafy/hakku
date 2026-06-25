@@ -5,8 +5,11 @@
       <h1 class="u-serif text-title text-ink mt-2.5">상품 등록</h1>
     </header>
 
-    <div v-if="!isSeller" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-      판매자만 접근할 수 있습니다.
+    <div v-if="!authChecked" role="status" class="px-4 py-4 text-ink-muted text-sm">
+      권한 확인 중…
+    </div>
+    <div v-else-if="!canRegister" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+      상품 등록 권한이 없습니다.
     </div>
 
     <template v-else>
@@ -117,9 +120,14 @@ const loading = ref(false)
 const uploadingImage = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+// 권한 확인(fetchMe)이 끝나기 전에는 폼·권한오류 배너를 모두 숨겨 깜빡임을 막는다.
+const authChecked = ref(false)
 
 const selectableColors = COLOR_OPTIONS.filter((c) => c.value !== 'ALL')
-const isSeller = computed(() => authStore.user?.role === 'SELLER')
+// 상품 등록은 판매자(SELLER)와 관리자(ADMIN)만 가능하다(백엔드 ProductService.create 와 동일 규칙).
+const canRegister = computed(
+  () => authStore.user?.role === 'SELLER' || authStore.user?.role === 'ADMIN',
+)
 
 const canSubmit = computed(
   () =>
@@ -178,10 +186,22 @@ async function handleSubmit() {
   loading.value = true
   errorMessage.value = ''
   successMessage.value = ''
+
+  // 1단계: 이미지 업로드. 실패 원인을 등록 실패와 구분해 안내한다.
+  let imageUrl: string
   try {
     uploadingImage.value = true
-    const imageUrl = await uploadProductImage(selectedFile.value)
+    imageUrl = await uploadProductImage(selectedFile.value)
+  } catch {
+    errorMessage.value = '이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.'
+    loading.value = false
     uploadingImage.value = false
+    return
+  }
+  uploadingImage.value = false
+
+  // 2단계: 상품 등록.
+  try {
     await createProduct({
       name: name.value.trim(),
       description: description.value.trim(),
@@ -202,15 +222,22 @@ async function handleSubmit() {
     purchaseUrl.value = ''
     clearImage()
   } catch {
-    errorMessage.value = '상품 등록에 실패했습니다. 이미지 업로드와 정보를 확인해주세요.'
+    errorMessage.value = '상품 등록에 실패했습니다. 입력 정보를 확인해주세요.'
   } finally {
     loading.value = false
-    uploadingImage.value = false
   }
 }
 
 onMounted(async () => {
-  if (!authStore.user) await authStore.fetchMe()
-  if (authStore.user?.role !== 'SELLER') router.replace('/')
+  try {
+    if (!authStore.user) await authStore.fetchMe()
+  } catch {
+    // 프로필 조회 실패(네트워크/토큰 만료 등)는 미인증으로 간주해 홈으로 보낸다.
+    router.replace('/')
+    return
+  } finally {
+    authChecked.value = true
+  }
+  if (!canRegister.value) router.replace('/')
 })
 </script>
