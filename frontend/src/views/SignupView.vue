@@ -26,7 +26,13 @@
         <form class="space-y-4" @submit.prevent="handleSignup">
           <AppInput v-model="email" label="이메일" type="email" autocomplete="email" />
           <AppInput v-model="nickname" label="닉네임" type="text" />
-          <AppInput v-model="password" label="비밀번호" type="password" autocomplete="new-password" />
+          <AppInput
+            v-model="password"
+            label="비밀번호"
+            type="password"
+            autocomplete="new-password"
+            latin-only
+          />
           <div>
             <AppInput
               v-model="passwordConfirm"
@@ -34,6 +40,7 @@
               type="password"
               autocomplete="new-password"
               placeholder="비밀번호를 한 번 더 입력하세요"
+              latin-only
             />
             <p v-if="passwordMismatch" class="mt-1.5 text-xs text-accent-ink">비밀번호가 일치하지 않아요.</p>
           </div>
