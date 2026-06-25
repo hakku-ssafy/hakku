@@ -66,6 +66,15 @@ def _default_model() -> str:
     return settings.openai_model
 
 
+async def load_recent_history(store, user_id: str, now_ms: int) -> dict:
+    """프론트 하이드레이션용: 서버에 보관된 최근(1시간) 대화를 메시지 배열로 반환한다.
+
+    새로고침/창 닫기로 사라지는 것은 프론트의 인메모리 상태일 뿐, 대화 기억 자체는
+    Redis 1시간 슬라이딩 윈도우에 남아 있다. 챗봇 창을 열 때 이 값으로 복원한다.
+    """
+    return {"messages": await store.recent(user_id, now_ms)}
+
+
 async def stream_chat(
     message: str,
     image_bytes: Optional[bytes] = None,

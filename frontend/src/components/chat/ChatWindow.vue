@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { renderMarkdown } from '@/lib/markdown'
@@ -237,6 +237,35 @@ async function send() {
     scrollToBottom()
   }
 }
+
+// 새로고침/창 닫기로 사라지는 건 프론트의 인메모리 상태뿐이다. 챗봇 창을 열 때
+// 서버의 1시간 대화 기억(/chat/history)을 받아 복원해 UI 와 봇 메모리를 일치시킨다.
+async function loadHistory() {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const response = await fetch('/chat/history', {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+    if (!response.ok) return
+    const data = await response.json()
+    const history: Array<{ role: string; content: string }> = Array.isArray(data?.messages)
+      ? data.messages
+      : []
+    messages.value = history.map((m) => ({
+      id: nextId++,
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content,
+    }))
+    scrollToBottom()
+  } catch {
+    // 복원 실패는 조용히 무시하고 빈 상태로 시작한다.
+  }
+}
+
+onMounted(() => {
+  if (isAuthenticated.value) loadHistory()
+})
 </script>
 
 <style scoped>
