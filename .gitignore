@@ -40,7 +40,6 @@ k6/results/
 data/
 *.log
 .gstack/
-docs/
 
 # ── 생성된 아키텍처 슬라이드 (로컬 발표·문서용) ──
 slides/
