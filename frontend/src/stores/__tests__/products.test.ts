@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useProductStore } from '../products'
+import { clearAll } from '@/lib/resourceCache'
 import * as apiModule from '@/api/products'
 
 vi.mock('@/api/products')
@@ -27,6 +28,7 @@ describe('useProductStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    clearAll() // 모듈 레벨 SWR 캐시 격리
   })
 
   it('초기 상태는 빈 목록이다', () => {
@@ -77,5 +79,32 @@ describe('useProductStore', () => {
 
     expect(store.error).toBe('서버 오류')
     expect(store.products).toHaveLength(0)
+  })
+
+  it('재방문 시 캐시를 즉시 보여주고, staleTime 이내면 다시 받지 않는다(SWR)', async () => {
+    vi.useFakeTimers()
+    mockGetProducts.mockResolvedValue([mockProduct])
+    const store = useProductStore()
+
+    await store.fetchProducts() // 첫 방문 → 네트워크
+    await store.fetchProducts() // 재방문 → 캐시(fresh)
+
+    expect(mockGetProducts).toHaveBeenCalledTimes(1)
+    expect(store.loading).toBe(false)
+    expect(store.products).toHaveLength(1)
+    vi.useRealTimers()
+  })
+
+  it('staleTime 이 지나면 캐시를 보여준 뒤 백그라운드로 다시 받는다(SWR)', async () => {
+    vi.useFakeTimers()
+    mockGetProducts.mockResolvedValue([mockProduct])
+    const store = useProductStore()
+
+    await store.fetchProducts()
+    vi.advanceTimersByTime(31_000) // staleTime(30s) 초과
+    await store.fetchProducts()
+
+    expect(mockGetProducts).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
   })
 })

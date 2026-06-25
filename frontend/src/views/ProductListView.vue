@@ -82,6 +82,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useProductStore } from '@/stores/products'
 import apiClient from '@/api/client'
+import { getEntry, setEntry, isFresh, dedupe, DEFAULT_STALE_TIME } from '@/lib/resourceCache'
 import { COLOR_OPTIONS, PRODUCT_CATEGORIES } from '@/types'
 import type { RecommendationItem } from '@/types'
 import { filterProductsByQuery } from '@/lib/productSearch'
@@ -172,13 +173,25 @@ function chipClass(active: boolean): string {
 
 async function loadRecommendations() {
   if (!authStore.isAuthenticated) return
-  recLoading.value = true
+  if (!authStore.user) await authStore.fetchMe()
+  // 홈과 같은 키를 공유해, 두 페이지를 오가도 staleTime 이내엔 재요청하지 않는다.
+  const key = `recommendations:${authStore.user?.id ?? 'anon'}`
+  const cached = getEntry<RecommendationItem[]>(key)
+  if (cached) {
+    recommendations.value = cached.data
+    if (isFresh(key, DEFAULT_STALE_TIME)) return
+  } else {
+    recLoading.value = true
+  }
   try {
-    if (!authStore.user) await authStore.fetchMe()
-    const { data } = await apiClient.get<RecommendationItem[]>('/recommendations')
+    const data = await dedupe(key, async () => {
+      const res = await apiClient.get<RecommendationItem[]>('/recommendations')
+      return res.data
+    })
     recommendations.value = data
+    setEntry(key, data)
   } catch {
-    recommendations.value = []
+    if (!cached) recommendations.value = []
   } finally {
     recLoading.value = false
   }

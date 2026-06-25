@@ -353,6 +353,7 @@ import { getPostsByAuthor } from '@/api/posts'
 import { getFollowers, getFollowing } from '@/api/follows'
 import { getMyOrders } from '@/api/orders'
 import { updatePreferredColors } from '@/api/users'
+import { getEntry, setEntry, isFresh, dedupe, DEFAULT_STALE_TIME } from '@/lib/resourceCache'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppModal from '@/components/ui/AppModal.vue'
@@ -471,71 +472,82 @@ async function selectTab(tab: TabKey) {
   if (tab === 'follow' && !followState.value.loaded) await loadFollow()
 }
 
-async function loadOrders() {
-  ordersState.value.loading = true
-  try {
-    ordersState.value.items = await getMyOrders()
-    ordersState.value.loaded = true
-  } catch {
-    ordersState.value.items = []
-  } finally {
-    ordersState.value.loading = false
+// 마이페이지 탭 데이터는 사용자별 키로 캐시한다(페이지를 떠났다 와도 재요청하지 않음).
+function myKey(scope: string): string {
+  return `mypage:${scope}:${user.value?.id ?? 'anon'}`
+}
+
+/** .items 형태 탭용 공통 SWR 로더: 캐시 즉시 표시 + staleTime 경과 시 백그라운드 갱신. */
+async function loadCachedItems<T>(
+  scope: string,
+  state: { loading: boolean; loaded: boolean; items: T[] },
+  fetcher: () => Promise<T[]>,
+) {
+  const key = myKey(scope)
+  const cached = getEntry<T[]>(key)
+  if (cached) {
+    state.items = cached.data
+    state.loaded = true
+    if (isFresh(key, DEFAULT_STALE_TIME)) return
+  } else {
+    state.loading = true
   }
+  try {
+    const data = await dedupe(key, fetcher)
+    state.items = data
+    setEntry(key, data)
+    state.loaded = true
+  } catch {
+    if (!cached) state.items = []
+  } finally {
+    state.loading = false
+  }
+}
+
+async function loadOrders() {
+  await loadCachedItems('orders', ordersState.value, getMyOrders)
 }
 
 async function loadReviews() {
   if (!user.value) return
-  reviewsState.value.loading = true
-  try {
-    reviewsState.value.items = await getUserReviews(user.value.id)
-    reviewsState.value.loaded = true
-  } catch {
-    reviewsState.value.items = []
-  } finally {
-    reviewsState.value.loading = false
-  }
+  await loadCachedItems('reviews', reviewsState.value, () => getUserReviews(user.value!.id))
 }
 
 async function loadWishlist() {
   if (!user.value) return
-  wishlistState.value.loading = true
-  try {
-    wishlistState.value.items = await getUserWishlist(user.value.id)
-    wishlistState.value.loaded = true
-  } catch {
-    wishlistState.value.items = []
-  } finally {
-    wishlistState.value.loading = false
-  }
+  await loadCachedItems('wishlist', wishlistState.value, () => getUserWishlist(user.value!.id))
 }
 
 async function loadPosts() {
   if (!user.value) return
-  postsState.value.loading = true
-  try {
-    postsState.value.items = await getPostsByAuthor(user.value.id)
-    postsState.value.loaded = true
-  } catch {
-    postsState.value.items = []
-  } finally {
-    postsState.value.loading = false
-  }
+  await loadCachedItems('posts', postsState.value, () => getPostsByAuthor(user.value!.id))
 }
 
 async function loadFollow() {
   if (!user.value) return
-  followState.value.loading = true
+  const key = myKey('follow')
+  const cached = getEntry<{ followers: UserSummary[]; following: UserSummary[] }>(key)
+  if (cached) {
+    followState.value.followers = cached.data.followers
+    followState.value.following = cached.data.following
+    followState.value.loaded = true
+    if (isFresh(key, DEFAULT_STALE_TIME)) return
+  } else {
+    followState.value.loading = true
+  }
   try {
-    const [followers, following] = await Promise.all([
-      getFollowers(user.value.id),
-      getFollowing(user.value.id),
-    ])
+    const [followers, following] = await dedupe(key, () =>
+      Promise.all([getFollowers(user.value!.id), getFollowing(user.value!.id)]),
+    )
     followState.value.followers = followers
     followState.value.following = following
+    setEntry(key, { followers, following })
     followState.value.loaded = true
   } catch {
-    followState.value.followers = []
-    followState.value.following = []
+    if (!cached) {
+      followState.value.followers = []
+      followState.value.following = []
+    }
   } finally {
     followState.value.loading = false
   }
