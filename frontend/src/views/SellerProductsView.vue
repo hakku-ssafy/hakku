@@ -95,6 +95,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useProductStore } from '@/stores/products'
 import { createProduct } from '@/api/products'
 import { uploadProductImage } from '@/api/storage'
 import { COLOR_OPTIONS, PRODUCT_CATEGORIES } from '@/types'
@@ -105,6 +106,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const productStore = useProductStore()
 
 const name = ref('')
 const description = ref('')
@@ -214,6 +216,7 @@ async function handleSubmit() {
       purchaseUrl: purchaseUrl.value.trim() || undefined
     })
     successMessage.value = '상품이 등록되었습니다.'
+    productStore.invalidateProducts() // 새 상품이 다음 목록 방문에 반영되도록 캐시 무효화
     name.value = ''
     description.value = ''
     price.value = null

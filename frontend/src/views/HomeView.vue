@@ -142,6 +142,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { getEntry, setEntry, isFresh, dedupe, DEFAULT_STALE_TIME } from '@/lib/resourceCache'
 import { usePostStore } from '@/stores/posts'
 import { useProductStore } from '@/stores/products'
 import apiClient from '@/api/client'
@@ -227,9 +228,20 @@ function formatDate(dateStr: string): string {
 }
 
 async function loadRecommendations() {
+  // 추천은 사용자별로 캐시(상품목록 페이지와 같은 키를 공유해 재요청을 막는다).
+  const key = `recommendations:${authStore.user?.id ?? 'anon'}`
+  const cached = getEntry<RecommendationItem[]>(key)
+  if (cached) {
+    recommendations.value = cached.data
+    if (isFresh(key, DEFAULT_STALE_TIME)) return
+  }
   try {
-    const { data } = await apiClient.get<RecommendationItem[]>('/recommendations')
+    const data = await dedupe(key, async () => {
+      const res = await apiClient.get<RecommendationItem[]>('/recommendations')
+      return res.data
+    })
     recommendations.value = data
+    setEntry(key, data)
   } catch {
     // recommendations optional
   }
@@ -237,12 +249,21 @@ async function loadRecommendations() {
 
 /** 학생증 자랑 게시판에서 이미지가 있는 글만 상위 8개 격자로 노출. */
 async function loadShowcase() {
-  showcaseLoading.value = true
+  const key = 'home:showcase'
+  const cached = getEntry<Post[]>(key)
+  if (cached) {
+    showcasePosts.value = cached.data
+    if (isFresh(key, DEFAULT_STALE_TIME)) return
+  } else {
+    showcaseLoading.value = true
+  }
   try {
-    const posts = await getPosts('STUDENT_ID')
-    showcasePosts.value = posts.filter((p) => p.imageUrl).slice(0, 8)
+    const posts = await dedupe(key, () => getPosts('STUDENT_ID'))
+    const filtered = posts.filter((p) => p.imageUrl).slice(0, 8)
+    showcasePosts.value = filtered
+    setEntry(key, filtered)
   } catch {
-    showcasePosts.value = []
+    if (!cached) showcasePosts.value = []
   } finally {
     showcaseLoading.value = false
   }

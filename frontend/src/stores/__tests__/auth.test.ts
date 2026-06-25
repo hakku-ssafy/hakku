@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../auth'
+import { setEntry, getEntry, clearAll } from '@/lib/resourceCache'
 import * as apiModule from '@/api/auth'
 
 vi.mock('@/api/auth')
@@ -13,6 +14,7 @@ describe('useAuthStore', () => {
     setActivePinia(createPinia())
     localStorage.clear()
     vi.clearAllMocks()
+    clearAll() // 모듈 레벨 SWR 캐시 격리
   })
 
   it('초기 상태는 미인증이다', () => {
@@ -77,5 +79,16 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.token).toBeNull()
     expect(localStorage.getItem('accessToken')).toBeNull()
+  })
+
+  it('로그아웃 시 SWR 캐시를 비운다(다른 계정 데이터 노출 방지)', () => {
+    const store = useAuthStore()
+    setEntry('products', [{ id: 1 }])
+    setEntry('mypage:orders:5', [{ id: 99 }])
+
+    store.logout()
+
+    expect(getEntry('products')).toBeUndefined()
+    expect(getEntry('mypage:orders:5')).toBeUndefined()
   })
 })
