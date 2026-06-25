@@ -10,7 +10,7 @@
           </svg>
         </div>
         <div>
-          <p class="chat-header__name">학꾸 도우미</p>
+          <p class="chat-header__name">학꾸AI</p>
           <p class="chat-header__sub">학생증 꾸미기 AI 도우미</p>
         </div>
       </div>
@@ -60,6 +60,9 @@
             <span /><span /><span />
           </span>
         </div>
+        <div v-if="msg.products && msg.products.length" class="chat-products">
+          <ChatProductCard v-for="p in msg.products" :key="p.id" :product="p" />
+        </div>
       </div>
     </div>
 
@@ -108,12 +111,15 @@ import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { renderMarkdown } from '@/lib/markdown'
+import ChatProductCard from './ChatProductCard.vue'
+import type { ChatProduct } from './chatTypes'
 
 interface Message {
   id: number
   role: 'user' | 'assistant'
   content: string
   image?: string
+  products?: ChatProduct[]
 }
 
 defineEmits<{ close: [] }>()
@@ -176,8 +182,8 @@ async function send() {
   // Vue 반응성 주의: ref 배열에 넣은 객체를 원시 참조로 변이하면 set 트랩이 호출되지 않아
   // 갱신이 트리거되지 않는다(→ 스트리밍이 끝난 뒤 한 번에 렌더되는 버그). 인덱스에 새 객체를
   // 할당하는 불변 갱신으로 토큰이 도착할 때마다 즉시 렌더되게 한다.
-  const setAssistantContent = (content: string) => {
-    messages.value[assistantIndex] = { ...messages.value[assistantIndex], content }
+  const patchAssistant = (patch: Partial<Message>) => {
+    messages.value[assistantIndex] = { ...messages.value[assistantIndex], ...patch }
   }
 
   inputText.value = ''
@@ -199,7 +205,7 @@ async function send() {
     })
 
     if (response.status === 401) {
-      setAssistantContent('로그인이 만료되었어요. 다시 로그인한 뒤 이용해주세요.')
+      patchAssistant({ content: '로그인이 만료되었어요. 다시 로그인한 뒤 이용해주세요.' })
       return
     }
     if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`)
@@ -222,16 +228,18 @@ async function send() {
         try {
           const parsed = JSON.parse(data)
           if (parsed.error) {
-            setAssistantContent(parsed.error)
+            patchAssistant({ content: parsed.error })
           } else if (parsed.text) {
-            setAssistantContent(messages.value[assistantIndex].content + parsed.text)
+            patchAssistant({ content: messages.value[assistantIndex].content + parsed.text })
+          } else if (Array.isArray(parsed.products)) {
+            patchAssistant({ products: parsed.products as ChatProduct[] })
           }
           scrollToBottom()
         } catch {}
       }
     }
   } catch {
-    setAssistantContent('일시적인 오류가 발생했어요. 다시 시도해주세요.')
+    patchAssistant({ content: '일시적인 오류가 발생했어요. 다시 시도해주세요.' })
   } finally {
     isStreaming.value = false
     scrollToBottom()
@@ -467,6 +475,27 @@ onMounted(() => {
   color: var(--hk-ink-3);
   border: 1px solid var(--hk-border-soft);
   border-bottom-left-radius: var(--hk-radius-cta);
+}
+
+/* 답변 아래 상품 카드 줄: 가로 스크롤(스냅), 메시지 폭을 넘겨 잘리지 않게 */
+.chat-products {
+  display: flex;
+  gap: 8px;
+  margin-top: 0.5rem;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.chat-products > * {
+  scroll-snap-align: start;
+}
+.chat-products::-webkit-scrollbar {
+  height: 4px;
+}
+.chat-products::-webkit-scrollbar-thumb {
+  background: var(--hk-border);
+  border-radius: 999px;
 }
 
 /* 마크다운 렌더링(AI 답변) — pre-wrap 영향 제거 + 블록 요소 간격/링크 스타일 */
