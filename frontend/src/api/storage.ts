@@ -9,13 +9,17 @@ function publicImageUrl(imageId: string): string {
   return `${base.replace(/\/$/, '')}/images/${imageId}`
 }
 
-/** 상품 이미지를 storage-server에 업로드하고 공개 URL을 반환한다. */
+/**
+ * 상품 이미지를 storage-server에 업로드하고 공개 URL을 반환한다.
+ * 상품 목록·상세는 비로그인 포함 누구나 보고, storageClient 는 인증 헤더를 싣지 않으므로
+ * 소유자 전용(result)이 아니라 인증 없이 조회 가능한 raw 종류로 저장한다.
+ */
 export async function uploadProductImage(file: File): Promise<string> {
   const { data } = await storageClient.post<{ id: string }>(
     '/images',
     file,
     {
-      params: { kind: 'result' },
+      params: { kind: 'raw' },
       headers: { 'Content-Type': file.type || 'application/octet-stream' },
       maxBodyLength: 10 * 1024 * 1024
     }

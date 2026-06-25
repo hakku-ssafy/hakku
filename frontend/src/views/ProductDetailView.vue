@@ -23,6 +23,9 @@
         <div class="pd__info">
           <span v-if="product.category" class="pd__eyebrow">{{ product.category }}</span>
           <h1 class="pd__name">{{ product.name }}</h1>
+          <p v-if="product.sellerNickname" class="pd__seller">
+            판매자 <span class="pd__seller-name">{{ product.sellerNickname }}</span>
+          </p>
 
           <div v-if="reviews.length > 0" class="pd__rating">
             <StarRating :rating="Math.round(averageRating)" size="sm" />
@@ -417,6 +420,14 @@ onMounted(async () => {
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.3;
+}
+.pd__seller {
+  margin: -4px 0 14px;
+  font-size: 13px;
+  color: var(--hk-text-muted-2);
+}
+.pd__seller-name {
+  font-weight: 600;
 }
 .pd__rating {
   display: flex;

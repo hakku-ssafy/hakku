@@ -22,6 +22,9 @@
           <p class="pcard__price">
             {{ formatPrice(product.price) }}<span class="pcard__won">원</span>
           </p>
+          <p v-if="product.sellerNickname" class="pcard__seller">
+            <span class="pcard__seller-by">by</span> {{ product.sellerNickname }}
+          </p>
           <slot name="meta" />
         </div>
       </template>
@@ -42,6 +45,9 @@
       <h3 class="text-sm font-medium text-ink truncate">{{ product.name }}</h3>
       <p class="text-sm font-bold text-ink mt-1">
         {{ formatPrice(product.price) }}<span class="font-normal text-ink-muted">원</span>
+      </p>
+      <p v-if="product.sellerNickname" class="text-xs text-ink-muted mt-1 truncate">
+        <span class="text-ink-faint">by</span> {{ product.sellerNickname }}
       </p>
       <slot name="meta" />
     </div>
@@ -123,6 +129,18 @@ function formatPrice(price: number): string {
 .pcard__won {
   font-weight: 400;
   opacity: 0.82;
+}
+.pcard__seller {
+  margin-top: 3px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  opacity: 0.82;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pcard__seller-by {
+  opacity: 0.6;
 }
 .pcard__code {
   position: absolute;

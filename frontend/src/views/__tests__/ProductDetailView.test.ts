@@ -93,4 +93,11 @@ describe('ProductDetailView 장바구니 담기', () => {
     })
     expect(cartApi.addCartItem).not.toHaveBeenCalled()
   })
+
+  it('판매자 닉네임을 상세에 노출한다', async () => {
+    vi.mocked(productsApi.getProduct).mockResolvedValue({ ...product, sellerNickname: '판매왕' })
+    render(ProductDetailView, { global: { plugins: [router] } })
+
+    expect(await screen.findByText(/판매왕/)).toBeInTheDocument()
+  })
 })
