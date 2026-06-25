@@ -1,18 +1,26 @@
 <template>
   <section class="hero" @mouseenter="pause()" @mouseleave="resume()">
     <div class="hero__viewport">
-      <!-- 유한 캐러셀: 복제 없이 한 벌만. CSS 가 --pos 로 활성 카드를 중앙 정렬. -->
+      <!-- 중앙 밴드 캐러셀: 밝은 중앙 --win 장 + 양옆은 순환 클론(dim)으로 빈 곳 없이 채움. -->
       <ul
         class="hero__track"
-        :style="{ '--pos': String(pos) }"
+        :style="{ '--win': String(effWin), '--offset': String(bandStart) }"
       >
         <li
-          v-for="(slide, i) in baseSlides"
-          :key="`${slide.type}-${i}`"
+          v-for="(item, di) in displaySlides"
+          :key="item.key"
           class="hero__slide"
+          :class="{
+            'hero__slide--in-band': di >= bandStart && di < bandStart + effWin,
+            'hero__slide--clone': item.isClone,
+          }"
+          :data-idx="item.logicalIdx"
+          :data-clone="item.isClone ? 'true' : 'false'"
+          :aria-hidden="item.isClone ? 'true' : undefined"
+          :inert="item.isClone || undefined"
         >
           <!-- 리드 슬라이드: 진단 완료면 추천 카드, 아니면 진단 상태 카드 -->
-          <template v-if="slide.type === 'lead'">
+          <template v-if="item.type === 'lead'">
             <HeroRecommendCard
               v-if="diagnosisState === 'done'"
               :personal-color-label="personalColorLabel"
@@ -29,27 +37,27 @@
           <!-- 에디토리얼 슬라이드 -->
           <template v-else>
             <a
-              v-if="isExternal(slide.to)"
-              :href="slide.to"
+              v-if="isExternal(item.to)"
+              :href="item.to"
               target="_blank"
               rel="noopener noreferrer"
               class="hero__slide-link"
             >
               <HeroEditorialCard
-                :tone="slide.tone"
-                :kicker="slide.kicker"
-                :title="slide.title"
-                :sub="slide.sub"
-                :image-url="slide.imageUrl"
+                :tone="item.tone"
+                :kicker="item.kicker"
+                :title="item.title"
+                :sub="item.sub"
+                :image-url="item.imageUrl"
               />
             </a>
-            <router-link v-else :to="slide.to" class="hero__slide-link">
+            <router-link v-else :to="item.to" class="hero__slide-link">
               <HeroEditorialCard
-                :tone="slide.tone"
-                :kicker="slide.kicker"
-                :title="slide.title"
-                :sub="slide.sub"
-                :image-url="slide.imageUrl"
+                :tone="item.tone"
+                :kicker="item.kicker"
+                :title="item.title"
+                :sub="item.sub"
+                :image-url="item.imageUrl"
               />
             </router-link>
           </template>
@@ -57,30 +65,30 @@
       </ul>
     </div>
 
-    <!-- 컨트롤: 도트 + 카운터 + 화살표 -->
-    <div class="hero__controls">
+    <!-- 컨트롤: 도트(이동 위치 단위) + 카운터 + 화살표. 이동 위치가 2개 이상일 때만. -->
+    <div v-if="positionCount > 1" class="hero__controls">
       <div class="hero__dots">
         <button
-          v-for="i in TOTAL"
+          v-for="i in positionCount"
           :key="i"
           type="button"
           class="hero__dot"
           :class="{ 'hero__dot--active': realIndex === i - 1 }"
-          :aria-label="`${i}번째 슬라이드로 이동`"
+          :aria-label="`${i}번째 위치로 이동`"
           @click="goTo(i - 1)"
         />
         <span class="hero__counter">{{ counter }}</span>
       </div>
       <div class="hero__arrows">
-        <button type="button" class="hero__arrow" aria-label="이전 슬라이드" :disabled="isFirst" @click="prev()">‹</button>
-        <button type="button" class="hero__arrow hero__arrow--next" aria-label="다음 슬라이드" :disabled="isLast" @click="next()">›</button>
+        <button type="button" class="hero__arrow" aria-label="이전 슬라이드" @click="prev()">‹</button>
+        <button type="button" class="hero__arrow hero__arrow--next" aria-label="다음 슬라이드" @click="next()">›</button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Magazine, Product } from '@/types'
 import { listActiveMagazines } from '@/api/magazine'
 import { useHeroCarousel } from '@/composables/useHeroCarousel'
@@ -111,6 +119,9 @@ interface EditorialSlide {
   imageUrl?: string
 }
 type BaseSlide = { type: 'lead' } | ({ type: 'editorial' } & EditorialSlide)
+
+/** 표시용 슬라이드(원본 + 논리 인덱스 + 클론 여부). */
+type DisplaySlide = BaseSlide & { logicalIdx: number; isClone: boolean; key: string }
 
 // 어드민 큐레이션 카드가 없거나 조회 실패 시 폴백할 기본 슬라이드.
 const EDITORIAL_SLIDES: EditorialSlide[] = [
@@ -161,37 +172,82 @@ const baseSlides = computed<BaseSlide[]>(() => [
 ])
 const TOTAL = computed(() => baseSlides.value.length)
 
+// 반응형 중앙 밴드 크기: 모바일 1 / 태블릿 2 / 데스크탑 3.
+const BP_TABLET = 640
+const BP_DESKTOP = 1024
+function visibleCount(w: number): number {
+  if (w >= BP_DESKTOP) return 3
+  if (w >= BP_TABLET) return 2
+  return 1
+}
+const win = ref(typeof window !== 'undefined' ? visibleCount(window.innerWidth) : 3)
+function handleResize(): void {
+  win.value = visibleCount(window.innerWidth)
+}
+onMounted(() => window.addEventListener('resize', handleResize, { passive: true }))
+onUnmounted(() => window.removeEventListener('resize', handleResize))
+
+// 실제로 적용되는 밴드 크기(카드 수보다 클 수 없음).
+const effWin = computed(() => Math.min(win.value, Math.max(1, TOTAL.value)))
+
 const canMatchMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
 const prefersReduced = canMatchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-const { pos, realIndex, isFirst, isLast, next, prev, goTo, pause, resume } = useHeroCarousel(
-  TOTAL,
-  { reducedMotion: prefersReduced },
-)
+const { realIndex, positionCount, next, prev, goTo, pause, resume } = useHeroCarousel(TOTAL, {
+  reducedMotion: prefersReduced,
+  windowSize: effWin,
+})
+
+/**
+ * 표시 트랙 = [말미 W장(클론, 왼쪽 채움)] + [실제 N장] + [선두 W장(클론, 오른쪽 채움)].
+ * 양끝 클론으로 어느 위치에서도 밴드 양옆이 dim 카드로 차서 빈 곳이 생기지 않는다(순환).
+ */
+const displaySlides = computed<DisplaySlide[]>(() => {
+  const base = baseSlides.value
+  const n = base.length
+  const w = effWin.value
+  const list: DisplaySlide[] = []
+  for (let k = n - w; k < n; k++) {
+    list.push({ ...base[k], logicalIdx: k, isClone: true, key: `pre-${k}` })
+  }
+  for (let k = 0; k < n; k++) {
+    list.push({ ...base[k], logicalIdx: k, isClone: false, key: `real-${k}` })
+  }
+  for (let k = 0; k < w; k++) {
+    list.push({ ...base[k], logicalIdx: k, isClone: true, key: `suf-${k}` })
+  }
+  return list
+})
+
+// 밝은 밴드의 시작(표시 트랙 기준) 인덱스 = 선두 클론 수(W) + 현재 위치.
+const bandStart = computed(() => effWin.value + realIndex.value)
 
 const counter = computed(
-  () => `${String(realIndex.value + 1).padStart(2, '0')} / ${String(TOTAL.value).padStart(2, '0')}`,
+  () =>
+    `${String(realIndex.value + 1).padStart(2, '0')} / ${String(positionCount.value).padStart(2, '0')}`,
 )
 </script>
 
 <style scoped>
 .hero {
-  /* 프레임 = 컨테이너(u-container) 콘텐츠 좌측 경계. 활성 카드를 여기에 정렬. */
+  /* 프레임 = 컨테이너(u-container) 콘텐츠 좌측 경계. 컨트롤을 여기에 정렬. */
   --hero-frame: max(var(--hk-pad-x), calc((100vw - var(--hk-w-wide)) / 2 + var(--hk-pad-x)));
   --hero-gap: 14px;
-  /* 모바일: 메인 1장이 거의 화면 폭 + 다음 카드 살짝 peek. */
-  --hero-card: calc(100vw - var(--hero-frame) - 46px);
+  /* 모바일: 밴드 1장 + 양옆 살짝 peek. */
+  --hero-card: 84vw;
   position: relative;
   margin-top: 4px;
 }
 @media (min-width: 640px) {
+  /* 태블릿: 밴드 2장. */
   .hero {
-    --hero-card: clamp(340px, 46vw, 420px);
+    --hero-card: clamp(240px, 40vw, 360px);
   }
 }
 @media (min-width: 1024px) {
+  /* 데스크탑: 밴드 3장. */
   .hero {
-    --hero-card: clamp(400px, 34vw, 480px);
+    --hero-card: clamp(280px, 24vw, 380px);
   }
 }
 
@@ -203,11 +259,13 @@ const counter = computed(
   display: flex;
   gap: var(--hero-gap);
   margin: 0;
-  /* 활성 카드를 뷰포트 가로 중앙에 정렬(양옆 카드는 peek). */
-  padding: 0 calc((100vw - var(--hero-card)) / 2);
+  padding: 0;
   list-style: none;
-  /* pos 칸만큼 좌측 이동(카드폭 + gap 단위). */
-  transform: translateX(calc(-1 * var(--pos, 0) * (var(--hero-card) + var(--hero-gap))));
+  --band-width: calc(var(--win, 1) * var(--hero-card) + (var(--win, 1) - 1) * var(--hero-gap));
+  /* 밝은 밴드(--win 장)를 뷰포트 가로 중앙에 두도록 --offset 번째 카드를 정렬. */
+  transform: translateX(
+    calc((100vw - var(--band-width)) / 2 - var(--offset, 0) * (var(--hero-card) + var(--hero-gap)))
+  );
   transition: transform var(--dur-slide, 0.6s) var(--hk-ease-slide);
   will-change: transform;
 }
@@ -217,6 +275,18 @@ const counter = computed(
   width: var(--hero-card);
   height: var(--hero-card); /* 정사각형 */
   box-sizing: border-box;
+  /* 중앙 밴드 밖 카드(클론 포함)는 어둡게(dim). */
+  opacity: 0.4;
+  filter: brightness(0.62);
+  transition: opacity var(--dur-slide, 0.6s) var(--hk-ease-slide),
+    filter var(--dur-slide, 0.6s) var(--hk-ease-slide);
+}
+.hero__slide--in-band {
+  opacity: 1;
+  filter: none;
+}
+.hero__slide--clone {
+  pointer-events: none;
 }
 .hero__slide-link {
   display: block;
