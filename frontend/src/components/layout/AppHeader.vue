@@ -3,7 +3,7 @@
     <div class="u-container h-[72px] flex items-center gap-6 md:gap-10">
       <!-- 로고 — hakku 워드마크 이미지(클릭 시 홈으로) -->
       <router-link to="/" class="logo-link shrink-0" aria-label="학꾸 홈">
-        <img src="/hakku.png" alt="hakku" class="logo-img" width="96" height="28" />
+        <img src="/hakku.png" alt="hakku" class="logo-img" width="82" height="24" />
       </router-link>
 
       <!-- 데스크탑 언더라인 내비 (홈·상품·커뮤니티 + 로그인 시 진단·추천 + SELLER 시 판매) -->
@@ -158,7 +158,7 @@ function handleLogout() {
 }
 .logo-img {
   display: block;
-  height: 1.75rem; /* 28px — 워드마크, 폭은 비율에 맞춰 자동 */
+  height: 1.5rem; /* 24px — 워드마크 살짝 축소, 폭은 비율에 맞춰 자동 */
   width: auto;
 }
 
