@@ -97,6 +97,19 @@ class ProductServiceTest {
     }
 
     @Test
+    @DisplayName("create: ADMIN 도 상품을 등록할 수 있다")
+    void create_byAdmin_saves() {
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+        doReturn(List.of(sellerNamed(SELLER, "관리자"))).when(userRepository).findAllById(anyList());
+
+        ProductResponse response = productService.create(SELLER, Role.ADMIN, command());
+
+        assertThat(response.name()).isEqualTo("코트");
+        assertThat(response.sellerNickname()).isEqualTo("관리자");
+        verify(productRepository).save(any(Product.class));
+    }
+
+    @Test
     @DisplayName("create: 일반 회원(NORMAL)은 등록할 수 없다 → ProductAccessDeniedException")
     void create_byNormal_denied() {
         assertThatThrownBy(() -> productService.create(SELLER, Role.NORMAL, command()))

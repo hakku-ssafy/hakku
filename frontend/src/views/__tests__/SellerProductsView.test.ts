@@ -6,10 +6,12 @@ import SellerProductsView from '../SellerProductsView.vue'
 import { useAuthStore } from '@/stores/auth'
 import * as productsApi from '@/api/products'
 import * as storageApi from '@/api/storage'
+import * as authApi from '@/api/auth'
 import type { User, UserRole } from '@/types'
 
 vi.mock('@/api/products')
 vi.mock('@/api/storage')
+vi.mock('@/api/auth')
 
 const blank = { template: '<div />' }
 
@@ -52,7 +54,7 @@ async function mountAs(role: UserRole): Promise<Router> {
 }
 
 async function fillForm(): Promise<void> {
-  await fireEvent.update(screen.getByLabelText(/상품명/), '미니 키링')
+  await fireEvent.update(await screen.findByLabelText(/상품명/), '미니 키링')
   await fireEvent.update(screen.getByLabelText(/설명/), '귀여운 키링이에요')
   await fireEvent.update(screen.getByLabelText(/가격/), '4900')
   await fireEvent.update(screen.getByLabelText(/카테고리/), '키링')
@@ -80,6 +82,20 @@ describe('SellerProductsView', () => {
 
   it('일반(NORMAL) 회원은 홈으로 리다이렉트된다', async () => {
     const router = await mountAs('NORMAL')
+    await waitFor(() => expect(router.currentRoute.value.path).toBe('/'))
+  })
+
+  it('프로필 조회에 실패하면 예외를 전파하지 않고 홈으로 리다이렉트한다', async () => {
+    vi.mocked(authApi.getMe).mockRejectedValue(new Error('401'))
+    const router = makeRouter()
+    await router.push('/seller/products')
+    await router.isReady()
+    const auth = useAuthStore()
+    auth.token = 'test-token'
+    auth.user = null
+
+    render(SellerProductsView, { global: { plugins: [router] } })
+
     await waitFor(() => expect(router.currentRoute.value.path).toBe('/'))
   })
 

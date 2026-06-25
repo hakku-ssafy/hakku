@@ -5,7 +5,10 @@
       <h1 class="u-serif text-title text-ink mt-2.5">상품 등록</h1>
     </header>
 
-    <div v-if="!canRegister" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+    <div v-if="!authChecked" role="status" class="px-4 py-4 text-ink-muted text-sm">
+      권한 확인 중…
+    </div>
+    <div v-else-if="!canRegister" role="alert" class="px-4 py-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
       상품 등록 권한이 없습니다.
     </div>
 
@@ -117,6 +120,8 @@ const loading = ref(false)
 const uploadingImage = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+// 권한 확인(fetchMe)이 끝나기 전에는 폼·권한오류 배너를 모두 숨겨 깜빡임을 막는다.
+const authChecked = ref(false)
 
 const selectableColors = COLOR_OPTIONS.filter((c) => c.value !== 'ALL')
 // 상품 등록은 판매자(SELLER)와 관리자(ADMIN)만 가능하다(백엔드 ProductService.create 와 동일 규칙).
@@ -224,7 +229,15 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
-  if (!authStore.user) await authStore.fetchMe()
+  try {
+    if (!authStore.user) await authStore.fetchMe()
+  } catch {
+    // 프로필 조회 실패(네트워크/토큰 만료 등)는 미인증으로 간주해 홈으로 보낸다.
+    router.replace('/')
+    return
+  } finally {
+    authChecked.value = true
+  }
   if (!canRegister.value) router.replace('/')
 })
 </script>
