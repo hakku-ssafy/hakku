@@ -6,6 +6,7 @@ import com.hakku.main.product.exception.ProductNotFoundException;
 import com.hakku.main.product.repository.ProductRepository;
 import com.hakku.main.user.domain.Role;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class ProductService {
+
+    /** 어드민 목록 페이지 크기 상한(과도한 limit 방지). */
+    private static final int MAX_ADMIN_PAGE_SIZE = 100;
 
     private final ProductRepository productRepository;
 
@@ -42,6 +46,28 @@ public class ProductService {
         return productRepository.findAllByOrderByIdDesc().stream()
                 .map(ProductResponse::from)
                 .toList();
+    }
+
+    /** 어드민 상품 목록 — 커서 페이지네이션(활성/비활성 모두). hasMore 판단 위해 limit+1 을 조회한다. */
+    @Transactional(readOnly = true)
+    public AdminProductPageResponse listForAdmin(Long cursorId, int limit) {
+        int safeLimit = Math.min(Math.max(limit, 1), MAX_ADMIN_PAGE_SIZE);
+        List<Product> rows = productRepository.findForAdminCursor(cursorId, safeLimit + 1);
+        boolean hasMore = rows.size() > safeLimit;
+        List<Product> page = hasMore ? rows.subList(0, safeLimit) : rows;
+        Long nextCursor = hasMore && !page.isEmpty() ? page.get(page.size() - 1).getId() : null;
+        return new AdminProductPageResponse(
+                page.stream().map(ProductResponse::from).toList(), nextCursor, hasMore);
+    }
+
+    /** 어드민 인라인 수정 — 이름·카테고리·태그(styles)·활성화 여부만 변경한다. */
+    @Transactional
+    public ProductResponse editByAdmin(Long productId, String name, String category,
+                                       Set<String> styles, boolean active) {
+        Product product = findOrThrow(productId);
+        product.editByAdmin(name, category, styles, active);
+        productRepository.save(product);
+        return ProductResponse.from(product);
     }
 
     @Transactional

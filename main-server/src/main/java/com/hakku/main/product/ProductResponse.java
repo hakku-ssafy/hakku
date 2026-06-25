@@ -18,7 +18,8 @@ public record ProductResponse(
         String imageUrl,
         String purchaseUrl,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        boolean active) {
 
     public static ProductResponse from(Product product) {
         return new ProductResponse(
@@ -35,6 +36,7 @@ public record ProductResponse(
                 product.getImageUrl(),
                 product.getPurchaseUrl(),
                 product.getCreatedAt(),
-                product.getUpdatedAt());
+                product.getUpdatedAt(),
+                product.isActive());
     }
 }

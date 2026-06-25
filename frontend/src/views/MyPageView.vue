@@ -133,6 +133,15 @@
           <svg class="w-5 h-5 text-ink-faint shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
         </router-link>
 
+        <router-link
+          v-if="user.role === 'ADMIN'"
+          to="/admin/products"
+          class="flex items-center justify-between w-full bg-surface border border-line rounded-lg px-5 py-4 mb-3 hover:border-line-strong transition-colors"
+        >
+          <span class="text-sm font-semibold text-ink">상품 관리</span>
+          <svg class="w-5 h-5 text-ink-faint shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </router-link>
+
         <button
           type="button"
           class="flex items-center justify-between w-full bg-surface border border-line rounded-lg px-5 py-4 hover:border-line-strong transition-colors"

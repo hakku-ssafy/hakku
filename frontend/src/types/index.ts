@@ -66,6 +66,24 @@ export interface Product {
   colors: string[]
   styles: string[]
   sellerId: number
+  /** 활성화 여부(서버 응답에 항상 포함; normalizeProduct 가 기본 true 로 채움). 비활성이면 공개 목록·검색·추천에서 숨김. */
+  active?: boolean
+}
+
+/** 어드민 상품 목록 커서 페이지(무한 스크롤). */
+export interface AdminProductPage {
+  items: Product[]
+  /** 다음 페이지 커서(없으면 마지막 페이지). */
+  nextCursor?: number
+  hasMore: boolean
+}
+
+/** 어드민 인라인 수정 — 편집 가능한 필드만 담는다. */
+export interface AdminProductEdit {
+  name: string
+  category: string | null
+  styles: string[]
+  active: boolean
 }
 
 export interface CartItem {
@@ -271,5 +289,6 @@ export function normalizeProduct(raw: Product): Product {
     colors: raw.colors ?? [],
     styles: raw.styles ?? [],
     purchaseUrl: raw.purchaseUrl ?? null,
+    active: raw.active ?? true,
   }
 }
