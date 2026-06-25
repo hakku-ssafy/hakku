@@ -1,18 +1,15 @@
 <template>
   <section class="hero" @mouseenter="pause()" @mouseleave="resume()">
     <div class="hero__viewport">
-      <!-- 슬라이드 3벌 복제 → seamless 무한 루프. CSS 가 --pos 로 translateX 계산. -->
+      <!-- 유한 캐러셀: 복제 없이 한 벌만. CSS 가 --pos 로 활성 카드를 중앙 정렬. -->
       <ul
         class="hero__track"
-        :class="{ 'hero__track--instant': !animating }"
         :style="{ '--pos': String(pos) }"
-        @transitionend="onTrackTransitionEnd"
       >
         <li
-          v-for="(slide, i) in displaySlides"
+          v-for="(slide, i) in baseSlides"
           :key="`${slide.type}-${i}`"
           class="hero__slide"
-          :inert="!isRealCopy(i)"
         >
           <!-- 리드 슬라이드: 진단 완료면 추천 카드, 아니면 진단 상태 카드 -->
           <template v-if="slide.type === 'lead'">
@@ -75,8 +72,8 @@
         <span class="hero__counter">{{ counter }}</span>
       </div>
       <div class="hero__arrows">
-        <button type="button" class="hero__arrow" aria-label="이전 슬라이드" @click="prev()">‹</button>
-        <button type="button" class="hero__arrow hero__arrow--next" aria-label="다음 슬라이드" @click="next()">›</button>
+        <button type="button" class="hero__arrow" aria-label="이전 슬라이드" :disabled="isFirst" @click="prev()">‹</button>
+        <button type="button" class="hero__arrow hero__arrow--next" aria-label="다음 슬라이드" :disabled="isLast" @click="next()">›</button>
       </div>
     </div>
   </section>
@@ -164,32 +161,13 @@ const baseSlides = computed<BaseSlide[]>(() => [
 ])
 const TOTAL = computed(() => baseSlides.value.length)
 
-// 3벌 복제 — 가운데 벌이 정상 동작 구간, 좌우 벌은 peek·wrap 버퍼.
-const displaySlides = computed<BaseSlide[]>(() => {
-  const base = baseSlides.value
-  return [...base, ...base, ...base]
-})
-
-// 가운데 벌(인덱스 N..2N-1)만 실제 — 복제본은 inert 로 포커스/상호작용·스크린리더 제외.
-function isRealCopy(i: number): boolean {
-  const n = TOTAL.value
-  return i >= n && i < n * 2
-}
-
 const canMatchMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
 const prefersReduced = canMatchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-const { pos, realIndex, animating, next, prev, goTo, pause, resume, onTransitionEnd } = useHeroCarousel(
+const { pos, realIndex, isFirst, isLast, next, prev, goTo, pause, resume } = useHeroCarousel(
   TOTAL,
   { reducedMotion: prefersReduced },
 )
-
-// 트랙 자신의 transform 전환만 처리(자식 카드 hover transform 버블링 무시).
-function onTrackTransitionEnd(e: TransitionEvent): void {
-  if (e.target !== e.currentTarget) return
-  if (e.propertyName !== 'transform') return
-  onTransitionEnd()
-}
 
 const counter = computed(
   () => `${String(realIndex.value + 1).padStart(2, '0')} / ${String(TOTAL.value).padStart(2, '0')}`,
@@ -225,15 +203,13 @@ const counter = computed(
   display: flex;
   gap: var(--hero-gap);
   margin: 0;
-  padding: 0 0 0 var(--hero-frame); /* 활성 카드를 프레임 좌측에 정렬 */
+  /* 활성 카드를 뷰포트 가로 중앙에 정렬(양옆 카드는 peek). */
+  padding: 0 calc((100vw - var(--hero-card)) / 2);
   list-style: none;
   /* pos 칸만큼 좌측 이동(카드폭 + gap 단위). */
   transform: translateX(calc(-1 * var(--pos, 0) * (var(--hero-card) + var(--hero-gap))));
   transition: transform var(--dur-slide, 0.6s) var(--hk-ease-slide);
   will-change: transform;
-}
-.hero__track--instant {
-  transition: none;
 }
 
 .hero__slide {
@@ -305,5 +281,12 @@ const counter = computed(
   border-color: var(--hk-ink);
   background: var(--hk-ink);
   color: var(--hk-on-dark);
+}
+.hero__arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.hero__arrow:disabled:hover {
+  transform: none;
 }
 </style>
