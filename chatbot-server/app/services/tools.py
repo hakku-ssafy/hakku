@@ -76,6 +76,7 @@ def _trim_recommendations(recs: list) -> list:
             "id": product.get("id"),
             "name": product.get("name"),
             "price": product.get("price"),
+            "imageUrl": product.get("imageUrl"),
         })
     return trimmed
 

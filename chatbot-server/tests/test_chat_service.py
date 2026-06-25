@@ -1,4 +1,5 @@
 """stream_chat 오케스트레이션: 히스토리 주입 → (필요시) 도구 호출 → 스트리밍 + 기억 저장."""
+import json
 from types import SimpleNamespace
 
 from app.services import chat_service
@@ -68,6 +69,24 @@ async def _collect(agen):
     return [c async for c in agen]
 
 
+def _sse_events(chunks):
+    """SSE 문자열 청크에서 [DONE] 을 제외한 JSON 페이로드만 파싱한다."""
+    events = []
+    for chunk in chunks:
+        for line in chunk.splitlines():
+            if line.startswith("data: ") and line[6:] != "[DONE]":
+                events.append(json.loads(line[6:]))
+    return events
+
+
+class RecommendingMainClient(FakeMainClient):
+    async def get_recommendations(self):
+        return [{
+            "product": {"id": 9, "name": "그립톡", "price": 5900, "imageUrl": "/img/9.jpg"},
+            "score": 0.9,
+        }]
+
+
 async def test_streams_content_and_persists_conversation():
     fake = FakeOpenAI([[
         _chunk(content="안녕"),
@@ -120,3 +139,24 @@ async def test_includes_prior_history_in_prompt():
     messages = fake.chat.completions.calls[0]["messages"]
     assert any(m.get("content") == "이전 질문" for m in messages)
     assert any(m.get("content") == "이전 답변" for m in messages)
+
+
+async def test_emits_product_cards_event_when_recommending():
+    fake = FakeOpenAI([
+        [
+            _chunk(tool_calls=[_tool_call(0, "call_1", "recommend_products", "{}")]),
+            _chunk(finish_reason="tool_calls"),
+        ],
+        [_chunk(content="이런 상품 어때요?", finish_reason="stop")],
+    ])
+    chunks = await _collect(chat_service.stream_chat(
+        "상품 추천해줘", None, "image/jpeg",
+        user_id="1", store=FakeStore(), main_client=RecommendingMainClient(),
+        now_ms=1000, openai_client=fake, model="gpt-4o",
+    ))
+
+    product_events = [e for e in _sse_events(chunks) if "products" in e]
+    assert product_events, "추천 도구 실행 시 products 카드 이벤트가 방출되어야 한다"
+    assert product_events[0]["products"][0] == {
+        "id": 9, "name": "그립톡", "price": 5900, "imageUrl": "/img/9.jpg",
+    }

@@ -25,7 +25,8 @@ class FakeMainClient:
 
     async def get_recommendations(self):
         self.recs_called = True
-        return [{"product": {"id": 9, "name": "그립톡", "price": 5900}, "score": 0.9}]
+        return [{"product": {"id": 9, "name": "그립톡", "price": 5900, "imageUrl": "/img/9.jpg"},
+                 "score": 0.9}]
 
 
 def test_tools_expose_three_customer_service_functions():
@@ -54,6 +55,12 @@ async def test_execute_recommend_products_extracts_product_for_links():
     assert client.recs_called
     assert data["recommendations"][0]["id"] == 9
     assert data["recommendations"][0]["name"] == "그립톡"
+
+
+async def test_execute_recommend_products_includes_image_url_for_cards():
+    client = FakeMainClient()
+    data = json.loads(await execute_tool("recommend_products", client, "1"))
+    assert data["recommendations"][0]["imageUrl"] == "/img/9.jpg"
 
 
 async def test_execute_unknown_tool_returns_error():
