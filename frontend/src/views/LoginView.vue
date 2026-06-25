@@ -37,6 +37,7 @@
             type="password"
             autocomplete="current-password"
             placeholder="비밀번호를 입력하세요"
+            latin-only
           />
           <AppButton type="submit" block size="lg" :disabled="!canSubmit || loading" :loading="loading">
             로그인
