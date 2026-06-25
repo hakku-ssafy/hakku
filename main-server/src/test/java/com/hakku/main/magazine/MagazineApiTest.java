@@ -1,4 +1,4 @@
-package com.hakku.main.curation;
+package com.hakku.main.magazine;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hakku.main.user.domain.Role;
 import com.hakku.main.user.domain.User;
 import com.hakku.main.user.repository.UserRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CurationCardApiTest {
+class MagazineApiTest {
 
     @Autowired
     private MockMvc mvc;
@@ -61,16 +62,16 @@ class CurationCardApiTest {
         return "Bearer " + objectMapper.readTree(body).get("accessToken").asText();
     }
 
-    private static String cardJson(String title, String linkUrl, boolean active) {
-        String link = linkUrl == null ? "null" : "\"" + linkUrl + "\"";
+    private static String magazineJson(String title, boolean published) {
         return """
-            {"kicker":"NEW","title":"%s","subtitle":"부제","body":"<p>본문</p>",
-             "imageUrl":"/storage/images/demo","linkUrl":%s,"displayOrder":1,"active":%s}
-            """.formatted(title, link, active);
+            {"kicker":"EDITORIAL","title":"%s","subtitle":"부제",
+             "content":"## 소제목\\n\\n사진과 글 그리고 [데코 스티커](/products/7)",
+             "coverImageUrl":"/storage/images/demo","displayOrder":1,"published":%s}
+            """.formatted(title, published);
     }
 
-    private long createCard(String adminToken, String json) throws Exception {
-        String body = mvc.perform(post("/api/admin/curation-cards")
+    private long createMagazine(String adminToken, String json) throws Exception {
+        String body = mvc.perform(post("/api/admin/magazines")
                         .header("Authorization", adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -80,103 +81,91 @@ class CurationCardApiTest {
     }
 
     @Test
-    @DisplayName("ADMIN 카드 생성 → 201, 공개 단건 조회 → 200")
+    @DisplayName("ADMIN 매거진 발행 → 201, 공개 단건 조회 → 200 (마크다운 본문 보존)")
     void createAndGet() throws Exception {
-        String admin = tokenFor("admin1@hakku.dev", "ADMIN");
-        long id = createCard(admin, cardJson("신상 모음", "/products", true));
+        String admin = tokenFor("mag-admin1@hakku.dev", "ADMIN");
+        long id = createMagazine(admin, magazineJson("이주의 다꾸", true));
 
-        mvc.perform(get("/api/curation-cards/" + id))
+        mvc.perform(get("/api/magazines/" + id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("신상 모음"))
-                .andExpect(jsonPath("$.linkUrl").value("/products"));
+                .andExpect(jsonPath("$.title").value("이주의 다꾸"))
+                .andExpect(jsonPath("$.content").value(
+                        org.hamcrest.Matchers.containsString("/products/7")));
     }
 
     @Test
     @DisplayName("공개 목록 조회 → 200 (배열)")
     void listPublic() throws Exception {
-        createCard(tokenFor("admin2@hakku.dev", "ADMIN"), cardJson("공개 카드", "/community", true));
+        createMagazine(tokenFor("mag-admin2@hakku.dev", "ADMIN"), magazineJson("공개 매거진", true));
 
-        mvc.perform(get("/api/curation-cards"))
+        mvc.perform(get("/api/magazines"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").exists());
     }
 
     @Test
-    @DisplayName("링크 없는 카드는 linkUrl=null 로 저장된다 (매거진 폴백용)")
-    void nullLinkPreserved() throws Exception {
-        String admin = tokenFor("admin3@hakku.dev", "ADMIN");
-        long id = createCard(admin, cardJson("매거진 카드", null, true));
+    @DisplayName("미발행(published=false) 매거진은 공개 목록에서 제외, 어드민 목록엔 포함")
+    void unpublishedExcludedFromPublic() throws Exception {
+        String admin = tokenFor("mag-admin3@hakku.dev", "ADMIN");
+        String unique = "미발행-" + System.nanoTime();
+        createMagazine(admin, magazineJson(unique, false));
 
-        mvc.perform(get("/api/curation-cards/" + id))
+        String publicBody = mvc.perform(get("/api/magazines"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.linkUrl").doesNotExist())
-                .andExpect(jsonPath("$.body").value("<p>본문</p>"));
+                .andReturn().getResponse().getContentAsString();
+        Assertions.assertFalse(publicBody.contains(unique));
+
+        String adminBody = mvc.perform(get("/api/admin/magazines").header("Authorization", admin))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Assertions.assertTrue(adminBody.contains(unique));
     }
 
     @Test
-    @DisplayName("일반 회원(NORMAL) 카드 생성 → 403")
+    @DisplayName("일반 회원(NORMAL) 매거진 발행 → 403")
     void createByNormal() throws Exception {
-        String normal = tokenFor("normal-c1@hakku.dev", "NORMAL");
+        String normal = tokenFor("mag-normal1@hakku.dev", "NORMAL");
 
-        mvc.perform(post("/api/admin/curation-cards")
+        mvc.perform(post("/api/admin/magazines")
                         .header("Authorization", normal)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(cardJson("거부", "/x", true)))
+                        .content(magazineJson("거부", true)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @DisplayName("토큰 없이 카드 생성 → 401")
+    @DisplayName("토큰 없이 매거진 발행 → 401")
     void createWithoutToken() throws Exception {
-        mvc.perform(post("/api/admin/curation-cards")
+        mvc.perform(post("/api/admin/magazines")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(cardJson("거부", "/x", true)))
+                        .content(magazineJson("거부", true)))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("ADMIN 카드 수정 → 200")
+    @DisplayName("ADMIN 매거진 수정 → 200")
     void updateByAdmin() throws Exception {
-        String admin = tokenFor("admin4@hakku.dev", "ADMIN");
-        long id = createCard(admin, cardJson("수정 전", "/a", true));
+        String admin = tokenFor("mag-admin4@hakku.dev", "ADMIN");
+        long id = createMagazine(admin, magazineJson("수정 전", true));
 
-        mvc.perform(put("/api/admin/curation-cards/" + id)
+        mvc.perform(put("/api/admin/magazines/" + id)
                         .header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(cardJson("수정 후", "/b", true)))
+                        .content(magazineJson("수정 후", true)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("수정 후"))
-                .andExpect(jsonPath("$.linkUrl").value("/b"));
+                .andExpect(jsonPath("$.title").value("수정 후"));
     }
 
     @Test
-    @DisplayName("ADMIN 카드 삭제 → 204, 이후 조회 → 404")
+    @DisplayName("ADMIN 매거진 삭제 → 204, 이후 조회 → 404")
     void deleteByAdmin() throws Exception {
-        String admin = tokenFor("admin5@hakku.dev", "ADMIN");
-        long id = createCard(admin, cardJson("삭제 대상", "/c", true));
+        String admin = tokenFor("mag-admin5@hakku.dev", "ADMIN");
+        long id = createMagazine(admin, magazineJson("삭제 대상", true));
 
-        mvc.perform(delete("/api/admin/curation-cards/" + id).header("Authorization", admin))
+        mvc.perform(delete("/api/admin/magazines/" + id).header("Authorization", admin))
                 .andExpect(status().isNoContent());
 
-        mvc.perform(get("/api/curation-cards/" + id))
+        mvc.perform(get("/api/magazines/" + id))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("비활성 카드는 공개 목록에서 제외, 어드민 목록엔 포함")
-    void inactiveExcludedFromPublic() throws Exception {
-        String admin = tokenFor("admin6@hakku.dev", "ADMIN");
-        String unique = "비활성-" + System.nanoTime();
-        createCard(admin, cardJson(unique, "/d", false));
-
-        String publicBody = mvc.perform(get("/api/curation-cards"))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        org.junit.jupiter.api.Assertions.assertFalse(publicBody.contains(unique));
-
-        String adminBody = mvc.perform(get("/api/admin/curation-cards").header("Authorization", admin))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        org.junit.jupiter.api.Assertions.assertTrue(adminBody.contains(unique));
     }
 }

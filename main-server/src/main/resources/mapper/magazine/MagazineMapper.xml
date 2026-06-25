@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hakku.main.magazine.repository.MagazineRepository">
+
+    <resultMap id="magazineResultMap" type="com.hakku.main.magazine.domain.Magazine">
+        <id property="id" column="id"/>
+        <result property="kicker" column="kicker"/>
+        <result property="title" column="title"/>
+        <result property="subtitle" column="subtitle"/>
+        <result property="content" column="content"/>
+        <result property="coverImageUrl" column="cover_image_url"/>
+        <result property="displayOrder" column="display_order"/>
+        <result property="published" column="published"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, kicker, title, subtitle, content, cover_image_url, display_order, published, created_at, updated_at
+    </sql>
+
+    <select id="selectById" resultMap="magazineResultMap">
+        SELECT <include refid="columns"/>
+        FROM magazines
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAllOrdered" resultMap="magazineResultMap">
+        SELECT <include refid="columns"/>
+        FROM magazines
+        ORDER BY display_order ASC, id ASC
+    </select>
+
+    <select id="findPublishedOrdered" resultMap="magazineResultMap">
+        SELECT <include refid="columns"/>
+        FROM magazines
+        WHERE published = TRUE
+        ORDER BY display_order ASC, id ASC
+    </select>
+
+    <insert id="insertMagazine" parameterType="com.hakku.main.magazine.domain.Magazine"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO magazines (kicker, title, subtitle, content, cover_image_url,
+                               display_order, published, created_at, updated_at)
+        VALUES (#{kicker}, #{title}, #{subtitle}, #{content}, #{coverImageUrl},
+                #{displayOrder}, #{published}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="updateMagazine" parameterType="com.hakku.main.magazine.domain.Magazine">
+        UPDATE magazines
+        SET kicker = #{kicker},
+            title = #{title},
+            subtitle = #{subtitle},
+            content = #{content},
+            cover_image_url = #{coverImageUrl},
+            display_order = #{displayOrder},
+            published = #{published},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM magazines WHERE id = #{id}
+    </delete>
+</mapper>

@@ -108,30 +108,29 @@ export interface Order {
   items: OrderItem[]
 }
 
-export interface CurationCard {
+export interface Magazine {
   id: number
   kicker: string | null
   title: string
   subtitle: string | null
-  body: string | null
-  imageUrl: string | null
-  linkUrl: string | null
+  /** 마크다운 본문 (사진·글, 내부 상품 링크 임베드). */
+  content: string | null
+  coverImageUrl: string | null
   displayOrder: number
-  active: boolean
+  published: boolean
   createdAt: string
   updatedAt: string
 }
 
-/** 큐레이션 카드 생성/수정 입력(어드민). */
-export interface CurationCardInput {
+/** 매거진 발행/수정 입력(어드민). */
+export interface MagazineInput {
   kicker: string | null
   title: string
   subtitle: string | null
-  body: string | null
-  imageUrl: string | null
-  linkUrl: string | null
+  content: string | null
+  coverImageUrl: string | null
   displayOrder: number
-  active: boolean
+  published: boolean
 }
 
 export interface Review {

@@ -11,20 +11,26 @@
 
     <div v-else-if="error" class="mag__center mag__error">{{ error }}</div>
 
-    <article v-else-if="card" class="mag__article">
+    <article v-else-if="magazine" class="mag__article">
       <header class="mag__head">
-        <span v-if="card.kicker" class="mag__kicker">{{ card.kicker }}</span>
-        <h1 class="mag__title">{{ card.title }}</h1>
-        <p v-if="card.subtitle" class="mag__sub">{{ card.subtitle }}</p>
+        <span v-if="magazine.kicker" class="mag__kicker">{{ magazine.kicker }}</span>
+        <h1 class="mag__title">{{ magazine.title }}</h1>
+        <p v-if="magazine.subtitle" class="mag__sub">{{ magazine.subtitle }}</p>
       </header>
+
       <img
-        v-if="card.imageUrl"
-        :src="card.imageUrl"
-        :alt="card.title"
+        v-if="magazine.coverImageUrl"
+        :src="magazine.coverImageUrl"
+        :alt="magazine.title"
         class="mag__hero"
         loading="eager"
       />
-      <div v-if="card.body" class="mag__body">{{ card.body }}</div>
+
+      <MagazineBody
+        v-if="magazine.content"
+        :content="magazine.content"
+        :products-by-id="productsById"
+      />
     </article>
   </div>
 </template>
@@ -32,13 +38,34 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getCurationCard } from '@/api/curation'
-import type { CurationCard } from '@/types'
+import { getMagazine } from '@/api/magazine'
+import { getProduct } from '@/api/products'
+import { parseMagazineBlocks } from '@/lib/magazineContent'
+import type { Magazine, Product } from '@/types'
+import MagazineBody from '@/components/magazine/MagazineBody.vue'
 
 const route = useRoute()
-const card = ref<CurationCard | null>(null)
+const magazine = ref<Magazine | null>(null)
+const productsById = ref<Record<number, Product>>({})
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+/** 본문에서 임베드된 상품 id 를 모아 병렬로 조회한다. 일부 실패는 폴백 링크로 처리. */
+async function loadEmbeddedProducts(content: string): Promise<void> {
+  const ids = [
+    ...new Set(
+      parseMagazineBlocks(content).flatMap((b) => (b.type === 'product' ? [b.productId] : [])),
+    ),
+  ]
+  if (ids.length === 0) return
+
+  const results = await Promise.allSettled(ids.map((id) => getProduct(id)))
+  const map: Record<number, Product> = {}
+  results.forEach((result, idx) => {
+    if (result.status === 'fulfilled') map[ids[idx]] = result.value
+  })
+  productsById.value = map
+}
 
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -48,7 +75,9 @@ onMounted(async () => {
     return
   }
   try {
-    card.value = await getCurationCard(id)
+    const loaded = await getMagazine(id)
+    magazine.value = loaded
+    if (loaded.content) await loadEmbeddedProducts(loaded.content)
   } catch {
     error.value = '콘텐츠를 찾을 수 없습니다.'
   } finally {
@@ -116,12 +145,5 @@ onMounted(async () => {
   aspect-ratio: 16 / 10;
   object-fit: cover;
   background: var(--hk-cream);
-}
-.mag__body {
-  font-size: 1.0625rem;
-  line-height: 1.8;
-  color: var(--hk-ink);
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 </style>
