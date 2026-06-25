@@ -12,6 +12,9 @@ export interface CacheEntry<T> {
   fetchedAt: number
 }
 
+/** 기본 staleTime(ms). 이 시간 이내 재방문은 네트워크 호출 없이 캐시만 쓴다. */
+export const DEFAULT_STALE_TIME = 30_000
+
 const store = new Map<string, CacheEntry<unknown>>()
 const inflight = new Map<string, Promise<unknown>>()
 

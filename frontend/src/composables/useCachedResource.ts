@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import { getEntry, setEntry, isFresh, dedupe } from '@/lib/resourceCache'
+import { getEntry, setEntry, isFresh, dedupe, DEFAULT_STALE_TIME } from '@/lib/resourceCache'
 
 interface UseCachedResourceOptions {
   /** 이 시간(ms) 이내면 캐시를 그대로 쓰고 백그라운드 갱신도 생략. 기본 30초. */
@@ -15,8 +15,6 @@ interface CachedResource<T> {
   error: Ref<unknown>
   load: () => Promise<void>
 }
-
-const DEFAULT_STALE_TIME = 30_000
 
 /**
  * 뷰-로컬 패칭에 stale-while-revalidate 를 입힌다.
