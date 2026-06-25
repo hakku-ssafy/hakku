@@ -25,8 +25,8 @@ const router = createRouter({
     { path: '/my', component: () => import('@/views/MyPageView.vue'), meta: { requiresAuth: true } },
     { path: '/magazine/:id', component: () => import('@/views/MagazineDetailView.vue') },
     {
-      path: '/admin/curation',
-      component: () => import('@/views/AdminCurationView.vue'),
+      path: '/admin/magazine',
+      component: () => import('@/views/AdminMagazineView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
   ]

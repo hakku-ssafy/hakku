@@ -84,8 +84,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { CurationCard, Product } from '@/types'
-import { listActiveCurationCards } from '@/api/curation'
+import type { Magazine, Product } from '@/types'
+import { listActiveMagazines } from '@/api/magazine'
 import { useHeroCarousel } from '@/composables/useHeroCarousel'
 import HeroDiagnosisCard from './HeroDiagnosisCard.vue'
 import HeroEditorialCard from './HeroEditorialCard.vue'
@@ -125,24 +125,23 @@ const EDITORIAL_SLIDES: EditorialSlide[] = [
 const TONES = ['u-tone-1', 'u-tone-2', 'u-tone-4', 'u-tone-5', 'u-tone-6', 'u-tone-3']
 const fetchedSlides = ref<EditorialSlide[]>([])
 
-/** 큐레이션 카드 → 에디토리얼 슬라이드. 링크가 없으면 매거진 상세(/magazine/:id)로 연결. */
-function toSlide(card: CurationCard, i: number): EditorialSlide {
-  const link = card.linkUrl?.trim()
+/** 발행 매거진 → 에디토리얼 슬라이드. 슬라이드를 누르면 매거진 상세(/magazine/:id)로 이동. */
+function toSlide(magazine: Magazine, i: number): EditorialSlide {
   return {
     tone: TONES[i % TONES.length],
-    kicker: card.kicker ?? '',
-    title: card.title,
-    sub: card.subtitle ?? '',
-    to: link ? link : `/magazine/${card.id}`,
-    imageUrl: card.imageUrl ?? undefined,
+    kicker: magazine.kicker ?? '',
+    title: magazine.title,
+    sub: magazine.subtitle ?? '',
+    to: `/magazine/${magazine.id}`,
+    imageUrl: magazine.coverImageUrl ?? undefined,
   }
 }
 
 onMounted(async () => {
   try {
-    const cards = await listActiveCurationCards()
-    if (Array.isArray(cards) && cards.length > 0) {
-      fetchedSlides.value = cards.map(toSlide)
+    const magazines = await listActiveMagazines()
+    if (Array.isArray(magazines) && magazines.length > 0) {
+      fetchedSlides.value = magazines.map(toSlide)
     }
   } catch {
     /* 폴백: 기본 슬라이드 유지 */
