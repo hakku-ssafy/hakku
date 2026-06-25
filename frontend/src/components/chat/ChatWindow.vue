@@ -170,8 +170,15 @@ async function send() {
   }
   messages.value.push(userMsg)
 
-  const assistantMsg: Message = { id: nextId++, role: 'assistant', content: '' }
-  messages.value.push(assistantMsg)
+  const assistantIndex = messages.value.length
+  messages.value.push({ id: nextId++, role: 'assistant', content: '' })
+
+  // Vue 반응성 주의: ref 배열에 넣은 객체를 원시 참조로 변이하면 set 트랩이 호출되지 않아
+  // 갱신이 트리거되지 않는다(→ 스트리밍이 끝난 뒤 한 번에 렌더되는 버그). 인덱스에 새 객체를
+  // 할당하는 불변 갱신으로 토큰이 도착할 때마다 즉시 렌더되게 한다.
+  const setAssistantContent = (content: string) => {
+    messages.value[assistantIndex] = { ...messages.value[assistantIndex], content }
+  }
 
   inputText.value = ''
   const file = selectedFile.value
@@ -192,7 +199,7 @@ async function send() {
     })
 
     if (response.status === 401) {
-      assistantMsg.content = '로그인이 만료되었어요. 다시 로그인한 뒤 이용해주세요.'
+      setAssistantContent('로그인이 만료되었어요. 다시 로그인한 뒤 이용해주세요.')
       return
     }
     if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`)
@@ -215,16 +222,16 @@ async function send() {
         try {
           const parsed = JSON.parse(data)
           if (parsed.error) {
-            assistantMsg.content = parsed.error
+            setAssistantContent(parsed.error)
           } else if (parsed.text) {
-            assistantMsg.content += parsed.text
+            setAssistantContent(messages.value[assistantIndex].content + parsed.text)
           }
           scrollToBottom()
         } catch {}
       }
     }
   } catch {
-    assistantMsg.content = '일시적인 오류가 발생했어요. 다시 시도해주세요.'
+    setAssistantContent('일시적인 오류가 발생했어요. 다시 시도해주세요.')
   } finally {
     isStreaming.value = false
     scrollToBottom()
