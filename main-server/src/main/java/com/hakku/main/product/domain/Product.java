@@ -41,6 +41,9 @@ public class Product {
 
     private String purchaseUrl;
 
+    /** 활성화 여부. false 면 공개 목록·검색·추천에서 숨긴다(어드민에서만 노출). 기본 true. */
+    private boolean active = true;
+
     private Instant createdAt;
 
     private Instant updatedAt;
@@ -59,6 +62,7 @@ public class Product {
         this.styles = styles == null ? new HashSet<>() : new HashSet<>(styles);
         this.imageUrl = imageUrl;
         this.purchaseUrl = purchaseUrl;
+        this.active = true;
     }
 
     /** 상품 정보를 갱신한다. */
@@ -75,6 +79,14 @@ public class Product {
         this.styles = styles == null ? new HashSet<>() : new HashSet<>(styles);
         this.imageUrl = imageUrl;
         this.purchaseUrl = purchaseUrl;
+    }
+
+    /** 어드민 인라인 수정: 이름·카테고리·스타일 태그·활성화 여부만 변경(가격·설명 등 나머지는 보존). */
+    public void editByAdmin(String name, String category, Set<String> styles, boolean active) {
+        this.name = name;
+        this.category = category;
+        this.styles = styles == null ? new HashSet<>() : new HashSet<>(styles);
+        this.active = active;
     }
 
     /** 주어진 회원이 이 상품을 등록한 판매자인지 여부. */

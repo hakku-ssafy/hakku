@@ -18,8 +18,11 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface ProductRepository {
 
-    /** 최신 상품이 먼저 오도록 id 내림차순으로 조회한다. */
+    /** 최신 상품이 먼저 오도록 id 내림차순으로 조회한다(공개 목록 — 활성 상품만). */
     List<Product> findAllByOrderByIdDesc();
+
+    /** 어드민 커서 페이지네이션(활성/비활성 모두). cursorId 미지정 시 최신부터, id 내림차순으로 limit 개. */
+    List<Product> findForAdminCursor(@Param("cursorId") Long cursorId, @Param("limit") int limit);
 
     boolean existsById(@Param("id") Long id);
 
