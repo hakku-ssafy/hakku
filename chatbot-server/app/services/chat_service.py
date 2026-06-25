@@ -52,6 +52,18 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+def _extract_products(name: str, result: str) -> list:
+    """추천 도구 결과(JSON 문자열)에서 카드용 상품 목록을 뽑는다. 그 외 도구는 빈 목록."""
+    if name != "recommend_products":
+        return []
+    try:
+        data = json.loads(result)
+    except (ValueError, TypeError):
+        return []
+    products = data.get("recommendations")
+    return products if isinstance(products, list) else []
+
+
 def _default_client():
     from openai import AsyncOpenAI
 
@@ -64,6 +76,15 @@ def _default_model() -> str:
     from app.config import settings
 
     return settings.openai_model
+
+
+async def load_recent_history(store, user_id: str, now_ms: int) -> dict:
+    """프론트 하이드레이션용: 서버에 보관된 최근(1시간) 대화를 메시지 배열로 반환한다.
+
+    새로고침/창 닫기로 사라지는 것은 프론트의 인메모리 상태일 뿐, 대화 기억 자체는
+    Redis 1시간 슬라이딩 윈도우에 남아 있다. 챗봇 창을 열 때 이 값으로 복원한다.
+    """
+    return {"messages": await store.recent(user_id, now_ms)}
 
 
 async def stream_chat(
@@ -146,6 +167,10 @@ async def stream_chat(
                 for buf in ordered:
                     result = await execute_tool(buf["name"], main_client, user_id)
                     messages.append({"role": "tool", "tool_call_id": buf["id"], "content": result})
+                    # 추천 상품은 텍스트 링크 외에 카드로도 보여주도록 구조화 데이터를 함께 흘려보낸다.
+                    products = _extract_products(buf["name"], result)
+                    if products:
+                        yield _sse({"products": products})
                 continue
 
             break
