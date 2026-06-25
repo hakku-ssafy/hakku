@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import ProductListView from '../ProductListView.vue'
+import { clearAll } from '@/lib/resourceCache'
 import * as productsApi from '@/api/products'
 
 vi.mock('@/api/products')
@@ -51,6 +52,7 @@ describe('ProductListView', () => {
   beforeEach(async () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    clearAll() // 모듈 레벨 SWR 캐시 격리
     mockGetProducts.mockResolvedValue([])
     await router.push('/products')
     await router.isReady()

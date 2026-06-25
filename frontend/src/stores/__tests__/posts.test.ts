@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePostStore } from '../posts'
+import { clearAll } from '@/lib/resourceCache'
 import * as apiModule from '@/api/posts'
 
 vi.mock('@/api/posts')
@@ -28,6 +29,7 @@ describe('usePostStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    clearAll() // 모듈 레벨 SWR 캐시 격리
   })
 
   it('초기 상태는 빈 게시글 목록이다', () => {
@@ -67,5 +69,45 @@ describe('usePostStore', () => {
     await store.toggleLikeAction(1)
 
     expect(store.posts[0].likeCount).toBe(4)
+  })
+
+  it('같은 board 재방문 시 staleTime 이내면 다시 받지 않는다(SWR)', async () => {
+    vi.useFakeTimers()
+    mockGetPosts.mockResolvedValue([mockPost])
+    const store = usePostStore()
+
+    await store.fetchPosts()
+    await store.fetchPosts()
+
+    expect(mockGetPosts).toHaveBeenCalledTimes(1)
+    expect(store.posts).toHaveLength(1)
+    vi.useRealTimers()
+  })
+
+  it('board 별로 캐시가 분리된다', async () => {
+    vi.useFakeTimers()
+    mockGetPosts.mockResolvedValue([mockPost])
+    const store = usePostStore()
+
+    await store.fetchPosts('GENERAL')
+    await store.fetchPosts('STUDENT_ID')
+    await store.fetchPosts('GENERAL') // 캐시(fresh)
+
+    expect(mockGetPosts).toHaveBeenCalledTimes(2) // board 별 1회씩
+    vi.useRealTimers()
+  })
+
+  it('글 작성 후 목록 캐시가 무효화되어 다음 방문에 다시 받는다', async () => {
+    vi.useFakeTimers()
+    mockGetPosts.mockResolvedValue([mockPost])
+    mockCreatePost.mockResolvedValueOnce(mockPost)
+    const store = usePostStore()
+
+    await store.fetchPosts() // 호출 1
+    await store.createPostAction({ title: 'x', content: 'y' })
+    await store.fetchPosts() // 무효화됨 → 호출 2
+
+    expect(mockGetPosts).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
   })
 })
