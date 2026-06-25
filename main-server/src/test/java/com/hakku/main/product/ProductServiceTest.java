@@ -3,6 +3,9 @@ package com.hakku.main.product;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +15,8 @@ import com.hakku.main.product.exception.ProductAccessDeniedException;
 import com.hakku.main.product.exception.ProductNotFoundException;
 import com.hakku.main.product.repository.ProductRepository;
 import com.hakku.main.user.domain.Role;
+import com.hakku.main.user.domain.User;
+import com.hakku.main.user.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,11 +36,22 @@ class ProductServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private ProductService productService;
 
     @BeforeEach
     void setUp() {
-        productService = new ProductService(productRepository);
+        productService = new ProductService(productRepository, userRepository);
+    }
+
+    /** 판매자 조회 결과를 흉내 낸다(닉네임 enrich 검증용). */
+    private User sellerNamed(Long id, String nickname) {
+        User user = mock(User.class);
+        lenient().when(user.getId()).thenReturn(id);
+        lenient().when(user.getNickname()).thenReturn(nickname);
+        return user;
     }
 
     private ProductCommand command() {
@@ -47,6 +63,7 @@ class ProductServiceTest {
     @DisplayName("create: SELLER 가 등록하면 상품을 저장한다")
     void create_bySeller_saves() {
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
 
         ProductResponse response = productService.create(SELLER, Role.SELLER, command());
 
@@ -54,6 +71,28 @@ class ProductServiceTest {
         assertThat(response.sellerId()).isEqualTo(SELLER);
         assertThat(response.price()).isEqualTo(89000L);
         verify(productRepository).save(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("create: 응답에 판매자 닉네임을 포함한다")
+    void create_includesSellerNickname() {
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
+
+        ProductResponse response = productService.create(SELLER, Role.SELLER, command());
+
+        assertThat(response.sellerNickname()).isEqualTo("판매왕");
+    }
+
+    @Test
+    @DisplayName("get: 판매자를 찾을 수 없으면 닉네임을 '알 수 없음' 으로 채운다")
+    void get_unknownSeller_fallsBack() {
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product()));
+        when(userRepository.findAllById(anyList())).thenReturn(List.of());
+
+        ProductResponse response = productService.get(1L);
+
+        assertThat(response.sellerNickname()).isEqualTo("알 수 없음");
     }
 
     @Test
@@ -78,6 +117,7 @@ class ProductServiceTest {
     @DisplayName("update: 등록한 판매자 본인이면 갱신한다")
     void update_byOwner_updates() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product()));
+        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
 
         ProductCommand changed = new ProductCommand("니트", "봄 니트", 49000L, "기타", "SPRING", null,
                 Set.of(), Set.of("캐주얼"), "https://img/knit.png", null);
@@ -121,10 +161,12 @@ class ProductServiceTest {
     @DisplayName("list: 모든 상품을 응답으로 변환한다")
     void list_returnsAll() {
         when(productRepository.findAllByOrderByIdDesc()).thenReturn(List.of(product(), product()));
+        when(userRepository.findAllById(anyList())).thenReturn(List.of(sellerNamed(SELLER, "판매왕")));
 
         List<ProductResponse> all = productService.list();
 
         assertThat(all).hasSize(2);
+        assertThat(all).allSatisfy(p -> assertThat(p.sellerNickname()).isEqualTo("판매왕"));
     }
 
     private Product product() {
