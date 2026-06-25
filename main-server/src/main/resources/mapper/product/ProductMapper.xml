@@ -18,6 +18,7 @@
         <result property="category" column="category"/>
         <result property="imageUrl" column="image_url"/>
         <result property="purchaseUrl" column="purchase_url"/>
+        <result property="active" column="active"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <collection property="colors" ofType="string"
@@ -28,7 +29,7 @@
 
     <sql id="columns">
         id, seller_id, name, description, price, key_color, sub_color, category,
-        image_url, purchase_url, created_at, updated_at
+        image_url, purchase_url, active, created_at, updated_at
     </sql>
 
     <select id="selectColors" resultType="string">
@@ -45,10 +46,23 @@
         WHERE id = #{id}
     </select>
 
+    <!-- 공개 목록·검색·추천용. 비활성(active=false) 상품은 제외한다. -->
     <select id="findAllByOrderByIdDesc" resultMap="productResultMap">
         SELECT <include refid="columns"/>
         FROM products
+        WHERE active = TRUE
         ORDER BY id DESC
+    </select>
+
+    <!-- 어드민 목록용 커서 페이지네이션. 활성/비활성 모두 노출. id 내림차순, id &lt; cursorId. -->
+    <select id="findForAdminCursor" resultMap="productResultMap">
+        SELECT <include refid="columns"/>
+        FROM products
+        <if test="cursorId != null">
+            WHERE id &lt; #{cursorId}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{limit}
     </select>
 
     <select id="existsById" resultType="boolean">
@@ -58,9 +72,9 @@
     <insert id="insertProduct" parameterType="com.hakku.main.product.domain.Product"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO products (seller_id, name, description, price, key_color, sub_color,
-                             category, image_url, purchase_url, created_at, updated_at)
+                             category, image_url, purchase_url, active, created_at, updated_at)
         VALUES (#{sellerId}, #{name}, #{description}, #{price}, #{keyColor}, #{subColor},
-                #{category}, #{imageUrl}, #{purchaseUrl}, #{createdAt}, #{updatedAt})
+                #{category}, #{imageUrl}, #{purchaseUrl}, #{active}, #{createdAt}, #{updatedAt})
     </insert>
 
     <update id="updateProduct" parameterType="com.hakku.main.product.domain.Product">
@@ -73,6 +87,7 @@
             category = #{category},
             image_url = #{imageUrl},
             purchase_url = #{purchaseUrl},
+            active = #{active},
             updated_at = #{updatedAt}
         WHERE id = #{id}
     </update>

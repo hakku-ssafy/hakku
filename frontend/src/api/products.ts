@@ -1,5 +1,11 @@
 import apiClient from './client'
-import { normalizeProduct, type Product, type Review } from '@/types'
+import {
+  normalizeProduct,
+  type AdminProductEdit,
+  type AdminProductPage,
+  type Product,
+  type Review,
+} from '@/types'
 
 export interface CreateProductRequest {
   name: string
@@ -36,6 +42,20 @@ export async function updateProduct(id: number, request: Partial<CreateProductRe
 
 export async function deleteProduct(id: number): Promise<void> {
   await apiClient.delete(`/products/${id}`)
+}
+
+/** 어드민 — 커서 페이지네이션 상품 목록(활성·비활성 모두). cursorId 미지정 시 최신부터. */
+export async function listAdminProducts(cursorId?: number, limit = 20): Promise<AdminProductPage> {
+  const params: { limit: number; cursorId?: number } = { limit }
+  if (cursorId != null) params.cursorId = cursorId
+  const { data } = await apiClient.get<AdminProductPage>('/admin/products', { params })
+  return { ...data, items: data.items.map(normalizeProduct) }
+}
+
+/** 어드민 — 상품 인라인 수정(이름·카테고리·태그·활성화 여부). */
+export async function editAdminProduct(id: number, edit: AdminProductEdit): Promise<Product> {
+  const { data } = await apiClient.patch<Product>(`/admin/products/${id}`, edit)
+  return normalizeProduct(data)
 }
 
 export async function getReviews(productId: number): Promise<Review[]> {
